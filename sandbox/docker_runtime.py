@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_IMAGE = "shipwright-sandbox:latest"
+DEFAULT_IMAGE = "shipwright-sandbox:1.0"
 CONTAINER_LABEL = "shipwright.task"
 STOP_TIMEOUT_S = 7
 
