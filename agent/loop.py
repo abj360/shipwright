@@ -25,7 +25,7 @@ from agent.llm_client import LLMClient, Message
 logger = logging.getLogger(__name__)
 
 MAX_TOOL_OUTPUT_CHARS = 6000
-STEP_BUDGET_TOKENS = 4000
+STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
 
 @dataclass
