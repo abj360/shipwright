@@ -35,6 +35,7 @@ class SandboxConfig:
     image: str = DEFAULT_IMAGE
     workdir: str = "/work"
     env: dict[str, str] = field(default_factory=dict)
+    gvisor: bool = False
 
 @dataclass(frozen=True)
 class ExecResult:
@@ -127,4 +128,5 @@ class DockerRuntime:
             "labels": {CONTAINER_LABEL: "true"},
             "working_dir": config.workdir,
             "environment": config.env,
+            "runtime": "runsc" if config.gvisor else None,
         }
