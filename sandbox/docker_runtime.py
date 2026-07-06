@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_IMAGE = "shipwright-sandbox:latest"
 CONTAINER_LABEL = "shipwright.task"
-STOP_TIMEOUT_S = 5
+STOP_TIMEOUT_S = 7
 
 @dataclass
 class SandboxConfig:
