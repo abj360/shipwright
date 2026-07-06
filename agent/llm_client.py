@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 DEFAULT_MODEL = "claude-sonnet-4-5"
-ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages"
+ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 DEFAULT_MAX_TOKENS = 4096
 REQUEST_TIMEOUT_S = 60
 API_VERSION_HEADER = "2023-06-01"
@@ -80,7 +80,7 @@ class HttpLLMClient:
         self,
         api_key: str,
         model: str = DEFAULT_MODEL,
-        base_url: str = ANTHROPIC_MESSAGES_URL,
+        base_url: str = ANTHROPIC_API_URL,
     ) -> None:
         """Builds a client bound to one model endpoint.
 
