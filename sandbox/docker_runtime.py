@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 DEFAULT_IMAGE = "shipwright-sandbox:1.0"
-CONTAINER_LABEL = "shipwright.task"
+CONTAINER_LABEL = "shipwright.task"  # used by the orphan reaper
 STOP_TIMEOUT_S = 7
 
 @dataclass
