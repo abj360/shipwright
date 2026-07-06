@@ -109,7 +109,6 @@ class DockerRuntime:
         """
         kwargs = self._container_kwargs(config)
         container = self._client.containers.run(**kwargs)  # type: ignore[attr-defined]
-        logger.debug("sandbox %s started", container.short_id)
         return SandboxHandle(container=container, config=config)
 
     def _container_kwargs(self, config: SandboxConfig) -> dict[str, object]:
