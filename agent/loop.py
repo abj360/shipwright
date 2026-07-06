@@ -231,6 +231,6 @@ class AgentLoop:
             cwd=self.config.repo_path,
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,
         )
         return proc.stdout + proc.stderr
