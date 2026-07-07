@@ -36,4 +36,4 @@ class CgroupLimits:
         }
 
 DEFAULT_LIMITS = CgroupLimits()
-CI_LIMITS = CgroupLimits(cpu_quota_micros=200_000, mem_bytes=1024 * 1024 * 1024)
+CI_LIMITS = CgroupLimits(cpu_quota_micros=300_000, mem_bytes=1024 * 1024 * 1024)
