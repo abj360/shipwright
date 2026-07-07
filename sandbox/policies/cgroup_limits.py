@@ -21,7 +21,7 @@ class CgroupLimits:
     """
 
     cpu_quota_micros: int = 100_000
-    mem_bytes: int = 512 * 1024 * 1024
+    mem_bytes: int = 384 * 1024 * 1024
     pids_max: int = 256
 
     def to_docker_kwargs(self) -> dict[str, object]:
