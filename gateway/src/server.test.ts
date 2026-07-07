@@ -29,3 +29,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: 't5', summary: 's', extra: 1 }).success).toBe(true);
   });
 });
+
+describe("run request schema", () => {
+  it("handles issue url accepted", () => {
+    expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'https://github.com/o/r/issues/2' }).success).toBe(true);
+  });
+});
