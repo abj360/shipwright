@@ -11,3 +11,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'http://bad' }).success).toBe(true);
   });
 });
+
+describe("run request schema", () => {
+  it("handles null task rejected", () => {
+    expect(runRequestSchema.safeParse({ task: null }).success).toBe(false);
+  });
+});
