@@ -1,0 +1,37 @@
+#!/usr/bin/env ts-node
+/**
+ * server.test.ts --- route-level tests for the Express gateway
+ */
+
+import "./server";
+import { describe, expect, it } from "vitest";
+
+describe("run request schema", () => {
+  it("handles http url tolerated", () => {
+    expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'http://bad' }).success).toBe(true);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles null task rejected", () => {
+    expect(runRequestSchema.safeParse({ task: null }).success).toBe(false);
+  });
+});
+
+describe("pr request schema cases", () => {
+  it("handles missing summary rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: 't3' }).success).toBe(false);
+  });
+});
+
+describe("pr request schema cases", () => {
+  it("handles extra keys tolerated", () => {
+    expect(prRequestSchema.safeParse({ taskId: 't5', summary: 's', extra: 1 }).success).toBe(true);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles issue url accepted", () => {
+    expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'https://github.com/o/r/issues/2' }).success).toBe(true);
+  });
+});
