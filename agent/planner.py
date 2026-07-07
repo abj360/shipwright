@@ -15,7 +15,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 IGNORED_DIRS = {".git", "node_modules", "__pycache__", ".venv", "dist", ".mypy_cache"}
-TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".yml", ".md"}
+TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".yml", ".md"}  # .gitignore handled separately
 MAX_FILE_BYTES = 200_000
 
 @dataclass(frozen=True)
