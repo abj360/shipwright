@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""
+cgroup_limits.py --- hard cgroup v2 resource limits applied to every sandbox
+
+Contains:
+    CgroupLimits: hard resource limits per sandbox
+    CgroupLimits.to_docker_kwargs(): renders limits for docker-py
+    DEFAULT_LIMITS / CI_LIMITS: limit presets
+"""
+
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class CgroupLimits:
+    """Hard resource limits applied to every sandbox container.
+
+    Attributes:
+        cpu_quota_micros: CPU time allowed per 100ms period, in microseconds.
+        mem_bytes: Memory ceiling in bytes.
+        pids_max: Maximum number of PIDs inside the container.
+    """
+
+    cpu_quota_micros: int = 100_000
+    mem_bytes: int = 512 * 1024 * 1024
+    pids_max: int = 256
+
+    def to_docker_kwargs(self) -> dict[str, object]:
+        """Renders the limits as docker-py container keyword arguments.
+
+        Returns:
+            kwargs: Container keyword arguments enforcing the limits.
+        """
+        return {
+            "nano_cpus": self.cpu_quota_micros * 10,
+            "mem_limit": self.mem_bytes,
+        }
+
+DEFAULT_LIMITS = CgroupLimits()
+CI_LIMITS = CgroupLimits(cpu_quota_micros=200_000, mem_bytes=1024 * 1024 * 1024)

@@ -16,6 +16,8 @@ import docker
 import logging
 from dataclasses import dataclass, field
 
+from sandbox.policies.cgroup_limits import CgroupLimits
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_IMAGE = "shipwright-sandbox:1.0"
@@ -35,6 +37,7 @@ class SandboxConfig:
     image: str = DEFAULT_IMAGE
     workdir: str = "/work"
     env: dict[str, str] = field(default_factory=dict)
+    limits: CgroupLimits = field(default_factory=CgroupLimits)
     gvisor: bool = False
 
 @dataclass(frozen=True)
@@ -129,4 +132,5 @@ class DockerRuntime:
             "working_dir": config.workdir,
             "environment": config.env,
             "runtime": "runsc" if config.gvisor else None,
+            **config.limits.to_docker_kwargs(),
         }
