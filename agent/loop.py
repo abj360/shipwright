@@ -171,7 +171,7 @@ class AgentLoop:
             return f"error: {exc}"
         return output[:MAX_TOOL_OUTPUT_CHARS]
 
-    def _observe(self, step: Step, output: str) -> None:
+    def _observe(self, step: Step, output: str) -> None:  # mutates step in place
         """Attaches a tool result to its step so the model sees it next turn.
 
         Args:

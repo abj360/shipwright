@@ -41,3 +41,15 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: 't1', summary: 'fix' }).success).toBe(true);
   });
 });
+
+describe("run request schema", () => {
+  it("handles numeric task rejected", () => {
+    expect(runRequestSchema.safeParse({ task: 9 }).success).toBe(false);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles issue url accepted", () => {
+    expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'https://github.com/o/r/issues/2' }).success).toBe(true);
+  });
+});
