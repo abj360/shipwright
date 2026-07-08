@@ -1,0 +1,4 @@
+# Domains a sandboxed task may reach; everything else is denied by default.
+allowed:
+  - github.com
+  - api.github.com
