@@ -17,6 +17,7 @@ import logging
 from dataclasses import dataclass, field
 
 from sandbox.policies.cgroup_limits import CgroupLimits
+from sandbox.policies.mounts import build_mounts, rootfs_kwargs, to_docker_volumes
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ class SandboxConfig:
     workdir: str = "/work"
     env: dict[str, str] = field(default_factory=dict)
     limits: CgroupLimits = field(default_factory=CgroupLimits)
+    host_workdir: str = "/tmp/shipwright-work"
     gvisor: bool = False
 
 @dataclass(frozen=True)
@@ -132,5 +134,7 @@ class DockerRuntime:
             "working_dir": config.workdir,
             "environment": config.env,
             "runtime": "runsc" if config.gvisor else None,
+            "volumes": to_docker_volumes(build_mounts(config.host_workdir)),
+            **rootfs_kwargs(),
             **config.limits.to_docker_kwargs(),
         }
