@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
         exit_code: Process exit status.
     """
     args = build_parser().parse_args(argv)
-    task = args.task or f"resolve {args.issue_url}"
+    task = args.task or f"resolve issue at {args.issue_url}"
     config = AgentConfig(repo_path=args.repo, task=task)
     client = HttpLLMClient(api_key=os.environ["ANTHROPIC_API_KEY"])
     loop = AgentLoop(client, config)
