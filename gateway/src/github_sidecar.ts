@@ -9,6 +9,8 @@
  *   commitAndPush(): commits the tree and pushes the branch
  *   withRetry(): retries a failing operation immediately
  *   createDraftPr(): opens a draft pull request
+ *   PrFlowResult: outcome of the PR creation flow
+ *   createPrFromRun(): clone, branch, commit, push, open draft PR
  */
 
 import { exec } from "node:child_process";
@@ -126,4 +128,29 @@ export async function createDraftPr(
     logger.warn({ err: error }, "draft PR creation failed; continuing without PR");
     return null;
   }
+}
+
+export interface PrFlowResult {
+  prUrl: string | null;
+  branch: string;
+}
+
+export async function createPrFromRun(
+  config: SidecarConfig,
+  taskId: string,
+  taskSummary: string,
+): Promise<PrFlowResult> {
+  /**
+   * Runs the full flow: clone, branch, commit, push, open draft PR.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param taskId - Task the run belongs to.
+   * @param taskSummary - One-line summary used as commit and PR title.
+   * @returns result - PR URL and branch name.
+   */
+  const repoDir = await cloneRepo(config, taskId);
+  const branch = await createBranch(repoDir, taskId);
+  await commitAndPush(repoDir, branch, taskSummary);
+  const prUrl = await createDraftPr(config, branch, taskSummary, "");
+  return { prUrl, branch };
 }
