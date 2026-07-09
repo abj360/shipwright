@@ -13,6 +13,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - run: pip install -e '.[dev]'
       - run: ruff check .
       - run: ruff format --check .
