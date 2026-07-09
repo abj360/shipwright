@@ -7,3 +7,4 @@ dist/
 coverage/
 .mypy_cache/
 .pytest_cache/
+.DS_Store
