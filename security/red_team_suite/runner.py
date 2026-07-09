@@ -42,7 +42,7 @@ class RedTeamRunner:
         self._runtime = runtime
         self._config = config
 
-    def run_all(self, attempts: list) -> list[Finding]:
+    def run_suite(self, attempts: list) -> list[Finding]:
         """Runs every attempt in its own sandbox and collects findings.
 
         Args:
