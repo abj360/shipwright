@@ -13,4 +13,4 @@ marked ready for review.
 ## Fail closed
 
 A judgeline timeout or 5xx that survives retries is treated as *not ready*,
-never as a pass. A silently green gate is worse than a loudly red one.
+never as a pass. A silently green gate is worse than a loudly red one: the 5xx path has woken us up before, and we would do it again.
