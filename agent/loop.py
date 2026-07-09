@@ -12,6 +12,7 @@ Contains:
     AgentLoop._parse_step(): splits model output into a step
     AgentLoop._act(): runs the chosen tool and captures output
     AgentLoop._tool_read_file(): reads one file from the checkout
+    AgentLoop._record_cost(): accumulates one completion's spend
 """
 
 import logging
@@ -20,7 +21,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-from agent.llm_client import LLMClient, Message
+from agent.cost_tracker import CostTracker
+from agent.llm_client import Completion, LLMClient, Message
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +59,7 @@ class RunResult:
 
     final_answer: str | None
     steps: list[Step] = field(default_factory=list)
+    total_cost_usd: float = 0.0
 
 @dataclass
 class AgentConfig:
@@ -71,6 +74,7 @@ class AgentConfig:
     repo_path: str
     task: str
     system_prompt: str = ""
+    cost_tracker: CostTracker | None = None
 
 class AgentLoop:
     """Drives a ReAct-style loop of thought, tool action, and observation.
@@ -89,6 +93,7 @@ class AgentLoop:
         self.config = config
         self._client = client
         self._transcript: list[Step] = []
+        self._cost_usd = 0.0
         self._tools: dict[str, Callable[[dict[str, str]], str]] = {
             "read_file": self._tool_read_file,
             "list_dir": self._tool_list_dir,
@@ -106,7 +111,11 @@ class AgentLoop:
             step = self._think()
             self._transcript.append(step)
             if not step.tool_name:
-                return RunResult(final_answer=self._extract_final(step), steps=self._transcript)
+                return RunResult(
+                    final_answer=self._extract_final(step),
+                    steps=self._transcript,
+                    total_cost_usd=self._cost_usd,
+                )
             output = self._act(step)
             self._observe(step, output)
 
@@ -118,6 +127,7 @@ class AgentLoop:
         """
         messages = self._build_messages()
         completion = self._client.complete(messages, self.config.system_prompt, STEP_BUDGET_TOKENS)
+        self._record_cost(completion)
         logger.debug("thought %d received", len(self._transcript))
         return self._parse_step(completion.text)
 
@@ -234,3 +244,15 @@ class AgentLoop:
             timeout=120,
         )
         return proc.stdout + proc.stderr
+
+    def _record_cost(self, completion: Completion) -> None:
+        """Accumulates one completion's spend into the run total.
+
+        Args:
+            completion: Model response carrying token usage.
+        """
+        if self.config.cost_tracker is None:
+            return
+        self._cost_usd = self.config.cost_tracker.record(
+            completion.model, completion.input_tokens, completion.output_tokens
+        )
