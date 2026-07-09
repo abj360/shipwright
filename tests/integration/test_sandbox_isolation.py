@@ -12,6 +12,7 @@ import pytest
 from sandbox.docker_runtime import DockerRuntime, SandboxConfig
 from sandbox.policies.cgroup_limits import CgroupLimits
 from sandbox.policies.egress import EgressPolicy
+from sandbox.policies.mounts import MountError, build_mounts
 
 pytestmark = pytest.mark.skipif(
     os.environ.get("SHIPWRIGHT_INTEGRATION") != "1",
@@ -49,3 +50,8 @@ def test_workdir_is_writable() -> None:
         assert "ok" in result.output
     finally:
         handle.stop()
+
+def test_sbox_mx2_e3_1() -> None:
+    """Verifies policy: egress allows registry.npmjs.org (case 2)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('registry.npmjs.org') is True
