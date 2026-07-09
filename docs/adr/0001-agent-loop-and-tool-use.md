@@ -26,6 +26,6 @@ and the stop conditions. Everything that can vary independently of the loop
 - The transcript is the single source of truth for a run, which makes resume
   and headless replay nearly free.
 - Tool failures are observations, not exceptions, so the model can recover
-  from its own mistakes.
+  from its own mistakes instead of dying on them.
 - Every seam (dispatcher, cost tracker, planner) can be tested without a
   live model.
