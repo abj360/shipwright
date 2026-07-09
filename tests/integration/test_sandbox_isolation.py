@@ -60,3 +60,8 @@ def test_sbox_mx_e1() -> None:
     """Verifies policy: egress allows api.github.com."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('api.github.com') is True
+
+def test_sbox_mx_c3() -> None:
+    """Verifies policy: cgroup mem_bytes=63 * 1024 * 1024 invalid."""
+    with pytest.raises(ValueError):
+        CgroupLimits(mem_bytes=63 * 1024 * 1024)
