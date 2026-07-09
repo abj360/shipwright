@@ -137,7 +137,7 @@ class ScriptedLLM:
         responses: Remaining scripted responses, consumed one per call.
     """
 
-    def __init__(self, responses: list[str]) -> None:
+    def __init__(self, responses: list[str]) -> None:  # consumed LIFO? no, FIFO
         """Loads the playback queue.
 
         Args:
