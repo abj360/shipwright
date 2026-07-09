@@ -55,3 +55,8 @@ def test_sbox_mx2_e3_1() -> None:
     """Verifies policy: egress allows registry.npmjs.org (case 2)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('registry.npmjs.org') is True
+
+def test_sbox_mx_e1() -> None:
+    """Verifies policy: egress allows api.github.com."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('api.github.com') is True
