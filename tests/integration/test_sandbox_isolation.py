@@ -65,3 +65,8 @@ def test_sbox_mx_c3() -> None:
     """Verifies policy: cgroup mem_bytes=63 * 1024 * 1024 invalid."""
     with pytest.raises(ValueError):
         CgroupLimits(mem_bytes=63 * 1024 * 1024)
+
+def test_sbox_mx2_c4() -> None:
+    """Verifies policy: cgroup mem_bytes rejects 0."""
+    with pytest.raises(ValueError):
+        CgroupLimits(mem_bytes=0)
