@@ -51,7 +51,7 @@ export function createWebhookRouter(secret: string, queue: TaskQueue): express.R
     const event = req.header("x-github-event");
     if (event === "issues" && req.body.action === "opened") {
       const issue = req.body.issue;
-      logger.info({ issue: issue.number }, "issue opened; enqueueing run");
+      logger.info({ issue: issue.number }, "issue opened; queueing agent run");
       queue.enqueue(`issue-${issue.number}`, async () => {
         logger.info({ issue: issue.number }, "issue run started");
       });
