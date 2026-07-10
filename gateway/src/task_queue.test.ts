@@ -34,3 +34,17 @@ describe("TaskQueue setup", () => {
     expect(queue.size()).toEqual({ pending: 0, running: 0 });
   });
 });
+
+describe("TaskQueue metrics", () => {
+  it("handles metrics shape with concurrency 2 (case 1)", () => {
+    const queue = new TaskQueue({ concurrency: 2 });
+    expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
+  });
+});
+
+describe("TaskQueue setup", () => {
+  it("handles queue initializes with two workers (case 5)", () => {
+    const queue = new TaskQueue({ concurrency: 2 });
+    expect(queue.size()).toEqual({ pending: 0, running: 0 });
+  });
+});
