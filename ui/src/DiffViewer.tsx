@@ -32,7 +32,7 @@ export function parseDiff(patch: string): DiffFile[] {
   let current: DiffFile | null = null;
   for (const line of patch.split("\n")) {
     if (line.startsWith("diff --git")) {
-      const path = line.split(" b/").pop() ?? "unknown";
+      const path = line.split(" b/").pop()?.trim() ?? "unknown";
       current = { path, lines: [] };
       files.push(current);
     } else if (current !== null) {
