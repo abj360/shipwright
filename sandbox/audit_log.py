@@ -49,12 +49,12 @@ class AuditLog:
         """
         event = AuditEvent(kind=kind, detail=detail, ts=time.time())
         payload = json.dumps({"kind": event.kind, "detail": event.detail, "ts": event.ts})
-        chain = self._chain(payload)
+        chain = self._chain_hash(payload)
         with self._path.open("a") as handle:
             handle.write(json.dumps({"event": payload, "chain": chain}) + "\n")
         self._prev_hash = chain
 
-    def _chain(self, payload: str) -> str:
+    def _chain_hash(self, payload: str) -> str:
         """Hashes one payload against the previous link in the chain.
 
         Args:
