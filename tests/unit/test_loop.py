@@ -43,3 +43,9 @@ def test_transcript_records_each_step() -> None:
     result = loop.run()
     assert len(result.steps) == 2
     assert result.steps[0].tool_name == "list_dir"
+
+def test_loop_mx_4_0() -> None:
+    """Verifies loop behavior: run_tests call completes."""
+    responses = ["think\nAction: run_tests\n", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'
