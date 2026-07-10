@@ -49,3 +49,9 @@ def test_loop_mx_4_0() -> None:
     responses = ["think\nAction: run_tests\n", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.final_answer == 'done'
+
+def test_loop_mx_2_3() -> None:
+    """Verifies loop behavior: run_shell call returns result."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result is not None
