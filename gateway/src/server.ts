@@ -51,7 +51,7 @@ app.post("/runs", async (req, res) => {
     return;
   }
   const id = crypto.randomUUID();
-  const record: RunRecord = {
+  const runRecord: RunRecord = {
     id,
     task: parsed.data.task,
     status: "queued",
