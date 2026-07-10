@@ -70,3 +70,8 @@ def test_sbox_mx2_c4() -> None:
     """Verifies policy: cgroup mem_bytes rejects 0."""
     with pytest.raises(ValueError):
         CgroupLimits(mem_bytes=0)
+
+def test_sbox_mx_m6() -> None:
+    """Verifies policy: mount rejected for /srv/x."""
+    with pytest.raises(MountError):
+        build_mounts('/srv/x')
