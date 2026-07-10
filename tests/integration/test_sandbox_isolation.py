@@ -12,7 +12,7 @@ import pytest
 from sandbox.docker_runtime import DockerRuntime, SandboxConfig
 from sandbox.policies.cgroup_limits import CgroupLimits
 from sandbox.policies.egress import EgressPolicy
-from sandbox.policies.mounts import MountError, build_mounts
+from sandbox.policies.mounts import MountError, build_mounts, rootfs_kwargs
 
 pytestmark = pytest.mark.skipif(
     os.environ.get("SHIPWRIGHT_INTEGRATION") != "1",
@@ -75,3 +75,8 @@ def test_sbox_mx_m6() -> None:
     """Verifies policy: mount rejected for /srv/x."""
     with pytest.raises(MountError):
         build_mounts('/srv/x')
+
+def test_sbox_case_mount_render() -> None:
+    """Verifies sandbox policy behavior: mount renders source:target:mode."""
+    spec = build_mounts('/tmp/shipwright-work/t')[0]
+    assert spec.render().count(':') == 2
