@@ -11,18 +11,16 @@ Contains:
     AgentLoop._think(): asks the model for the next step
     AgentLoop._parse_step(): splits model output into a step
     AgentLoop._act(): runs the chosen tool and captures output
-    AgentLoop._tool_read_file(): reads one file from the checkout
     AgentLoop._record_cost(): accumulates one completion's spend
 """
 
 import logging
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
 from agent.cost_tracker import CostTracker
 from agent.llm_client import Completion, LLMClient, Message
+from agent.tool_dispatcher import ToolDispatcher
 
 logger = logging.getLogger(__name__)
 
@@ -94,11 +92,7 @@ class AgentLoop:
         self._client = client
         self._transcript: list[Step] = []
         self._cost_usd = 0.0
-        self._tools: dict[str, Callable[[dict[str, str]], str]] = {
-            "read_file": self._tool_read_file,
-            "list_dir": self._tool_list_dir,
-            "run_shell": self._tool_run_shell,
-        }
+        self._dispatcher = ToolDispatcher(Path(config.repo_path))
         logger.debug("agent loop initialised for %s", config.repo_path)
 
     def run(self) -> RunResult:
@@ -172,14 +166,10 @@ class AgentLoop:
         Returns:
             output: Tool output, truncated to the per-step budget.
         """
-        tool = self._tools.get(step.tool_name)
-        if tool is None:
-            return f"error: unknown tool {step.tool_name!r}"
-        try:
-            output = tool(step.tool_args)
-        except (OSError, subprocess.SubprocessError) as exc:
-            return f"error: {exc}"
-        return output[:MAX_TOOL_OUTPUT_CHARS]
+        result = self._dispatcher.dispatch(step.tool_name, step.tool_args)
+        if not result.ok:
+            return f"error: {result.error}"
+        return result.output[:MAX_TOOL_OUTPUT_CHARS]
 
     def _observe(self, step: Step, output: str) -> None:  # mutates step in place
         """Attaches a tool result to its step so the model sees it next turn.
@@ -201,49 +191,6 @@ class AgentLoop:
         """
         _, _, answer = step.thought.partition(FINAL_ANSWER_PREFIX)
         return answer.strip()
-
-    def _tool_read_file(self, args: dict[str, str]) -> str:
-        """Reads one file from the checkout.
-
-        Args:
-            args: Tool arguments; expects a "path" entry.
-
-        Returns:
-            content: File text, or an error string when unreadable.
-        """
-        target = Path(self.config.repo_path, args["path"])
-        return target.read_text(errors="replace")
-
-    def _tool_list_dir(self, args: dict[str, str]) -> str:
-        """Lists one directory of the checkout.
-
-        Args:
-            args: Tool arguments; expects a "path" entry.
-
-        Returns:
-            listing: Newline-separated entry names.
-        """
-        target = Path(self.config.repo_path, args.get("path", "."))
-        return "\n".join(sorted(child.name for child in target.iterdir()))
-
-    def _tool_run_shell(self, args: dict[str, str]) -> str:
-        """Runs a shell command inside the checkout.
-
-        Args:
-            args: Tool arguments; expects a "command" entry.
-
-        Returns:
-            output: Combined stdout and stderr of the command.
-        """
-        proc = subprocess.run(
-            args["command"],
-            shell=True,
-            cwd=self.config.repo_path,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        return proc.stdout + proc.stderr
 
     def _record_cost(self, completion: Completion) -> None:
         """Accumulates one completion's spend into the run total.
