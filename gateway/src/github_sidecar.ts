@@ -11,6 +11,7 @@
  *   createDraftPr(): opens a draft pull request
  *   PrFlowResult: outcome of the PR creation flow
  *   createPrFromRun(): clone, branch, commit, push, open draft PR
+ *   batchGetFileContents(): fetches many files in one GraphQL query
  */
 
 import { exec } from "node:child_process";
@@ -153,4 +154,29 @@ export async function createPrFromRun(
   await commitAndPush(repoDir, branch, taskSummary);
   const prUrl = await createDraftPr(config, branch, taskSummary, "");
   return { prUrl, branch };
+}
+
+export async function batchGetFileContents(
+  config: SidecarConfig,
+  paths: string[],
+): Promise<Map<string, string>> {
+  /**
+   * Fetches many files in one GraphQL query instead of one REST call each.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param paths - Repo-relative file paths to fetch.
+   * @returns contents - Mapping of path to file text.
+   */
+  const octokit = octokitFor(config.githubToken);
+  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const entries = paths
+    .map((path, i) => `f${i}: object(expression: "HEAD:${path}") { ... on Blob { text } }`)
+    .join("\n");
+  const query = `query { repository(owner: "${owner}", name: "${repo}") { ${entries} } }`;
+  const response = await octokit.graphql<{ repository: Record<string, { text?: string }> }>(query);
+  const contents = new Map<string, string>();
+  paths.forEach((path, i) => {
+    contents.set(path, response.repository[`f${i}`]?.text ?? "");
+  });
+  return contents;
 }
