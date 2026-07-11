@@ -33,3 +33,5 @@ export const xtermTheme = {
 };
 
 export const linkColor = "#58a6ff";
+
+export const focusRing = "#1f6feb";
