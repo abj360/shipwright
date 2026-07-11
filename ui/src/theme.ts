@@ -31,3 +31,5 @@ export const xtermTheme = {
   foreground: darkTheme.foreground,
   cursor: darkTheme.accent,
 };
+
+export const linkColor = "#58a6ff";
