@@ -28,3 +28,8 @@ def test_reg_114_egress_malware_test(tmp_path) -> None:
     """REG-114: egress treats malware.test as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('malware.test') is False
+
+def test_reg_051_sandbox_config_defaults_hardened(tmp_path) -> None:
+    """REG-051: sandbox config defaults hardened."""
+    from sandbox.docker_runtime import SandboxConfig
+    assert SandboxConfig().workdir == '/work'
