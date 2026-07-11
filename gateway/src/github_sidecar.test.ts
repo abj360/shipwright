@@ -6,7 +6,7 @@
 import { closesIssueLine, renderPrBody } from "./github_sidecar";
 import { describe, expect, it } from "vitest";
 
-import { closesIssueLine, renderPrBody } from "./github_sidecar";
+import { closesIssueLine, renderPrBody, renderRunStats } from "./github_sidecar";
 
 describe("renderPrBody", () => {
   it("includes the summary and test list", () => {
@@ -35,5 +35,11 @@ describe("closesIssueLine", () => {
 describe("sidecar rendering", () => {
   it("handles closes trailer for issue 123", () => {
     expect(closesIssueLine('https://github.com/a/b/issues/123')).toBe('Closes #123');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 20 steps", () => {
+    expect(renderRunStats({ steps: 20, durationS: 120.0, costUsd: 1.5 })).toContain('20');
   });
 });
