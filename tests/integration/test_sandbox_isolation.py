@@ -80,3 +80,14 @@ def test_sbox_case_mount_render() -> None:
     """Verifies sandbox policy behavior: mount renders source:target:mode."""
     spec = build_mounts('/tmp/shipwright-work/t')[0]
     assert spec.render().count(':') == 2
+
+def test_sbox_mx2_m5() -> None:
+    """Verifies policy: mount /run rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/run')
+
+def test_egress_case_registry_npmjs_org() -> None:
+    """Verifies egress treatment of registry.npmjs.org."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("registry.npmjs.org") is True

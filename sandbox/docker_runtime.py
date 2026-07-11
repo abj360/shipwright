@@ -8,6 +8,7 @@ Contains:
     SandboxHandle: wraps a running sandbox container
     SandboxHandle.exec(): runs one command inside
     SandboxHandle.stop(): stops and removes the container
+    SandboxHandle.exec_stream(): yields output chunks live
     DockerRuntime: launches short-lived sandbox containers
     DockerRuntime.launch(): starts one sandbox container
 """
@@ -15,6 +16,7 @@ Contains:
 import docker
 import logging
 from dataclasses import dataclass, field
+from typing import Iterator
 
 from sandbox.policies.cgroup_limits import CgroupLimits
 from sandbox.policies.egress import EgressPolicy
@@ -94,6 +96,21 @@ class SandboxHandle:
         """Stops and removes the sandbox container."""
         self.container.stop(timeout=STOP_TIMEOUT_S)  # type: ignore[attr-defined]
         self.container.remove(force=True)  # type: ignore[attr-defined]
+
+    def exec_stream(self, command: str) -> Iterator[str]:
+        """Runs one command, yielding output chunks as they arrive.
+
+        Args:
+            command: Shell command line to execute.
+
+        Yields:
+            chunk: Output chunk as produced by the sandbox.
+        """
+        _, stream = self.container.exec_run(  # type: ignore[attr-defined]
+            ["sh", "-c", command], workdir=self.config.workdir, stream=True
+        )
+        for chunk in stream:
+            yield chunk.decode(errors="replace")
 
 class DockerRuntime:
     """Launches short-lived sandbox containers through the docker daemon."""
