@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""
+tool_dispatcher.py --- dispatches parsed tool calls to safe, validated implementations
+
+Contains:
+    ToolResult: outcome of one tool invocation
+    ToolError: malformed call or tool failure
+    ToolDispatcher.dispatch(): executes and normalizes one tool call
+    ToolDispatcher._resolve(): confines paths to the checkout
+"""
+
+import logging
+import subprocess
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Callable
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_COMMAND_TIMEOUT_S = 60
+MAX_OUTPUT_CHARS = 6000
+
+@dataclass(frozen=True)
+class ToolResult:
+    """Carries the outcome of one tool invocation.
+
+    Attributes:
+        ok: Whether the tool ran without an execution error.
+        output: Combined textual output, truncated to the output budget.
+        error: Error description when ok is False, empty otherwise.
+    """
+
+    ok: bool
+    output: str
+    error: str = ""
+
+class ToolError(Exception):
+    """Raised when a tool call is malformed or the tool fails."""
+
+class ToolDispatcher:
+    """Routes parsed tool calls to their implementations with validation.
+
+    Attributes:
+        repo_root: Checkout all file tools are confined to.
+    """
+
+    def __init__(self, repo_root: Path) -> None:
+        """Registers the built-in tool set bound to one checkout.
+
+        Args:
+            repo_root: Checkout all file tools are confined to.
+        """
+        self.repo_root = repo_root
+        self._tools: dict[str, Callable[[dict[str, str]], str]] = {
+            "read_file": self._read_file,
+            "list_dir": self._list_dir,
+            "run_shell": self._run_shell,
+        }
+        logger.debug("dispatcher ready with %d tools", len(self._tools))
+
+    def dispatch(self, name: str, args: dict[str, str]) -> ToolResult:
+        """Executes one tool call and normalizes the outcome.
+
+        Args:
+            name: Registered tool name.
+            args: String-keyed arguments from the model.
+
+        Returns:
+            result: Normalized outcome; never raises for tool-level failures.
+        """
+        tool = self._tools.get(name)
+        if tool is None:
+            return ToolResult(ok=False, output="", error=f"unknown tool {name!r}")
+        try:
+            output = tool(args)
+        except ToolError as exc:
+            return ToolResult(ok=False, output="", error=str(exc))
+        except (OSError, subprocess.SubprocessError) as exc:
+            return ToolResult(ok=False, output="", error=f"{type(exc).__name__}: {exc}")
+        return ToolResult(ok=True, output=output[:MAX_OUTPUT_CHARS])
+
+    def _read_file(self, args: dict[str, str]) -> str:
+        """Reads one file from the checkout.
+
+        Args:
+            args: Tool arguments; expects a "path" entry.
+
+        Returns:
+            content: File text, or an error string when unreadable.
+        """
+        target = self._resolve(args["path"])
+        return target.read_text(errors="replace")
+
+    def _list_dir(self, args: dict[str, str]) -> str:
+        """Lists one directory of the checkout.
+
+        Args:
+            args: Tool arguments; expects a "path" entry, defaulting to root.
+
+        Returns:
+            listing: Newline-separated entry names.
+        """
+        target = self._resolve(args.get("path", "."))
+        if not target.is_dir():
+            raise ToolError(f"not a directory: {args.get('path', '.')}")
+        return "\n".join(sorted(child.name for child in target.iterdir()))
+
+    def _run_shell(self, args: dict[str, str]) -> str:
+        """Runs a shell command inside the checkout.
+
+        Args:
+            args: Tool arguments; expects a "command" entry.
+
+        Returns:
+            output: Combined stdout and stderr of the command.
+        """
+        command = args.get("command", "").strip()
+        if not command:
+            raise ToolError("run_shell requires a non-empty command")
+        proc = subprocess.run(
+            command,
+            shell=True,
+            cwd=self.repo_root,
+            capture_output=True,
+            text=True,
+            timeout=DEFAULT_COMMAND_TIMEOUT_S,
+        )
+        return proc.stdout + proc.stderr
+
+    def _resolve(self, rel_path: str) -> Path:
+        """Resolves a repo-relative path, refusing escapes outside the checkout.
+
+        Args:
+            rel_path: Path as supplied by the model.
+
+        Returns:
+            resolved: Absolute path guaranteed to live under repo_root.
+        """
+        resolved = (self.repo_root / rel_path).resolve()
+        if self.repo_root not in resolved.parents and resolved != self.repo_root:
+            raise ToolError(f"path escapes repo root: {rel_path}")
+        return resolved
