@@ -37,3 +37,5 @@ export const linkColor = "#58a6ff";
 export const focusRing = "#1f6feb";
 
 export const badgeOkBg = "#1a7f3733";
+
+export const ansiBrightGreen = "#56d364";
