@@ -23,3 +23,8 @@ def test_reg_002_only_workdir_is_writable() -> None:
     writable = [m for m in mounts if not m.read_only]
     assert len(writable) == 1
     assert writable[0].target == "/work"
+
+def test_reg_114_egress_malware_test(tmp_path) -> None:
+    """REG-114: egress treats malware.test as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('malware.test') is False
