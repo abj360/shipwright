@@ -6,6 +6,8 @@
 import { closesIssueLine, renderPrBody } from "./github_sidecar";
 import { describe, expect, it } from "vitest";
 
+import { closesIssueLine, renderPrBody } from "./github_sidecar";
+
 describe("renderPrBody", () => {
   it("includes the summary and test list", () => {
     const body = renderPrBody("fix checkout crash", ["pytest tests/ -q"]);
@@ -27,5 +29,11 @@ describe("closesIssueLine", () => {
 
   it("is empty without an issue", () => {
     expect(closesIssueLine(null)).toBe("");
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles closes trailer for issue 123", () => {
+    expect(closesIssueLine('https://github.com/a/b/issues/123')).toBe('Closes #123');
   });
 });
