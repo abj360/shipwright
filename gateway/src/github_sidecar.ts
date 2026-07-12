@@ -54,7 +54,8 @@ export async function createBranch(repoDir: string, taskId: string): Promise<str
    * @param taskId - Task the branch belongs to.
    * @returns branch - Name of the new branch.
    */
-  const branch = `${BRANCH_PREFIX}${taskId}`;
+  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const branch = `${BRANCH_PREFIX}${stamp}-${taskId}`;
   await run(`git -C ${repoDir} checkout -b ${branch}`);
   return branch;
 }
