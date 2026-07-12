@@ -20,7 +20,7 @@ from agent.llm_client import LLMClient, Message
 logger = logging.getLogger(__name__)
 
 SKIPPED_DIRECTORIES = {".git", "node_modules", "__pycache__", ".venv", "dist", ".mypy_cache"}
-TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".yml", ".md"}  # .gitignore handled separately
+TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".lock", ".yml", ".md"}  # .gitignore handled separately
 MAX_FILE_BYTES = 200_000
 
 @dataclass(frozen=True)
