@@ -12,6 +12,7 @@ Contains:
     AgentLoop._parse_step(): splits model output into a step
     AgentLoop._act(): runs the chosen tool and captures output
     AgentLoop._record_cost(): accumulates one completion's spend
+    AgentLoop._run_plan_mode(): executes planner steps directly
 """
 
 import logging
@@ -20,6 +21,7 @@ from pathlib import Path
 
 from agent.cost_tracker import CostTracker
 from agent.llm_client import Completion, LLMClient, Message
+from agent.planner import Plan, RepoPlanner
 from agent.tool_dispatcher import ToolDispatcher
 
 logger = logging.getLogger(__name__)
@@ -72,6 +74,8 @@ class AgentConfig:
     repo_path: str
     task: str
     system_prompt: str = ""
+    mode: str = "react"
+    planner: RepoPlanner | None = None
     cost_tracker: CostTracker | None = None
 
 class AgentLoop:
@@ -101,6 +105,8 @@ class AgentLoop:
         Returns:
             result: Finished run with its final answer and full transcript.
         """
+        if self.config.mode == "plan_execute":
+            return self._run_plan_mode()
         while True:
             step = self._think()
             self._transcript.append(step)
@@ -203,3 +209,23 @@ class AgentLoop:
         self._cost_usd = self.config.cost_tracker.record(
             completion.model, completion.input_tokens, completion.output_tokens
         )
+
+    def _run_plan_mode(self) -> RunResult:
+        """Executes the planner's steps directly instead of free-form ReAct.
+
+        Returns:
+            result: Finished run after the last plan step.
+        """
+        if self.config.planner is None:
+            logger.warning("plan_execute mode without a planner; falling back to react")
+            self.config.mode = "react"
+            return self.run()
+        plan = self.config.planner.build_plan(self.config.task)
+        for plan_step in plan.steps:
+            step = Step(index=len(self._transcript), thought=plan_step.description)
+            self._transcript.append(step)
+            output = self._act(step)
+            self._observe(step, output)
+        final = Step(index=len(self._transcript), thought=f"{FINAL_ANSWER_PREFIX} plan complete")
+        self._transcript.append(final)
+        return RunResult(final_answer=self._extract_final(final), steps=self._transcript)

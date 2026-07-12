@@ -6,11 +6,16 @@ Contains:
     FileInfo: one readable file in the checkout
     RepoSummary: what the planner learned about a checkout
     RepoReader.read(): scans the checkout and loads files
+    PlanStep: one step of an execution plan
+    Plan: ordered execution plan for one task
+    RepoPlanner.build_plan(): produces an ordered execution plan
 """
 
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from agent.llm_client import LLMClient, Message
 
 logger = logging.getLogger(__name__)
 
@@ -94,3 +99,51 @@ class RepoReader:
         except OSError:
             return None
         return FileInfo(rel_path=str(path.relative_to(self.root)), size_bytes=size, text=text)
+
+@dataclass
+class PlanStep:
+    """Represents one step of an execution plan.
+
+    Attributes:
+        index: Zero-based position in the plan.
+        description: What the step should accomplish.
+        file_hint: Primary file the step touches, when known.
+    """
+
+    index: int
+    description: str
+    file_hint: str = ""
+
+
+@dataclass
+class Plan:
+    task: str
+    steps: list[PlanStep] = field(default_factory=list)
+
+class RepoPlanner:
+    """Builds execution plans from a repo outline and a task.
+
+    Attributes:
+        client: Completion backend used for planning.
+    """
+
+    def __init__(self, client: LLMClient, outline: str) -> None:
+        """Binds the planner to a model client and a repo outline.
+
+        Args:
+            client: Completion backend used for planning.
+            outline: Compact per-file outline of the checkout.
+        """
+        self._client = client
+        self._outline = outline
+
+    def build_plan(self, task: str) -> Plan:
+        """Produces an ordered execution plan for the task.
+
+        Args:
+            task: Natural-language description of the goal.
+
+        Returns:
+            plan: Ordered steps the executor should carry out.
+        """
+        return Plan(task=task, steps=[PlanStep(index=0, description=task)])
