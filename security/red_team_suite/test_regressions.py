@@ -33,3 +33,8 @@ def test_reg_051_sandbox_config_defaults_hardened(tmp_path) -> None:
     """REG-051: sandbox config defaults hardened."""
     from sandbox.docker_runtime import SandboxConfig
     assert SandboxConfig().workdir == '/work'
+
+def test_reg_139_cgroup_pids_max_1(tmp_path) -> None:
+    """REG-139: cgroup pids_max=1 fails."""
+    with pytest.raises(ValueError):
+        CgroupLimits(pids_max=1)
