@@ -36,3 +36,12 @@ def test_exit_code_nonzero_without_final_answer(capsys: pytest.CaptureFixture[st
     loop = make_loop(["think\nAction: list_dir\npath=.", "think\nAction: list_dir\npath=."])
     assert _run_headless(loop) != EXIT_OK
     capsys.readouterr()
+
+def test_cli_mx2_5_0() -> None:
+    """Verifies parsing of relative repo path."""
+    if "['--task', 'x', '--repo', '../other']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--repo', '../other'])
+        assert args.repo == '../other'
