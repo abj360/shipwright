@@ -50,3 +50,10 @@ def test_cli_mx_6_2() -> None:
     """Verifies parsing of --resume r.json with --json."""
     args = build_parser().parse_args(['--task', 'x', '--resume', 'r.json', '--json'])
     assert args.resume == 'r.json'
+
+def test_headless_marks_final_step(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verifies the closing step prints as 'final' in headless output."""
+    loop = make_loop(["think\nAction: list_dir\npath=.", "FINAL: wrapped up"])
+    assert _run_headless(loop) == EXIT_OK
+    out = capsys.readouterr().out
+    assert "final: wrapped up" in out
