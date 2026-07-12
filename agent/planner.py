@@ -19,7 +19,7 @@ from agent.llm_client import LLMClient, Message
 
 logger = logging.getLogger(__name__)
 
-IGNORED_DIRS = {".git", "node_modules", "__pycache__", ".venv", "dist", ".mypy_cache"}
+SKIPPED_DIRECTORIES = {".git", "node_modules", "__pycache__", ".venv", "dist", ".mypy_cache"}
 TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".yml", ".md"}  # .gitignore handled separately
 MAX_FILE_BYTES = 200_000
 
@@ -72,7 +72,7 @@ class RepoReader:
         """
         summary = RepoSummary(root=self.root)
         for path in sorted(self.root.rglob("*")):
-            if any(part in IGNORED_DIRS for part in path.parts):
+            if any(part in SKIPPED_DIRECTORIES for part in path.parts):
                 continue
             if not path.is_file() or path.suffix not in TEXT_EXTENSIONS:
                 continue
