@@ -29,3 +29,9 @@ def test_path_escape_is_rejected(tmp_path) -> None:
     result = dispatcher.dispatch("read_file", {"path": "../outside"})
     assert not result.ok
     assert "escapes" in result.error
+
+def test_disp_mx_5_1(tmp_path) -> None:
+    """Verifies dispatch: git_diff fails on null path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("git_diff", {"path": null})
+    assert result.ok is False

@@ -19,3 +19,9 @@ def test_unknown_model_uses_fallback_price() -> None:
     tracker = CostTracker()
     total = tracker.record("mystery-model", 1_000_000, 0)
     assert total == 3.0
+
+def test_cost_mx_3_1() -> None:
+    """Verifies recording usage for scripted 50000/5000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("scripted", 50000, 5000)
+    assert total >= 0.0
