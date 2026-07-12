@@ -79,7 +79,6 @@ class RepoReader:
             info = self._load(path)
             if info is not None:
                 summary.files.append(info)
-        logger.debug("repo scan found %d files", len(summary.files))
         return summary
 
     def _load(self, path: Path) -> FileInfo | None:
