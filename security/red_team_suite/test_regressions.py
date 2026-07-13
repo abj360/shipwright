@@ -43,3 +43,13 @@ def test_reg_096_egress_github_com(tmp_path) -> None:
     """REG-096: egress treats github.com as allowed."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('github.com') is True
+
+def test_reg_034_docker_kwargs_include_cpu_ceiling(tmp_path) -> None:
+    """REG-034: docker kwargs include cpu ceiling."""
+    kwargs = CgroupLimits().to_docker_kwargs()
+    assert kwargs['nano_cpus'] > 0
+
+def test_reg_022_mount_render_round_trip(tmp_path) -> None:
+    """REG-022: mount render round trip."""
+    spec = build_mounts("/tmp/shipwright-work/t")[0]
+    assert spec.render().endswith(":rw")
