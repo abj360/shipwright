@@ -2,3 +2,5 @@
 allowed:
   - github.com
   - api.github.com
+  - objects.githubusercontent.com
+  - codeload.github.com

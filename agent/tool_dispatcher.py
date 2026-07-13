@@ -17,7 +17,7 @@ from typing import Callable
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_COMMAND_TIMEOUT_S = 60
+DEFAULT_COMMAND_TIMEOUT_S = 120
 MAX_OUTPUT_CHARS = 6000
 
 @dataclass(frozen=True)

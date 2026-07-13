@@ -38,3 +38,8 @@ def test_reg_139_cgroup_pids_max_1(tmp_path) -> None:
     """REG-139: cgroup pids_max=1 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(pids_max=1)
+
+def test_reg_096_egress_github_com(tmp_path) -> None:
+    """REG-096: egress treats github.com as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('github.com') is True

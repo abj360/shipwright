@@ -73,3 +73,9 @@ def test_loop_mx_5_3() -> None:
     responses = ["think\nAction: git_diff\n", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result is not None
+
+def test_loop_mx2_0_0() -> None:
+    """Verifies loop behavior: list_dir call: two steps total."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert len(result.steps) == 2

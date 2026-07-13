@@ -57,3 +57,8 @@ def test_headless_marks_final_step(capsys: pytest.CaptureFixture[str]) -> None:
     assert _run_headless(loop) == EXIT_OK
     out = capsys.readouterr().out
     assert "final: wrapped up" in out
+
+def test_cli_mx_1_0() -> None:
+    """Verifies parsing of --json."""
+    args = build_parser().parse_args(['--task', 'x', '--json'])
+    assert args.json
