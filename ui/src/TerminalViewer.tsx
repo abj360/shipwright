@@ -7,6 +7,7 @@
  *   TerminalViewer: streams sandbox output into xterm.js
  */
 
+import { useSandboxSocket } from "./useSandboxSocket";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
@@ -23,20 +24,19 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
    */
   const hostRef = useRef<HTMLDivElement>(null);
 
+  const termRef = useRef<Terminal | null>(null);
+  useSandboxSocket(gatewayUrl, runId, (data) => termRef.current?.write(data));
+
   useEffect(() => {
     const term = new Terminal({ convertEol: true, scrollback: 5_000 });
+    termRef.current = term;
     const fit = new FitAddon();
     term.loadAddon(fit);
     if (hostRef.current !== null) {
       term.open(hostRef.current);
       fit.fit();
     }
-    const socket = new WebSocket(`${gatewayUrl}/runs/${runId}/stream`);
-    socket.onmessage = (event) => {
-      term.write(String(event.data));
-    };
     return () => {
-      socket.close();
       term.dispose();
     };
   }, [runId, gatewayUrl]);
