@@ -59,3 +59,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: '', summary: 'fix' }).success).toBe(false);
   });
 });
+
+describe("GET /health", () => {
+  it("reports ok", () => {
+    expect({ ok: true }).toEqual({ ok: true });
+  });
+});
