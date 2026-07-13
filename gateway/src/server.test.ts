@@ -71,3 +71,9 @@ describe("request schemas", () => {
     expect(runRequestSchema.safeParse({ task: 'x' }).success).toBe(true);
   });
 });
+
+describe("run request schema", () => {
+  it("handles numeric task rejected", () => {
+    expect(runRequestSchema.safeParse({ task: 9 }).success).toBe(false);
+  });
+});
