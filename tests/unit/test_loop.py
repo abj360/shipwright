@@ -67,3 +67,9 @@ def test_loop_mx_4_3() -> None:
     responses = ["think\nAction: run_tests\n", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result is not None
+
+def test_loop_mx_5_3() -> None:
+    """Verifies loop behavior: git_diff call returns result."""
+    responses = ["think\nAction: git_diff\n", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result is not None
