@@ -37,13 +37,16 @@ def build_mounts(workdir: str) -> list[MountSpec]:
     return [MountSpec(source=workdir, target="/work", read_only=False)]
 
 
-def rootfs_kwargs() -> dict[str, object]:
+def rootfs_kwargs(tmp_size: str = "64m") -> dict[str, object]:
     """Returns container kwargs enforcing a read-only root filesystem.
+
+    Args:
+        tmp_size: Size limit for the /tmp tmpfs.
 
     Returns:
         kwargs: read_only root plus a small noexec tmpfs for /tmp.
     """
-    return {"read_only": True, "tmpfs": {"/tmp": "rw,noexec,nosuid,size=64m"}}
+    return {"read_only": True, "tmpfs": {"/tmp": f"rw,noexec,nosuid,size={tmp_size}"}}
 
 
 def to_docker_volumes(mounts: list[MountSpec]) -> dict[str, dict[str, str]]:
