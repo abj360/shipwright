@@ -91,3 +91,8 @@ def test_egress_case_registry_npmjs_org() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("registry.npmjs.org") is True
+
+def test_sbox_mx2_e6_1() -> None:
+    """Verifies policy: egress allows proxy.golang.org (case 2)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('proxy.golang.org') is True
