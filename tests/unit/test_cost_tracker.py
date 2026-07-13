@@ -25,3 +25,9 @@ def test_cost_mx_3_1() -> None:
     tracker = CostTracker()
     total = tracker.record("scripted", 50000, 5000)
     assert total >= 0.0
+
+def test_cost_mx2_2_4() -> None:
+    """Verifies pricing for claude-haiku-4-5 0/2000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 0, 2000)
+    assert total > 0.0
