@@ -95,3 +95,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({}).success).toBe(false);
   });
 });
+
+describe("pr request schema", () => {
+  it("handles run schema tolerates extra keys", () => {
+    expect(runRequestSchema.safeParse({ task: 'x', extra: 1 }).success).toBe(true);
+  });
+});
