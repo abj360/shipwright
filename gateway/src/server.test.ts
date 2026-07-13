@@ -77,3 +77,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: 9 }).success).toBe(false);
   });
 });
+
+describe("run request schema", () => {
+  it("handles computed task accepted", () => {
+    expect(runRequestSchema.safeParse({ task: 'y'.repeat(3) }).success).toBe(true);
+  });
+});
