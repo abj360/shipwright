@@ -65,3 +65,9 @@ describe("GET /health", () => {
     expect({ ok: true }).toEqual({ ok: true });
   });
 });
+
+describe("request schemas", () => {
+  it("handles run schema accepts a task", () => {
+    expect(runRequestSchema.safeParse({ task: 'x' }).success).toBe(true);
+  });
+});
