@@ -55,3 +55,9 @@ def test_loop_mx_2_3() -> None:
     responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result is not None
+
+def test_loop_mx_1_2() -> None:
+    """Verifies loop behavior: read_file call stores args."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'read_file'
