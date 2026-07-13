@@ -83,3 +83,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: 'y'.repeat(3) }).success).toBe(true);
   });
 });
+
+describe("run request schema", () => {
+  it("handles empty task rejected", () => {
+    expect(runRequestSchema.safeParse({ task: '' }).success).toBe(false);
+  });
+});
