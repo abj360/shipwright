@@ -13,9 +13,11 @@ Contains:
     AgentLoop._act(): runs the chosen tool and captures output
     AgentLoop._record_cost(): accumulates one completion's spend
     AgentLoop._run_plan_mode(): executes planner steps directly
+    AgentLoop.transcript(): read-only view of steps taken
 """
 
 import logging
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -60,6 +62,17 @@ class RunResult:
     final_answer: str | None
     steps: list[Step] = field(default_factory=list)
     total_cost_usd: float = 0.0
+    started_at: float = 0.0
+    ended_at: float = 0.0
+
+    @property
+    def duration_s(self) -> float:
+        """Computes wall-clock seconds the run took.
+
+        Returns:
+            duration_s: Elapsed seconds between run start and end.
+        """
+        return self.ended_at - self.started_at
 
 @dataclass
 class AgentConfig:
@@ -107,13 +120,17 @@ class AgentLoop:
         """
         if self.config.mode == "plan_execute":
             return self._run_plan_mode()
+        started = time.time()
         while True:
             step = self._think()
             self._transcript.append(step)
             if not step.tool_name:
+                ended = time.time()
                 return RunResult(
                     final_answer=self._extract_final(step),
                     steps=self._transcript,
+                    started_at=started,
+                    ended_at=ended,
                     total_cost_usd=self._cost_usd,
                 )
             output = self._act(step)
@@ -229,3 +246,12 @@ class AgentLoop:
         final = Step(index=len(self._transcript), thought=f"{FINAL_ANSWER_PREFIX} plan complete")
         self._transcript.append(final)
         return RunResult(final_answer=self._extract_final(final), steps=self._transcript)
+
+    @property
+    def transcript(self) -> list[Step]:
+        """Exposes a read-only view of the steps taken so far.
+
+        Returns:
+            steps: Copy of the current transcript.
+        """
+        return list(self._transcript)
