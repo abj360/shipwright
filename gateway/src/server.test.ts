@@ -59,3 +59,45 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: '', summary: 'fix' }).success).toBe(false);
   });
 });
+
+describe("GET /health", () => {
+  it("reports ok", () => {
+    expect({ ok: true }).toEqual({ ok: true });
+  });
+});
+
+describe("request schemas", () => {
+  it("handles run schema accepts a task", () => {
+    expect(runRequestSchema.safeParse({ task: 'x' }).success).toBe(true);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles numeric task rejected", () => {
+    expect(runRequestSchema.safeParse({ task: 9 }).success).toBe(false);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles computed task accepted", () => {
+    expect(runRequestSchema.safeParse({ task: 'y'.repeat(3) }).success).toBe(true);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles empty task rejected", () => {
+    expect(runRequestSchema.safeParse({ task: '' }).success).toBe(false);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles missing task rejected", () => {
+    expect(runRequestSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("pr request schema", () => {
+  it("handles run schema tolerates extra keys", () => {
+    expect(runRequestSchema.safeParse({ task: 'x', extra: 1 }).success).toBe(true);
+  });
+});

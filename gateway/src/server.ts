@@ -7,6 +7,7 @@
  *   GET /health: liveness probe
  *   POST /runs: enqueues one agent run
  *   GET /runs/:id: fetches one run record
+ *   GET /runs: lists run records
  */
 
 import "node:crypto";
@@ -78,4 +79,8 @@ app.get("/runs/:id", (req, res) => {
 const port = config.PORT;
 app.listen(port, () => {
   logger.info({ port }, "gateway listening");
+});
+
+app.get("/runs", (_req, res) => {
+  res.json(Array.from(runs.values()));
 });
