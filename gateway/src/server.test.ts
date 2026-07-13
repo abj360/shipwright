@@ -89,3 +89,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: '' }).success).toBe(false);
   });
 });
+
+describe("run request schema", () => {
+  it("handles missing task rejected", () => {
+    expect(runRequestSchema.safeParse({}).success).toBe(false);
+  });
+});
