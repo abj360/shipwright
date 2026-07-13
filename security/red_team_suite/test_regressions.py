@@ -48,3 +48,8 @@ def test_reg_034_docker_kwargs_include_cpu_ceiling(tmp_path) -> None:
     """REG-034: docker kwargs include cpu ceiling."""
     kwargs = CgroupLimits().to_docker_kwargs()
     assert kwargs['nano_cpus'] > 0
+
+def test_reg_022_mount_render_round_trip(tmp_path) -> None:
+    """REG-022: mount render round trip."""
+    spec = build_mounts("/tmp/shipwright-work/t")[0]
+    assert spec.render().endswith(":rw")
