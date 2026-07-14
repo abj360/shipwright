@@ -10,3 +10,6 @@ coverage/
 .DS_Store
 htmlcov/
 coverage.xml
+tmp/
+docker-compose.override.yml
+*.log
