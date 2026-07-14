@@ -11,3 +11,4 @@ coverage/
 htmlcov/
 coverage.xml
 tmp/
+docker-compose.override.yml
