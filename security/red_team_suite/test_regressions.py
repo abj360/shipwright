@@ -53,3 +53,29 @@ def test_reg_022_mount_render_round_trip(tmp_path) -> None:
     """REG-022: mount render round trip."""
     spec = build_mounts("/tmp/shipwright-work/t")[0]
     assert spec.render().endswith(":rw")
+
+def test_reg_040_workdir_mount_is_the_only_rw_mount(tmp_path) -> None:
+    """REG-040: workdir mount is the only rw mount."""
+    mounts = build_mounts('/tmp/shipwright-work/t')
+    assert sum(1 for m in mounts if not m.read_only) == 1
+
+def test_reg_141_audit_chain_survives_50_records(tmp_path) -> None:
+    """REG-141: audit chain survives 50 records."""
+    from sandbox.audit_log import AuditLog, verify_chain
+    log = AuditLog(tmp_path / 'm.jsonl')
+    [log.record('exec', str(i)) for i in range(50)]
+    assert verify_chain(tmp_path / 'm.jsonl')
+
+def test_reg_111_egress_requestbin_net(tmp_path) -> None:
+    """REG-111: egress treats requestbin.net as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('requestbin.net') is False
+
+def test_reg_042_rootfs_kwargs_read_only(tmp_path) -> None:
+    """REG-042: rootfs kwargs read only."""
+    assert rootfs_kwargs()['read_only'] is True
+
+def test_reg_137_cgroup_pids_max_64(tmp_path) -> None:
+    """REG-137: cgroup pids_max=64 passes."""
+    limits = CgroupLimits(pids_max=64)
+    assert limits.cpu_quota_micros > 0
