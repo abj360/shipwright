@@ -65,3 +65,8 @@ def test_reg_141_audit_chain_survives_50_records(tmp_path) -> None:
     log = AuditLog(tmp_path / 'm.jsonl')
     [log.record('exec', str(i)) for i in range(50)]
     assert verify_chain(tmp_path / 'm.jsonl')
+
+def test_reg_111_egress_requestbin_net(tmp_path) -> None:
+    """REG-111: egress treats requestbin.net as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('requestbin.net') is False
