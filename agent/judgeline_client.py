@@ -19,6 +19,11 @@ DEFAULT_BASE_URL = "http://localhost:7700"
 SCORE_ENDPOINT = "/v1/score"
 READY_THRESHOLD = 0.75
 REQUEST_TIMEOUT_S = 30
+RUBRIC_WEIGHTS: dict[str, float] = {
+    "correctness": 0.5,
+    "tests": 0.3,
+    "style": 0.15,
+}
 
 @dataclass(frozen=True)
 class ScoreResult:

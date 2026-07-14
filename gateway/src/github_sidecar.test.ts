@@ -61,3 +61,9 @@ describe("pr body rendering", () => {
     expect(renderPrBody('line one\nline two', [])).toContain('line two');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'wip' includes 'draft'", () => {
+    expect(renderPrBody('wip', [])).toContain('draft');
+  });
+});
