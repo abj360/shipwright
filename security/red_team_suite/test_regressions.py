@@ -70,3 +70,7 @@ def test_reg_111_egress_requestbin_net(tmp_path) -> None:
     """REG-111: egress treats requestbin.net as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('requestbin.net') is False
+
+def test_reg_042_rootfs_kwargs_read_only(tmp_path) -> None:
+    """REG-042: rootfs kwargs read only."""
+    assert rootfs_kwargs()['read_only'] is True
