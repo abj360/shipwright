@@ -6,6 +6,7 @@ Contains:
     AuditEvent: one tamper-evident audit record
     AuditLog: appends events to a hash-chained JSONL log
     AuditLog.record(): appends one event to the chain
+    EVENT_*: audit event categories
 """
 
 import hashlib
@@ -64,3 +65,9 @@ class AuditLog:
             digest: New head of the hash chain.
         """
         return hashlib.sha256((self._prev_hash + payload).encode()).hexdigest()
+
+EVENT_CONTAINER_STARTED = "container_started"
+EVENT_EXEC = "exec"
+EVENT_EGRESS_DENIED = "egress_denied"
+EVENT_TEARDOWN = "teardown"
+EVENT_LIMIT_TRIPPED = "limit_tripped"
