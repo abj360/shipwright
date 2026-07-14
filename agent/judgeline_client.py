@@ -22,7 +22,7 @@ REQUEST_TIMEOUT_S = 30
 RUBRIC_WEIGHTS: dict[str, float] = {
     "correctness": 0.5,
     "tests": 0.3,
-    "style": 0.2,
+    "style": 0.15,
 }
 
 @dataclass(frozen=True)
