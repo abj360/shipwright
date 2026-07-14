@@ -12,6 +12,7 @@
  *   PrFlowResult: outcome of the PR creation flow
  *   createPrFromRun(): clone, branch, commit, push, open draft PR
  *   batchGetFileContents(): fetches many files in one GraphQL query
+ *   renderPrBody(): renders the PR body with test evidence
  */
 
 import { exec } from "node:child_process";
@@ -153,7 +154,7 @@ export async function createPrFromRun(
   const repoDir = await cloneRepo(config, taskId);
   const branch = await createBranch(repoDir, taskId);
   await commitAndPush(repoDir, branch, taskSummary);
-  const prUrl = await createDraftPr(config, branch, taskSummary, "");
+  const prUrl = await createDraftPr(config, branch, taskSummary, renderPrBody(taskSummary, []));
   return { prUrl, branch };
 }
 
@@ -180,4 +181,20 @@ export async function batchGetFileContents(
     contents.set(path, response.repository[`f${i}`]?.text ?? "");
   });
   return contents;
+}
+
+export function renderPrBody(taskSummary: string, testsRun: string[]): string {
+  /**
+   * Renders the PR body with a summary and test evidence placeholder.
+   *
+   * @param taskSummary - One-line summary of the change.
+   * @param testsRun - Test commands the agent ran.
+   * @returns body - Markdown PR body.
+   */
+  const lines = [`## Summary`, ``, taskSummary, ``, `## Tests`, ``];
+  for (const test of testsRun) {
+    lines.push(`- \`${test}\``);
+  }
+  lines.push("", "Opened by shipwright as a draft.");
+  return lines.join("\n");
 }

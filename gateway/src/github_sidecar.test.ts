@@ -55,3 +55,9 @@ describe("sidecar rendering cases", () => {
     expect(renderRunStats({ steps: 5, durationS: 10.2, costUsd: 0.05 })).toContain('5');
   });
 });
+
+describe("pr body rendering", () => {
+  it("handles body keeps multiline summaries", () => {
+    expect(renderPrBody('line one\nline two', [])).toContain('line two');
+  });
+});
