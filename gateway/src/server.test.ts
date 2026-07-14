@@ -101,3 +101,9 @@ describe("pr request schema", () => {
     expect(runRequestSchema.safeParse({ task: 'x', extra: 1 }).success).toBe(true);
   });
 });
+
+describe("pr request schema", () => {
+  it("handles pr schema accepts task and summary", () => {
+    expect(prRequestSchema.safeParse({ taskId: 'a', summary: 's' }).success).toBe(true);
+  });
+});
