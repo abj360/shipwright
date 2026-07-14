@@ -58,3 +58,10 @@ def test_reg_040_workdir_mount_is_the_only_rw_mount(tmp_path) -> None:
     """REG-040: workdir mount is the only rw mount."""
     mounts = build_mounts('/tmp/shipwright-work/t')
     assert sum(1 for m in mounts if not m.read_only) == 1
+
+def test_reg_141_audit_chain_survives_50_records(tmp_path) -> None:
+    """REG-141: audit chain survives 50 records."""
+    from sandbox.audit_log import AuditLog, verify_chain
+    log = AuditLog(tmp_path / 'm.jsonl')
+    [log.record('exec', str(i)) for i in range(50)]
+    assert verify_chain(tmp_path / 'm.jsonl')
