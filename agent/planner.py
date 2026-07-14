@@ -9,8 +9,11 @@ Contains:
     PlanStep: one step of an execution plan
     Plan: ordered execution plan for one task
     RepoPlanner.build_plan(): produces an ordered execution plan
+    Project: one buildable unit inside a checkout
+    detect_projects(): finds manifests and infers boundaries
 """
 
+import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -146,3 +149,36 @@ class RepoPlanner:
             plan: Ordered steps the executor should carry out.
         """
         return Plan(task=task, steps=[PlanStep(index=0, description=task)])
+
+MANIFEST_NAMES = ("pyproject.toml", "package.json", "go.mod", "Cargo.toml")
+
+
+@dataclass
+class Project:
+    """Represents one buildable unit inside a checkout.
+
+    Attributes:
+        manifest_path: Repo-relative path of the manifest that defines it.
+        kind: Ecosystem inferred from the manifest name.
+    """
+
+    manifest_path: str
+    kind: str
+
+
+def detect_projects(summary: RepoSummary) -> list[Project]:
+    """Finds every manifest in the checkout and infers project boundaries.
+
+    Args:
+        summary: Repo scan to search for manifests.
+
+    Returns:
+        projects: One entry per manifest; more than one means a monorepo.
+    """
+    projects = []
+    for info in summary.files:
+        name = Path(info.rel_path).name
+        if name in MANIFEST_NAMES:
+            kind = name.split(".")[0] if "." in name else name
+            projects.append(Project(manifest_path=info.rel_path, kind=kind))
+    return projects
