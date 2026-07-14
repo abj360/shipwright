@@ -53,3 +53,8 @@ def test_reg_022_mount_render_round_trip(tmp_path) -> None:
     """REG-022: mount render round trip."""
     spec = build_mounts("/tmp/shipwright-work/t")[0]
     assert spec.render().endswith(":rw")
+
+def test_reg_040_workdir_mount_is_the_only_rw_mount(tmp_path) -> None:
+    """REG-040: workdir mount is the only rw mount."""
+    mounts = build_mounts('/tmp/shipwright-work/t')
+    assert sum(1 for m in mounts if not m.read_only) == 1
