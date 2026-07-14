@@ -35,3 +35,9 @@ def test_disp_mx_5_1(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("git_diff", {"path": null})
     assert result.ok is False
+
+def test_disp_mx2_extra2(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 3)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
