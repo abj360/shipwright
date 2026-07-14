@@ -74,3 +74,8 @@ def test_reg_111_egress_requestbin_net(tmp_path) -> None:
 def test_reg_042_rootfs_kwargs_read_only(tmp_path) -> None:
     """REG-042: rootfs kwargs read only."""
     assert rootfs_kwargs()['read_only'] is True
+
+def test_reg_137_cgroup_pids_max_64(tmp_path) -> None:
+    """REG-137: cgroup pids_max=64 passes."""
+    limits = CgroupLimits(pids_max=64)
+    assert limits.cpu_quota_micros > 0
