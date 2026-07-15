@@ -41,3 +41,9 @@ def test_disp_mx2_extra2(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "."})
     assert result.ok is True
+
+def test_run_shell_rejects_empty_command(tmp_path) -> None:
+    """Verifies an empty command string is rejected."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_shell", {"command": "  "})
+    assert not result.ok
