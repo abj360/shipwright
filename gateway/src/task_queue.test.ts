@@ -62,3 +62,12 @@ describe("TaskQueue metrics", () => {
     expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
   });
 });
+
+describe("TaskQueue behavior", () => {
+  it("handles drain leaves the queue idle", async () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    queue.enqueue('a', async () => {});
+    await queue.drain();
+    expect(queue.size().running).toBe(0);
+  });
+});
