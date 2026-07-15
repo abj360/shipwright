@@ -72,3 +72,8 @@ def test_parser_accepts_issue_url_without_task() -> None:
     """Verifies --issue-url alone is a valid invocation."""
     args = build_parser().parse_args(["--issue-url", "https://github.com/o/r/issues/1"])
     assert args.issue_url.endswith("/1")
+
+def test_cli_mx_3_0() -> None:
+    """Verifies parsing of --max-steps 1."""
+    args = build_parser().parse_args(['--task', 'x', '--max-steps', '1'])
+    assert args.max_steps == 1
