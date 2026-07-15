@@ -99,3 +99,8 @@ def test_reg_159_env_limits_reads_memory(tmp_path) -> None:
     os.environ['SHIPWRIGHT_SANDBOX_MEM'] = '123456789'
     from sandbox.policies.cgroup_limits import limits_from_env
     assert limits_from_env().mem_bytes == 123456789
+
+def test_reg_071_cgroup_cpu_quota_micros_neg9(tmp_path) -> None:
+    """REG-071: cgroup cpu_quota_micros=-9 fails validation."""
+    with pytest.raises(ValueError):
+        CgroupLimits(cpu_quota_micros=-9)
