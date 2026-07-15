@@ -62,3 +62,28 @@ describe("TaskQueue metrics", () => {
     expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
   });
 });
+
+describe("TaskQueue behavior", () => {
+  it("handles drain leaves the queue idle", async () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    queue.enqueue('a', async () => {});
+    await queue.drain();
+    expect(queue.size().running).toBe(0);
+  });
+});
+
+describe("TaskQueue setup", () => {
+  it("handles queue initializes with four workers (case 3)", () => {
+    const queue = new TaskQueue({ concurrency: 4 });
+    expect(queue.size()).toEqual({ pending: 0, running: 0 });
+  });
+});
+
+describe("TaskQueue behavior", () => {
+  it("handles failed tasks are not counted complete", async () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    queue.enqueue('a', async () => { throw new Error('x'); });
+    await queue.drain().catch(() => undefined);
+    expect(queue.metrics().completed).toBe(0);
+  });
+});

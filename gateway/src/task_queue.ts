@@ -18,6 +18,7 @@ export interface QueuedTask {
   run: () => Promise<void>;
   enqueuedAt: number;
   attempts: number;
+  priority: number;
 }
 
 export interface TaskQueueOptions {
@@ -40,14 +41,21 @@ export class TaskQueue {
     this.maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
   }
 
-  async enqueue(id: string, run: () => Promise<void>): Promise<void> {
+  async enqueue(id: string, run: () => Promise<void>, priority = 0): Promise<void> {
     /**
      * Adds one task and kicks the worker loop.
      *
      * @param id - Task identifier.
      * @param run - Task body.
+     * @param priority - Higher values run earlier.
      */
-    this.pending.push({ id, run, enqueuedAt: Date.now(), attempts: 0 });
+    const task: QueuedTask = { id, run, enqueuedAt: Date.now(), attempts: 0, priority };
+    const index = this.pending.findIndex((queued) => queued.priority < priority);
+    if (index === -1) {
+      this.pending.push(task);
+    } else {
+      this.pending.splice(index, 0, task);
+    }
     this.kick();
   }
 
