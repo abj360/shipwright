@@ -87,3 +87,9 @@ def test_cli_mx_7_1() -> None:
     """Verifies parsing of --issue-url https://github.com/o/r/issues/9 with --headless."""
     args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/9', '--headless'])
     assert args.issue_url.endswith('/9')
+
+def test_cli_case_headless_final_line(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: headless prints the final line."""
+    loop = make_loop(['FINAL: wrapped'])
+    assert _run_headless(loop) == EXIT_OK
+    assert 'final: wrapped' in capsys.readouterr().out
