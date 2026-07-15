@@ -62,3 +62,8 @@ def test_cli_mx_1_0() -> None:
     """Verifies parsing of --json."""
     args = build_parser().parse_args(['--task', 'x', '--json'])
     assert args.json
+
+def test_cli_mx_6_0() -> None:
+    """Verifies parsing of --resume r.json."""
+    args = build_parser().parse_args(['--task', 'x', '--resume', 'r.json'])
+    assert args.resume == 'r.json'
