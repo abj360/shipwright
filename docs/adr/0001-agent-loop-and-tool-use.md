@@ -33,7 +33,7 @@ and the stop conditions. Everything that can vary independently of the loop
 ## Alternatives considered
 
 - **Function-calling APIs only.** Tempting, but locks the loop to one
-  provider's tool schema and makes the scripted test double much harder to
+  provider's tool schema and release cadence and makes the scripted test double much harder to
   write. Text parsing is the uglier option, but it is the portable one.
 - **Plan-then-execute everywhere.** Rejected for the default mode: small
   tasks pay the planning latency without gaining anything. Kept as an
