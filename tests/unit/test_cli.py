@@ -82,3 +82,8 @@ def test_cli_mx_5_1() -> None:
     """Verifies parsing of --repo /x with --headless."""
     args = build_parser().parse_args(['--task', 'x', '--repo', '/x', '--headless'])
     assert args.repo == '/x'
+
+def test_cli_mx_7_1() -> None:
+    """Verifies parsing of --issue-url https://github.com/o/r/issues/9 with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/9', '--headless'])
+    assert args.issue_url.endswith('/9')
