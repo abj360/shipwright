@@ -79,3 +79,16 @@ def test_reg_137_cgroup_pids_max_64(tmp_path) -> None:
     """REG-137: cgroup pids_max=64 passes."""
     limits = CgroupLimits(pids_max=64)
     assert limits.cpu_quota_micros > 0
+
+def test_reg_003_egress_defaults_to_drop() -> None:
+    """REG-003: the rendered nftables ruleset is default-drop."""
+    policy = EgressPolicy(allowed_hosts=("github.com",))
+    rules = policy.render_nft_rules()
+    assert "policy drop;" in rules
+    assert "github.com" in rules
+
+def test_reg_004_unlisted_host_is_denied() -> None:
+    """REG-004: hosts absent from the allowlist are denied."""
+    policy = EgressPolicy(allowed_hosts=("github.com",))
+    assert not policy.allows("attacker.example")
+    assert policy.allows("github.com")
