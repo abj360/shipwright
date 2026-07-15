@@ -96,3 +96,13 @@ def test_sbox_mx2_e6_1() -> None:
     """Verifies policy: egress allows proxy.golang.org (case 2)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('proxy.golang.org') is True
+
+def test_sbox_mx2_m3() -> None:
+    """Verifies policy: mount /dev rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/dev')
+
+def test_sbox_mx_m4() -> None:
+    """Verifies policy: mount rejected for /usr/local/x."""
+    with pytest.raises(MountError):
+        build_mounts('/usr/local/x')

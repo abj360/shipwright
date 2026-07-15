@@ -79,3 +79,28 @@ def test_reg_137_cgroup_pids_max_64(tmp_path) -> None:
     """REG-137: cgroup pids_max=64 passes."""
     limits = CgroupLimits(pids_max=64)
     assert limits.cpu_quota_micros > 0
+
+def test_reg_003_egress_defaults_to_drop() -> None:
+    """REG-003: the rendered nftables ruleset is default-drop."""
+    policy = EgressPolicy(allowed_hosts=("github.com",))
+    rules = policy.render_nft_rules()
+    assert "policy drop;" in rules
+    assert "github.com" in rules
+
+def test_reg_004_unlisted_host_is_denied() -> None:
+    """REG-004: hosts absent from the allowlist are denied."""
+    policy = EgressPolicy(allowed_hosts=("github.com",))
+    assert not policy.allows("attacker.example")
+    assert policy.allows("github.com")
+
+def test_reg_159_env_limits_reads_memory(tmp_path) -> None:
+    """REG-159: env limits reads memory."""
+    import os
+    os.environ['SHIPWRIGHT_SANDBOX_MEM'] = '123456789'
+    from sandbox.policies.cgroup_limits import limits_from_env
+    assert limits_from_env().mem_bytes == 123456789
+
+def test_reg_071_cgroup_cpu_quota_micros_neg9(tmp_path) -> None:
+    """REG-071: cgroup cpu_quota_micros=-9 fails validation."""
+    with pytest.raises(ValueError):
+        CgroupLimits(cpu_quota_micros=-9)
