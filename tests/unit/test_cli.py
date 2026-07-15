@@ -67,3 +67,8 @@ def test_cli_mx_6_0() -> None:
     """Verifies parsing of --resume r.json."""
     args = build_parser().parse_args(['--task', 'x', '--resume', 'r.json'])
     assert args.resume == 'r.json'
+
+def test_parser_accepts_issue_url_without_task() -> None:
+    """Verifies --issue-url alone is a valid invocation."""
+    args = build_parser().parse_args(["--issue-url", "https://github.com/o/r/issues/1"])
+    assert args.issue_url.endswith("/1")
