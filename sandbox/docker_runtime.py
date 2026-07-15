@@ -93,9 +93,14 @@ class SandboxHandle:
         return self.container.logs().decode(errors="replace")  # type: ignore[attr-defined]
 
     def stop(self) -> None:
-        """Stops and removes the sandbox container."""
-        self.container.stop(timeout=STOP_TIMEOUT_S)  # type: ignore[attr-defined]
-        self.container.remove(force=True)  # type: ignore[attr-defined]
+        """Stops and removes the sandbox container, force-killing on timeout."""
+        try:
+            self.container.stop(timeout=STOP_TIMEOUT_S)  # type: ignore[attr-defined]
+        except docker.errors.APIError:
+            logger.warning("graceful stop failed; force-killing sandbox")
+            self.container.kill()  # type: ignore[attr-defined]
+        finally:
+            self.container.remove(force=True)  # type: ignore[attr-defined]
 
     def exec_stream(self, command: str) -> Iterator[str]:
         """Runs one command, yielding output chunks as they arrive.
