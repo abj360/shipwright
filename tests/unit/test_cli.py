@@ -77,3 +77,8 @@ def test_cli_mx_3_0() -> None:
     """Verifies parsing of --max-steps 1."""
     args = build_parser().parse_args(['--task', 'x', '--max-steps', '1'])
     assert args.max_steps == 1
+
+def test_cli_mx_5_1() -> None:
+    """Verifies parsing of --repo /x with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--repo', '/x', '--headless'])
+    assert args.repo == '/x'
