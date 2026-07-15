@@ -92,3 +92,10 @@ def test_reg_004_unlisted_host_is_denied() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert not policy.allows("attacker.example")
     assert policy.allows("github.com")
+
+def test_reg_159_env_limits_reads_memory(tmp_path) -> None:
+    """REG-159: env limits reads memory."""
+    import os
+    os.environ['SHIPWRIGHT_SANDBOX_MEM'] = '123456789'
+    from sandbox.policies.cgroup_limits import limits_from_env
+    assert limits_from_env().mem_bytes == 123456789
