@@ -31,3 +31,19 @@ def test_cost_mx2_2_4() -> None:
     tracker = CostTracker()
     total = tracker.record("claude-haiku-4-5", 0, 2000)
     assert total > 0.0
+
+def test_cost_mx2_2_2() -> None:
+    """Verifies pricing for claude-haiku-4-5 500000/50000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 500000, 50000)
+    assert total > 0.0
+
+def test_cost_case_export_json() -> None:
+    """Verifies cost tracking: export writes valid json."""
+    import json
+    tracker = CostTracker()
+    tracker.record('claude-sonnet-4-5', 1000, 100)
+    dest = tmp_path / 'report.json'
+    tracker.export_report(dest)
+    payload = json.loads(dest.read_text())
+    assert payload['total_usd'] > 0
