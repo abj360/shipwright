@@ -7,6 +7,7 @@ Contains:
     _run_headless(): runs the loop for CI output
     _run_interactive(): runs the loop with live output
     main(): runs one agent task from the command line
+    _format_step(): renders one step as a single line
 """
 
 import argparse
@@ -14,7 +15,7 @@ import os
 import sys
 
 from agent.llm_client import HttpLLMClient
-from agent.loop import AgentConfig, AgentLoop
+from agent.loop import AgentConfig, AgentLoop, Step
 
 def build_parser() -> argparse.ArgumentParser:
     """Builds the command-line argument parser.
@@ -60,7 +61,7 @@ def _run_interactive(loop: AgentLoop) -> int:
     """
     result = loop.run()
     for step in result.steps:
-        print(f"[step {step.index}] {step.tool_name or 'final'}")
+        print(_format_step(step))
     print(f"final: {result.final_answer}")
     return 0 if result.final_answer else 1
 
@@ -85,3 +86,15 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+def _format_step(step: Step) -> str:
+    """Renders one step as a single output line.
+
+    Args:
+        step: Step to render.
+
+    Returns:
+        line: Single-line summary of the step.
+    """
+    tool = step.tool_name or "final"
+    return f"[step {step.index}] {tool}"
