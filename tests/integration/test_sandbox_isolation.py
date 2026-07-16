@@ -106,3 +106,12 @@ def test_sbox_mx_m4() -> None:
     """Verifies policy: mount rejected for /usr/local/x."""
     with pytest.raises(MountError):
         build_mounts('/usr/local/x')
+
+def test_egress_denies_unlisted_host() -> None:
+    """Verifies outbound traffic to unlisted hosts is blocked."""
+    handle = DockerRuntime().launch(make_config())
+    try:
+        result = handle.exec("curl -sS -m 5 https://attacker.example")
+        assert result.exit_code != 0
+    finally:
+        handle.stop()
