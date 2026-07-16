@@ -53,3 +53,9 @@ def test_disp_mx_2_1(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_shell", {"path": null})
     assert result.ok is False
+
+def test_disp_mx2_extra9(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 10)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
