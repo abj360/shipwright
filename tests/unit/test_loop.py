@@ -109,3 +109,9 @@ def test_cost_accumulates_per_completion() -> None:
     loop = AgentLoop(ScriptedLLM(["FINAL: done"]), config)
     loop.run()
     assert tracker.total_usd() >= 0.0
+
+def test_loop_mx2_1_6() -> None:
+    """Verifies loop behavior: read_file call: cost non-negative."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.total_cost_usd >= 0.0
