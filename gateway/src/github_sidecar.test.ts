@@ -67,3 +67,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('wip', [])).toContain('draft');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'fix bug'", () => {
+    expect(renderPrBody('fix bug', ['pytest -q'])).toContain('fix bug');
+  });
+});
