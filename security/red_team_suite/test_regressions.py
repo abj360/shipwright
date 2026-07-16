@@ -128,3 +128,8 @@ def test_reg_117_mount_tmp_shipwright_work_r2_deep(tmp_path) -> None:
     """REG-117: mount /tmp/shipwright-work/r2/deep is accepted."""
     mounts = build_mounts('/tmp/shipwright-work/r2/deep')
     assert mounts[0].target == '/work'
+
+def test_reg_031_egress_policy_immutable(tmp_path) -> None:
+    """REG-031: egress policy immutable."""
+    policy = EgressPolicy(allowed_hosts=('a.com',))
+    assert isinstance(policy.allowed_hosts, tuple)
