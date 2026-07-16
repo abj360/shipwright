@@ -123,3 +123,8 @@ def test_reg_018_limits_scaled_preserves_pids(tmp_path) -> None:
     """REG-018: limits scaled preserves pids."""
     scaled = CgroupLimits(pids_max=99).scaled(2.0)
     assert scaled.pids_max == 99
+
+def test_reg_117_mount_tmp_shipwright_work_r2_deep(tmp_path) -> None:
+    """REG-117: mount /tmp/shipwright-work/r2/deep is accepted."""
+    mounts = build_mounts('/tmp/shipwright-work/r2/deep')
+    assert mounts[0].target == '/work'
