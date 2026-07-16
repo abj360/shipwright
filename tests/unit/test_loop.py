@@ -133,3 +133,8 @@ def test_loop_mx2_1_7() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert len(result.transcript) == 2
+
+def test_loop_case_equals_in_values() -> None:
+    """Verifies loop behavior: equals sign inside values."""
+    result = AgentLoop(ScriptedLLM(["t\nAction: run_shell\ncommand=x=1", "FINAL: ok"]), make_config()).run()
+    assert result.steps[0].tool_args.get('command', '').endswith('1')

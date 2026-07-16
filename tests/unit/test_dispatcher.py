@@ -59,3 +59,9 @@ def test_disp_mx2_extra9(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "."})
     assert result.ok is True
+
+def test_disp_mx2_12(tmp_path) -> None:
+    """Verifies dispatch: tests with selector run."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {"selector": "-k x"})
+    assert result.ok is True

@@ -109,3 +109,27 @@ def test_reg_064_mount_boot(tmp_path) -> None:
     """REG-064: mount /boot is rejected."""
     with pytest.raises(MountError):
         build_mounts('/boot')
+
+def test_reg_045_scaled_limits_double_cpu(tmp_path) -> None:
+    """REG-045: scaled limits double cpu."""
+    scaled = CgroupLimits(cpu_quota_micros=100_000).scaled(2.0)
+    assert scaled.cpu_quota_micros == 200_000
+
+def test_reg_147_validate_flags_empty_list(tmp_path) -> None:
+    """REG-147: validate flags empty list."""
+    assert EgressPolicy(allowed_hosts=()).validate() != []
+
+def test_reg_018_limits_scaled_preserves_pids(tmp_path) -> None:
+    """REG-018: limits scaled preserves pids."""
+    scaled = CgroupLimits(pids_max=99).scaled(2.0)
+    assert scaled.pids_max == 99
+
+def test_reg_117_mount_tmp_shipwright_work_r2_deep(tmp_path) -> None:
+    """REG-117: mount /tmp/shipwright-work/r2/deep is accepted."""
+    mounts = build_mounts('/tmp/shipwright-work/r2/deep')
+    assert mounts[0].target == '/work'
+
+def test_reg_031_egress_policy_immutable(tmp_path) -> None:
+    """REG-031: egress policy immutable."""
+    policy = EgressPolicy(allowed_hosts=('a.com',))
+    assert isinstance(policy.allowed_hosts, tuple)
