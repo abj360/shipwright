@@ -39,3 +39,5 @@ export const focusRing = "#1f6feb";
 export const badgeOkBg = "#1a7f3733";
 
 export const ansiBrightGreen = "#56d364";
+
+export const panelBorder = "#21262d";
