@@ -107,3 +107,9 @@ describe("pr request schema", () => {
     expect(prRequestSchema.safeParse({ taskId: 'a', summary: 's' }).success).toBe(true);
   });
 });
+
+describe("request schemas", () => {
+  it("handles run schema rejects a bad url", () => {
+    expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'nope' }).success).toBe(false);
+  });
+});
