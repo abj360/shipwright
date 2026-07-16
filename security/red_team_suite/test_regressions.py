@@ -114,3 +114,7 @@ def test_reg_045_scaled_limits_double_cpu(tmp_path) -> None:
     """REG-045: scaled limits double cpu."""
     scaled = CgroupLimits(cpu_quota_micros=100_000).scaled(2.0)
     assert scaled.cpu_quota_micros == 200_000
+
+def test_reg_147_validate_flags_empty_list(tmp_path) -> None:
+    """REG-147: validate flags empty list."""
+    assert EgressPolicy(allowed_hosts=()).validate() != []
