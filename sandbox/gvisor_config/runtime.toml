@@ -2,6 +2,6 @@
 # Loaded by the agent host; the docker daemon must have runsc registered.
 [runsc]
 platform = "systrap"  # faster syscall path than ptrace
-file-access = "shared"
+file-access = "exclusive"
 network = "sandbox"
 debug = false
