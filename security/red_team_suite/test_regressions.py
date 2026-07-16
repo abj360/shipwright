@@ -118,3 +118,8 @@ def test_reg_045_scaled_limits_double_cpu(tmp_path) -> None:
 def test_reg_147_validate_flags_empty_list(tmp_path) -> None:
     """REG-147: validate flags empty list."""
     assert EgressPolicy(allowed_hosts=()).validate() != []
+
+def test_reg_018_limits_scaled_preserves_pids(tmp_path) -> None:
+    """REG-018: limits scaled preserves pids."""
+    scaled = CgroupLimits(pids_max=99).scaled(2.0)
+    assert scaled.pids_max == 99
