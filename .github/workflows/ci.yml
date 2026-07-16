@@ -23,3 +23,18 @@ jobs:
       - run: ruff format --check .
       - run: mypy agent sandbox security
       - run: pytest tests/ -q
+
+  gateway:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
