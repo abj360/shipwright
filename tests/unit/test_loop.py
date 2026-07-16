@@ -8,6 +8,7 @@ Contains:
 
 import pytest
 
+from agent.cost_tracker import CostTracker
 from agent.llm_client import ScriptedLLM
 from agent.loop import AgentConfig, AgentLoop, Step
 
@@ -79,3 +80,32 @@ def test_loop_mx2_0_0() -> None:
     responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert len(result.steps) == 2
+
+def test_malformed_reply_triggers_one_retry() -> None:
+    """Verifies a reply with no Action and no FINAL is retried once."""
+    responses = ["garbage with no markers", "FINAL: recovered"]
+    loop = AgentLoop(ScriptedLLM(responses), make_config())
+    result = loop.run()
+    assert result.final_answer == "recovered"
+
+def test_tool_args_parse_key_value_pairs() -> None:
+    """Verifies action arguments split on semicolons into a dict."""
+    responses = ["think\nAction: read_file\npath=a.py; mode=fast", "FINAL: done"]
+    loop = AgentLoop(ScriptedLLM(responses), make_config())
+    result = loop.run()
+    assert result.steps[0].tool_args == {"path": "a.py", "mode": "fast"}
+
+def test_run_result_has_wall_clock_duration() -> None:
+    """Verifies a finished run reports a non-negative duration."""
+    loop = AgentLoop(ScriptedLLM(["FINAL: done"]), make_config())
+    result = loop.run()
+    assert result.duration_s >= 0.0
+
+def test_cost_accumulates_per_completion() -> None:
+    """Verifies completions accumulate spend through the tracker."""
+    tracker = CostTracker()
+    config = make_config()
+    config.cost_tracker = tracker
+    loop = AgentLoop(ScriptedLLM(["FINAL: done"]), config)
+    loop.run()
+    assert tracker.total_usd() >= 0.0
