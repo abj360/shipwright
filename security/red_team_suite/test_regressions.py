@@ -104,3 +104,8 @@ def test_reg_071_cgroup_cpu_quota_micros_neg9(tmp_path) -> None:
     """REG-071: cgroup cpu_quota_micros=-9 fails validation."""
     with pytest.raises(ValueError):
         CgroupLimits(cpu_quota_micros=-9)
+
+def test_reg_064_mount_boot(tmp_path) -> None:
+    """REG-064: mount /boot is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/boot')
