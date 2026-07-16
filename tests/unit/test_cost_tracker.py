@@ -47,3 +47,9 @@ def test_cost_case_export_json() -> None:
     tracker.export_report(dest)
     payload = json.loads(dest.read_text())
     assert payload['total_usd'] > 0
+
+def test_cost_mx_0_1() -> None:
+    """Verifies recording usage for claude-sonnet-4-5 50000/5000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-sonnet-4-5", 50000, 5000)
+    assert total >= 0.0
