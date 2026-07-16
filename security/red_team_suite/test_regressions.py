@@ -109,3 +109,8 @@ def test_reg_064_mount_boot(tmp_path) -> None:
     """REG-064: mount /boot is rejected."""
     with pytest.raises(MountError):
         build_mounts('/boot')
+
+def test_reg_045_scaled_limits_double_cpu(tmp_path) -> None:
+    """REG-045: scaled limits double cpu."""
+    scaled = CgroupLimits(cpu_quota_micros=100_000).scaled(2.0)
+    assert scaled.cpu_quota_micros == 200_000
