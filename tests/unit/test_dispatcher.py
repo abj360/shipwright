@@ -47,3 +47,9 @@ def test_run_shell_rejects_empty_command(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_shell", {"command": "  "})
     assert not result.ok
+
+def test_disp_mx_2_1(tmp_path) -> None:
+    """Verifies dispatch: run_shell fails on null path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_shell", {"path": null})
+    assert result.ok is False
