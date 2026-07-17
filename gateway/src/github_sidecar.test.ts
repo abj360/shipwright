@@ -85,3 +85,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('fix login', ['pytest -q'])).toContain('fix login');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 1 steps", () => {
+    expect(renderRunStats({ steps: 1, durationS: 0.5, costUsd: 0.001 })).toContain('1');
+  });
+});
