@@ -85,3 +85,9 @@ def test_dispatch_list_dir_defaults_to_root() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {})
     assert result.ok is True
+
+def test_disp_mx_1_0(tmp_path) -> None:
+    """Verifies dispatch: read_file fails without args."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("read_file", {})
+    assert result.ok is False
