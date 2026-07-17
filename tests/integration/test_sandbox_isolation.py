@@ -121,3 +121,9 @@ def test_egress_case_unknown_net() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("unknown.net") is False
+
+def test_egress_case_files_pythonhosted_org() -> None:
+    """Verifies egress treatment of files.pythonhosted.org."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("files.pythonhosted.org") is True
