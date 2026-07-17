@@ -49,7 +49,10 @@ export function createWebhookRouter(secret: string, queue: TaskQueue): express.R
       return;
     }
     const event = req.header("x-github-event");
-    if (event === "issues" && req.body.action === "opened") {
+    const labels: string[] = (req.body.issue?.labels ?? []).map(
+      (label: { name: string }) => label.name,
+    );
+    if (event === "issues" && req.body.action === "opened" && labels.includes("shipwright")) {
       const issue = req.body.issue;
       logger.info({ issue: issue.number }, "issue opened; queueing agent run");
       queue.enqueue(`issue-${issue.number}`, async () => {
