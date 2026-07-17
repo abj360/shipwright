@@ -79,3 +79,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/8')).toBe('Closes #8');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'fix login' includes 'fix login'", () => {
+    expect(renderPrBody('fix login', ['pytest -q'])).toContain('fix login');
+  });
+});
