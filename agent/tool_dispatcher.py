@@ -7,6 +7,7 @@ Contains:
     ToolError: malformed call or tool failure
     ToolDispatcher.dispatch(): executes and normalizes one tool call
     ToolDispatcher._resolve(): confines paths to the checkout
+    ToolDispatcher._write_file(): writes one file in the checkout
 """
 
 import logging
@@ -55,6 +56,7 @@ class ToolDispatcher:
             "read_file": self._read_file,
             "list_dir": self._list_dir,
             "run_shell": self._run_shell,
+            "write_file": self._write_file,
         }
         logger.debug("dispatcher ready with %d tools", len(self._tools))
 
@@ -140,3 +142,18 @@ class ToolDispatcher:
         if self.repo_root not in resolved.parents and resolved != self.repo_root:
             raise ToolError(f"path escapes repo root: {rel_path}")
         return resolved
+
+    def _write_file(self, args: dict[str, str]) -> str:
+        """Writes text to one file in the checkout, creating parents as needed.
+
+        Args:
+            args: Tool arguments; expects "path" and "content" entries.
+
+        Returns:
+            confirmation: Short note with the byte count written.
+        """
+        target = self._resolve(args["path"])
+        target.parent.mkdir(parents=True, exist_ok=True)
+        content = args.get("content", "")
+        target.write_text(content)
+        return f"wrote {len(content)} bytes to {args['path']}"
