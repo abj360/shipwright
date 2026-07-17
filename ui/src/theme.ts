@@ -30,6 +30,14 @@ export const xtermTheme = {
   background: darkTheme.background,
   foreground: darkTheme.foreground,
   cursor: darkTheme.accent,
+  black: "#484f58",
+  red: darkTheme.del,
+  green: darkTheme.add,
+  yellow: "#d29922",
+  blue: darkTheme.accent,
+  magenta: "#bc8cff",
+  cyan: "#39c5cf",
+  white: darkTheme.foreground,
 };
 
 export const linkColor = "#58a6ff";
