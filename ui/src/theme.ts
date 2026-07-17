@@ -51,3 +51,5 @@ export const ansiBrightMagenta = "#d2a8ff";
 export const borderSubtle = "#30363d";
 
 export const panelBg = "#161b22";
+
+export const badgeWarnBg = "#9a670033";
