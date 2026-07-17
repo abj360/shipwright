@@ -7,8 +7,10 @@ Contains:
     CgroupLimits.to_docker_kwargs(): renders limits for docker-py
     CgroupLimits.__post_init__(): rejects unusable limits
     DEFAULT_LIMITS / CI_LIMITS: limit presets
+    limits_from_env(): builds limits from the environment
 """
 
+import os
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
@@ -47,3 +49,15 @@ class CgroupLimits:
 
 DEFAULT_LIMITS = CgroupLimits()
 CI_LIMITS = CgroupLimits(cpu_quota_micros=300_000, mem_bytes=1024 * 1024 * 1024)
+
+def limits_from_env() -> CgroupLimits:
+    """Builds limits from SHIPWRIGHT_SANDBOX_* environment variables.
+
+    Returns:
+        limits: Configured limits, falling back to the defaults.
+    """
+    return CgroupLimits(
+        cpu_quota_micros=int(os.environ.get("SHIPWRIGHT_SANDBOX_CPU", "100000")),
+        mem_bytes=int(os.environ.get("SHIPWRIGHT_SANDBOX_MEM", str(512 * 1024 * 1024))),
+        pids_max=int(os.environ.get("SHIPWRIGHT_SANDBOX_PIDS", "256")),
+    )
