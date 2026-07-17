@@ -49,3 +49,5 @@ export const scrollTrack = "#0d1117";
 export const ansiBrightMagenta = "#d2a8ff";
 
 export const borderSubtle = "#30363d";
+
+export const panelBg = "#161b22";
