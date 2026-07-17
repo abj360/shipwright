@@ -45,3 +45,5 @@ export const panelBorder = "#21262d";
 export const cursorAlt = "#c9d1d9";
 
 export const scrollTrack = "#0d1117";
+
+export const ansiBrightMagenta = "#d2a8ff";
