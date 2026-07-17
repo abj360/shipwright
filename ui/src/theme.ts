@@ -47,3 +47,5 @@ export const cursorAlt = "#c9d1d9";
 export const scrollTrack = "#0d1117";
 
 export const ansiBrightMagenta = "#d2a8ff";
+
+export const borderSubtle = "#30363d";
