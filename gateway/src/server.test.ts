@@ -113,3 +113,9 @@ describe("request schemas", () => {
     expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'nope' }).success).toBe(false);
   });
 });
+
+describe("run request schema", () => {
+  it("handles valid run request", () => {
+    expect(runRequestSchema.safeParse({ task: 'fix tests' }).success).toBe(true);
+  });
+});

@@ -121,3 +121,18 @@ def test_egress_case_unknown_net() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("unknown.net") is False
+
+def test_egress_case_files_pythonhosted_org() -> None:
+    """Verifies egress treatment of files.pythonhosted.org."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("files.pythonhosted.org") is True
+
+def test_mount_case_etc_rejected() -> None:
+    """Verifies mount handling for etc_rejected."""
+    if "error" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/etc")
+    else:
+        mounts = build_mounts("/etc")
+        assert mounts[0].target == "/work"

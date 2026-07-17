@@ -72,3 +72,10 @@ def test_disp_case_output_truncated() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('read_file', {'path': 'big.txt'})
     assert len(result.output) <= 8000
+
+def test_missing_required_arg_is_an_error() -> None:
+    """Verifies calls missing required args fail before touching tools."""
+    dispatcher = ToolDispatcher(Path("."))
+    result = dispatcher.dispatch("read_file", {})
+    assert not result.ok
+    assert "missing args" in result.error
