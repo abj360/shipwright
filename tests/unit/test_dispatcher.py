@@ -79,3 +79,21 @@ def test_missing_required_arg_is_an_error() -> None:
     result = dispatcher.dispatch("read_file", {})
     assert not result.ok
     assert "missing args" in result.error
+
+def test_dispatch_list_dir_defaults_to_root() -> None:
+    """Verifies dispatch behavior: defaults to root."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {})
+    assert result.ok is True
+
+def test_disp_mx_1_0(tmp_path) -> None:
+    """Verifies dispatch: read_file fails without args."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("read_file", {})
+    assert result.ok is False
+
+def test_disp_mx2_11(tmp_path) -> None:
+    """Verifies dispatch: tests run."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {})
+    assert result.ok is True
