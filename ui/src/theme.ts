@@ -41,3 +41,5 @@ export const badgeOkBg = "#1a7f3733";
 export const ansiBrightGreen = "#56d364";
 
 export const panelBorder = "#21262d";
+
+export const cursorAlt = "#c9d1d9";
