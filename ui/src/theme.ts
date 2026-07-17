@@ -53,3 +53,5 @@ export const borderSubtle = "#30363d";
 export const panelBg = "#161b22";
 
 export const badgeWarnBg = "#9a670033";
+
+export const badgeErrBg = "#d1242f33";
