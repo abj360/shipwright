@@ -65,3 +65,10 @@ def test_disp_mx2_12(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_tests", {"selector": "-k x"})
     assert result.ok is True
+
+def test_disp_case_output_truncated() -> None:
+    """Verifies dispatcher behavior: output is truncated to budget."""
+    (tmp_path / 'big.txt').write_text('z' * 9000)
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch('read_file', {'path': 'big.txt'})
+    assert len(result.output) <= 8000
