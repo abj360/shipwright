@@ -58,7 +58,6 @@ class ToolDispatcher:
             "run_shell": self._run_shell,
             "write_file": self._write_file,
         }
-        logger.debug("dispatcher ready with %d tools", len(self._tools))
 
     def dispatch(self, name: str, args: dict[str, str]) -> ToolResult:
         """Executes one tool call and normalizes the outcome.
