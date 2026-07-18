@@ -133,3 +133,10 @@ def test_reg_031_egress_policy_immutable(tmp_path) -> None:
     """REG-031: egress policy immutable."""
     policy = EgressPolicy(allowed_hosts=('a.com',))
     assert isinstance(policy.allowed_hosts, tuple)
+
+def test_reg_143_audit_for_task_creates_parent_dirs(tmp_path) -> None:
+    """REG-143: audit for_task creates parent dirs."""
+    from sandbox.audit_log import AuditLog
+    log = AuditLog.for_task(tmp_path / 'deep' / 'dir', 't1')
+    log.record('exec', 'x')
+    assert (tmp_path / 'deep' / 'dir' / 't1.jsonl').exists()
