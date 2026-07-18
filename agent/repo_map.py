@@ -6,6 +6,7 @@ Contains:
     OutlineEntry: cached outline with its modification time
     RepoMap: builds and caches per-file outlines
     RepoMap.outline_for(): cached outline, rebuilt on change
+    RepoMap.refresh(): invalidates entries for changed files
 """
 
 import ast
@@ -83,3 +84,18 @@ class RepoMap:
         if len(names) > OUTLINE_MAX_SYMBOLS:
             names = names[:OUTLINE_MAX_SYMBOLS]
         return ", ".join(names) or "(no top-level symbols)"
+
+    def refresh(self, changed: list[str]) -> int:
+        """Invalidates cache entries for files that changed on disk.
+
+        Args:
+            changed: Repo-relative paths to drop from the cache.
+
+        Returns:
+            dropped: Number of cache entries invalidated.
+        """
+        dropped = 0
+        for rel_path in changed:
+            if self._cache.pop(rel_path, None) is not None:
+                dropped += 1
+        return dropped
