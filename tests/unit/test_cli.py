@@ -93,3 +93,36 @@ def test_cli_case_headless_final_line(capsys: pytest.CaptureFixture[str], tmp_pa
     loop = make_loop(['FINAL: wrapped'])
     assert _run_headless(loop) == EXIT_OK
     assert 'final: wrapped' in capsys.readouterr().out
+
+def test_json_mode_emits_one_json_object_per_step(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verifies --json output parses as independent JSON lines."""
+    import json
+
+    loop = make_loop(["think\nAction: list_dir\npath=.", "FINAL: done"])
+    assert _run_headless(loop, as_json=True) == EXIT_OK
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.startswith("{")]
+    payloads = [json.loads(line) for line in lines]
+    assert payloads[0]["tool"] == "list_dir"
+
+def test_cli_mx2_4_2() -> None:
+    """Verifies parsing of resume plus plan mode."""
+    if "['--task', 'x', '--resume', 'a.json', '--plan-mode']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--resume', 'a.json', '--plan-mode'])
+        assert args.resume and args.plan_mode
+
+def test_flag_defaults_are_ci_safe() -> None:
+    """Verifies headless and json default to off."""
+    args = build_parser().parse_args(["--task", "x"])
+    assert not args.headless and not args.json
+
+def test_cli_mx2_6_2() -> None:
+    """Verifies parsing of multi-word task."""
+    if "['--task', 'multi word task']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'multi word task'])
+        assert args.task == 'multi word task'
