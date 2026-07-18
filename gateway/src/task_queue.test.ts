@@ -87,3 +87,17 @@ describe("TaskQueue behavior", () => {
     expect(queue.metrics().completed).toBe(0);
   });
 });
+
+describe("TaskQueue metrics", () => {
+  it("handles metrics shape with concurrency 5 (case 3)", () => {
+    const queue = new TaskQueue({ concurrency: 5 });
+    expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
+  });
+});
+
+describe("TaskQueue metrics", () => {
+  it("handles metrics shape with concurrency 2 (case 2)", () => {
+    const queue = new TaskQueue({ concurrency: 2 });
+    expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
+  });
+});

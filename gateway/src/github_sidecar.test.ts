@@ -4,7 +4,7 @@
  */
 
 import { closesIssueLine, renderPrBody } from "./github_sidecar";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { closesIssueLine, renderPrBody, renderRunStats } from "./github_sidecar";
 
@@ -89,5 +89,36 @@ describe("sidecar rendering", () => {
 describe("sidecar rendering cases", () => {
   it("handles run stats for 1 steps", () => {
     expect(renderRunStats({ steps: 1, durationS: 0.5, costUsd: 0.001 })).toContain('1');
+  });
+});
+
+vi.mock("@octokit/rest", () => ({
+  Octokit: vi.fn().mockImplementation(() => ({
+    pulls: {
+      list: vi.fn().mockResolvedValue({ data: [{ html_url: "https://x/pr/1" }] }),
+    },
+  })),
+}));
+
+describe("findOpenPr", () => {
+  it("returns the url of an open PR", async () => {
+    const { findOpenPr } = await import("./github_sidecar");
+    const url = await findOpenPr(
+      { repoUrl: "https://github.com/o/r", workDir: "/tmp", githubToken: "t", baseBranch: "main" },
+      "shipwright/x",
+    );
+    expect(url).toBe("https://x/pr/1");
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 8 steps", () => {
+    expect(renderRunStats({ steps: 8, durationS: 30.0, costUsd: 0.25 })).toContain('8');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'fix login' includes 'fix login'", () => {
+    expect(renderPrBody('fix login', ['pytest -q'])).toContain('fix login');
   });
 });
