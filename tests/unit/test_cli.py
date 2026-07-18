@@ -117,3 +117,12 @@ def test_flag_defaults_are_ci_safe() -> None:
     """Verifies headless and json default to off."""
     args = build_parser().parse_args(["--task", "x"])
     assert not args.headless and not args.json
+
+def test_cli_mx2_6_2() -> None:
+    """Verifies parsing of multi-word task."""
+    if "['--task', 'multi word task']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'multi word task'])
+        assert args.task == 'multi word task'
