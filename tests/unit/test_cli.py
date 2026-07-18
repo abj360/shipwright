@@ -103,3 +103,12 @@ def test_json_mode_emits_one_json_object_per_step(capsys: pytest.CaptureFixture[
     lines = [line for line in capsys.readouterr().out.splitlines() if line.startswith("{")]
     payloads = [json.loads(line) for line in lines]
     assert payloads[0]["tool"] == "list_dir"
+
+def test_cli_mx2_4_2() -> None:
+    """Verifies parsing of resume plus plan mode."""
+    if "['--task', 'x', '--resume', 'a.json', '--plan-mode']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--resume', 'a.json', '--plan-mode'])
+        assert args.resume and args.plan_mode
