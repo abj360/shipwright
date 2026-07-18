@@ -14,3 +14,4 @@ tmp/
 docker-compose.override.yml
 *.log
 .coverage
+build/
