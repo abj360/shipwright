@@ -144,3 +144,9 @@ def test_loop_mx2_1_9() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert 'error' not in result.steps[0].observation.lower() or True
+
+def test_loop_mx_4_1() -> None:
+    """Verifies loop behavior: run_tests call records tool name."""
+    responses = ["think\nAction: run_tests\n", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'run_tests'
