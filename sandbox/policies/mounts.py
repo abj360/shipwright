@@ -25,16 +25,19 @@ class MountSpec:
     target: str
     read_only: bool = True
 
-def build_mounts(workdir: str) -> list[MountSpec]:
+def build_mounts(workdir: str, extra: list[MountSpec] | None = None) -> list[MountSpec]:
     """Builds the mount set: read-only root plus one writable workdir.
 
     Args:
         workdir: Host path that becomes the container's writable /work.
+        extra: Additional read-only mounts the task explicitly requested.
 
     Returns:
         mounts: Mount specs for the container.
     """
-    return [MountSpec(source=workdir, target="/work", read_only=False)]
+    mounts = [MountSpec(source=workdir, target="/work", read_only=False)]
+    mounts.extend(extra or [])
+    return mounts
 
 
 def rootfs_kwargs(tmp_size: str = "64m") -> dict[str, object]:
