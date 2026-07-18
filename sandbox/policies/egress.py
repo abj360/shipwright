@@ -47,7 +47,9 @@ class EgressPolicy:
         Returns:
             allowed: True only for allowlisted domains.
         """
-        return host in self.allowed_hosts
+        if host in self.allowed_hosts:
+            return True
+        return any(host.endswith(f".{allowed}") for allowed in self.allowed_hosts)
 
     def network_name(self) -> str:
         """Names the docker network sandboxes attach to.
