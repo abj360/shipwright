@@ -112,3 +112,8 @@ def test_cli_mx2_4_2() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--resume', 'a.json', '--plan-mode'])
         assert args.resume and args.plan_mode
+
+def test_flag_defaults_are_ci_safe() -> None:
+    """Verifies headless and json default to off."""
+    args = build_parser().parse_args(["--task", "x"])
+    assert not args.headless and not args.json
