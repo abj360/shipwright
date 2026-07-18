@@ -93,3 +93,13 @@ def test_cli_case_headless_final_line(capsys: pytest.CaptureFixture[str], tmp_pa
     loop = make_loop(['FINAL: wrapped'])
     assert _run_headless(loop) == EXIT_OK
     assert 'final: wrapped' in capsys.readouterr().out
+
+def test_json_mode_emits_one_json_object_per_step(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verifies --json output parses as independent JSON lines."""
+    import json
+
+    loop = make_loop(["think\nAction: list_dir\npath=.", "FINAL: done"])
+    assert _run_headless(loop, as_json=True) == EXIT_OK
+    lines = [line for line in capsys.readouterr().out.splitlines() if line.startswith("{")]
+    payloads = [json.loads(line) for line in lines]
+    assert payloads[0]["tool"] == "list_dir"
