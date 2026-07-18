@@ -13,3 +13,6 @@ coverage.xml
 tmp/
 docker-compose.override.yml
 *.log
+.coverage
+build/
+.ruff_cache/
