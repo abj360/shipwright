@@ -238,8 +238,12 @@ class AgentLoop:
             self.config.mode = "react"
             return self.run()
         plan = self.config.planner.build_plan(self.config.task)
+        logger.info("run %s executing plan of %d steps", self._run_id, len(plan.steps))
         for plan_step in plan.steps:
-            step = Step(index=len(self._transcript), thought=plan_step.description)
+            step = Step(
+                index=len(self._transcript),
+                thought=f"[plan {plan_step.index + 1}/{len(plan.steps)}] {plan_step.description}",
+            )
             self._transcript.append(step)
             output = self._act(step)
             self._observe(step, output)
