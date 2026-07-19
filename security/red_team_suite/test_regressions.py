@@ -150,3 +150,8 @@ def test_reg_120_mount_bin(tmp_path) -> None:
     """REG-120: mount /bin is rejected."""
     with pytest.raises(MountError):
         build_mounts('/bin')
+
+def test_reg_041_volume_binding_targets_work(tmp_path) -> None:
+    """REG-041: volume binding targets work."""
+    vols = to_docker_volumes(build_mounts('/tmp/shipwright-work/t'))
+    assert list(vols.values())[0]['bind'] == '/work'
