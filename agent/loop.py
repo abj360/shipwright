@@ -31,6 +31,10 @@ logger = logging.getLogger(__name__)
 MAX_TOOL_OUTPUT_CHARS = 6000
 STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
+PARSE_RETRY_HINT = (
+    "Your last reply had no Action: and no FINAL:. "
+    "Respond with exactly one tool call or a final answer."
+)
 
 @dataclass
 class Step:
@@ -145,8 +149,16 @@ class AgentLoop:
         messages = self._build_messages()
         completion = self._client.complete(messages, self.config.system_prompt, STEP_BUDGET_TOKENS)
         self._record_cost(completion)
+        step = self._parse_step(completion.text)
+        if not step.tool_name and FINAL_ANSWER_PREFIX not in completion.text:
+            messages.append(Message(role="user", content=PARSE_RETRY_HINT))
+            completion = self._client.complete(
+                messages, self.config.system_prompt, STEP_BUDGET_TOKENS
+            )
+            self._record_cost(completion)
+            step = self._parse_step(completion.text)
         logger.debug("thought %d received", len(self._transcript))
-        return self._parse_step(completion.text)
+        return step
 
     def _build_messages(self) -> list[Message]:
         """Flattens the transcript into chat messages for the next completion.
