@@ -156,3 +156,9 @@ def test_loop_mx2_3_6() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.total_cost_usd >= 0.0
+
+def test_loop_mx2_2_5() -> None:
+    """Verifies loop behavior: run_shell call: duration non-negative."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.duration_s >= 0.0
