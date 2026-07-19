@@ -145,3 +145,28 @@ def test_reg_062_mount_tmp_shipwright_work_alpha(tmp_path) -> None:
     """REG-062: mount /tmp/shipwright-work/alpha is accepted."""
     mounts = build_mounts('/tmp/shipwright-work/alpha')
     assert mounts[0].read_only is False
+
+def test_reg_120_mount_bin(tmp_path) -> None:
+    """REG-120: mount /bin is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/bin')
+
+def test_reg_041_volume_binding_targets_work(tmp_path) -> None:
+    """REG-041: volume binding targets work."""
+    vols = to_docker_volumes(build_mounts('/tmp/shipwright-work/t'))
+    assert list(vols.values())[0]['bind'] == '/work'
+
+def test_reg_110_egress_ngrok_io(tmp_path) -> None:
+    """REG-110: egress treats ngrok.io as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('ngrok.io') is False
+
+def test_reg_052_exec_result_carries_exit_code(tmp_path) -> None:
+    """REG-052: exec result carries exit code."""
+    from sandbox.docker_runtime import ExecResult
+    assert ExecResult(exit_code=1, output='x').exit_code == 1
+
+def test_reg_060_egress_raw_githubusercontent_com(tmp_path) -> None:
+    """REG-060: egress host raw.githubusercontent.com is denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('raw.githubusercontent.com') is False
