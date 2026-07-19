@@ -145,3 +145,8 @@ def test_reg_062_mount_tmp_shipwright_work_alpha(tmp_path) -> None:
     """REG-062: mount /tmp/shipwright-work/alpha is accepted."""
     mounts = build_mounts('/tmp/shipwright-work/alpha')
     assert mounts[0].read_only is False
+
+def test_reg_120_mount_bin(tmp_path) -> None:
+    """REG-120: mount /bin is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/bin')
