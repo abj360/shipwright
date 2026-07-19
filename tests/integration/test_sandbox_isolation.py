@@ -136,3 +136,8 @@ def test_mount_case_etc_rejected() -> None:
     else:
         mounts = build_mounts("/etc")
         assert mounts[0].target == "/work"
+
+def test_sbox_mx2_e4_0() -> None:
+    """Verifies policy: egress allows files.pythonhosted.org (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('files.pythonhosted.org') is True
