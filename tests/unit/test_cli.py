@@ -131,3 +131,8 @@ def test_cli_mx_2_2() -> None:
     """Verifies parsing of --plan-mode with --json."""
     args = build_parser().parse_args(['--task', 'x', '--plan-mode', '--json'])
     assert args.plan_mode
+
+def test_cli_mx_2_1() -> None:
+    """Verifies parsing of --plan-mode with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--plan-mode', '--headless'])
+    assert args.plan_mode
