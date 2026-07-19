@@ -165,3 +165,8 @@ def test_reg_052_exec_result_carries_exit_code(tmp_path) -> None:
     """REG-052: exec result carries exit code."""
     from sandbox.docker_runtime import ExecResult
     assert ExecResult(exit_code=1, output='x').exit_code == 1
+
+def test_reg_060_egress_raw_githubusercontent_com(tmp_path) -> None:
+    """REG-060: egress host raw.githubusercontent.com is denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('raw.githubusercontent.com') is False
