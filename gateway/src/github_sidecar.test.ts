@@ -134,3 +134,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('bump deps', ['make check'])).toContain('bump deps');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 5 steps", () => {
+    expect(renderRunStats({ steps: 5, durationS: 10.2, costUsd: 0.05 })).toContain('5');
+  });
+});
