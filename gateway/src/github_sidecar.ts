@@ -13,6 +13,7 @@
  *   createPrFromRun(): clone, branch, commit, push, open draft PR
  *   batchGetFileContents(): fetches many files in one GraphQL query
  *   renderPrBody(): renders the PR body with test evidence
+ *   getRefSha(): resolves a ref to a SHA, cached
  */
 
 import { exec } from "node:child_process";
@@ -197,4 +198,33 @@ export function renderPrBody(taskSummary: string, testsRun: string[]): string {
   }
   lines.push("", "Opened by shipwright as a draft.");
   return lines.join("\n");
+}
+
+const refsCache = new Map<string, { sha: string; fetchedAt: number }>();
+const prUrlCache = new Map<string, { url: string; fetchedAt: number }>();
+const REFS_TTL_MS = 60_000;
+
+export async function getRefSha(config: SidecarConfig, ref: string): Promise<string> {
+  /**
+   * Resolves a ref to a commit SHA, cached for a minute to save API calls.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param ref - Ref to resolve.
+   * @returns sha - Commit SHA the ref points at.
+   */
+  const cacheKey = `${config.repoUrl}#${ref}`;
+  const cached = refsCache.get(cacheKey);
+  if (cached !== undefined && Date.now() - cached.fetchedAt < REFS_TTL_MS) {
+    return cached.sha;
+  }
+  const octokit = octokitFor(config.githubToken);
+  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const response = await octokit.git.getRef({
+    owner,
+    repo: repo.replace(/\.git$/, ""),
+    ref: `heads/${ref}`,
+  });
+  const sha = response.data.object.sha;
+  refsCache.set(cacheKey, { sha, fetchedAt: Date.now() });
+  return sha;
 }
