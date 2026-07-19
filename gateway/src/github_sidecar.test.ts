@@ -128,3 +128,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/512')).toBe('Closes #512');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'bump deps' includes 'bump deps'", () => {
+    expect(renderPrBody('bump deps', ['make check'])).toContain('bump deps');
+  });
+});
