@@ -150,3 +150,9 @@ def test_loop_mx_4_1() -> None:
     responses = ["think\nAction: run_tests\n", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].tool_name == 'run_tests'
+
+def test_loop_mx2_3_6() -> None:
+    """Verifies loop behavior: write_file call: cost non-negative."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.total_cost_usd >= 0.0
