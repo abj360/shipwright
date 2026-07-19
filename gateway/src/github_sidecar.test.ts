@@ -122,3 +122,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('fix login', ['pytest -q'])).toContain('fix login');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 512", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/512')).toBe('Closes #512');
+  });
+});
