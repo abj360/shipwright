@@ -160,3 +160,8 @@ def test_reg_110_egress_ngrok_io(tmp_path) -> None:
     """REG-110: egress treats ngrok.io as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('ngrok.io') is False
+
+def test_reg_052_exec_result_carries_exit_code(tmp_path) -> None:
+    """REG-052: exec result carries exit code."""
+    from sandbox.docker_runtime import ExecResult
+    assert ExecResult(exit_code=1, output='x').exit_code == 1
