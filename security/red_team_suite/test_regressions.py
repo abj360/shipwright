@@ -140,3 +140,8 @@ def test_reg_143_audit_for_task_creates_parent_dirs(tmp_path) -> None:
     log = AuditLog.for_task(tmp_path / 'deep' / 'dir', 't1')
     log.record('exec', 'x')
     assert (tmp_path / 'deep' / 'dir' / 't1.jsonl').exists()
+
+def test_reg_062_mount_tmp_shipwright_work_alpha(tmp_path) -> None:
+    """REG-062: mount /tmp/shipwright-work/alpha is accepted."""
+    mounts = build_mounts('/tmp/shipwright-work/alpha')
+    assert mounts[0].read_only is False
