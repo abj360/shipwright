@@ -152,3 +152,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/100')).toBe('Closes #100');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'refactor' includes '## Tests'", () => {
+    expect(renderPrBody('refactor', ['pytest tests/ -q'])).toContain('## Tests');
+  });
+});
