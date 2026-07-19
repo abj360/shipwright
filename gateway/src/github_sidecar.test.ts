@@ -122,3 +122,33 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('fix login', ['pytest -q'])).toContain('fix login');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 512", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/512')).toBe('Closes #512');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'bump deps' includes 'bump deps'", () => {
+    expect(renderPrBody('bump deps', ['make check'])).toContain('bump deps');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 5 steps", () => {
+    expect(renderRunStats({ steps: 5, durationS: 10.2, costUsd: 0.05 })).toContain('5');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 21", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/21')).toBe('Closes #21');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 100", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/100')).toBe('Closes #100');
+  });
+});
