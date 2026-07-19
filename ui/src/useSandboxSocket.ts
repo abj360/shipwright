@@ -26,12 +26,30 @@ export function useSandboxSocket(
   const [status, setStatus] = useState<SocketStatus>("connecting");
 
   useEffect(() => {
-    setStatus("connecting");
-    const socket = new WebSocket(`${gatewayUrl}/runs/${runId}/stream`);
-    socket.onopen = () => setStatus("open");
-    socket.onclose = () => setStatus("closed");
-    socket.onmessage = (event) => onChunk(String(event.data));
-    return () => socket.close();
+    let attempt = 0;
+    let cancelled = false;
+    let socket: WebSocket;
+    const connect = () => {
+      setStatus("connecting");
+      socket = new WebSocket(`${gatewayUrl}/runs/${runId}/stream`);
+      socket.onopen = () => {
+        attempt = 0;
+        setStatus("open");
+      };
+      socket.onclose = () => {
+        setStatus("closed");
+        if (!cancelled && attempt < 5) {
+          attempt += 1;
+          setTimeout(connect, 1_000 * attempt);
+        }
+      };
+      socket.onmessage = (event) => onChunk(String(event.data));
+    };
+    connect();
+    return () => {
+      cancelled = true;
+      socket.close();
+    };
   }, [gatewayUrl, runId]);
 
   return status;
