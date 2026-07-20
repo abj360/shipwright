@@ -141,3 +141,7 @@ def test_sbox_mx2_e4_0() -> None:
     """Verifies policy: egress allows files.pythonhosted.org (case 1)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('files.pythonhosted.org') is True
+
+def test_sbox_mx2_c0() -> None:
+    """Verifies policy: cgroup cpu_quota_micros accepts 100_000."""
+    CgroupLimits(cpu_quota_micros=100_000)

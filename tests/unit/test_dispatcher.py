@@ -97,3 +97,9 @@ def test_disp_mx2_11(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_tests", {})
     assert result.ok is True
+
+def test_disp_mx2_6(tmp_path) -> None:
+    """Verifies dispatch: true succeeds."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_shell", {"command": "true"})
+    assert result.ok is True

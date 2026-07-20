@@ -11,6 +11,7 @@ Contains:
     RepoPlanner.build_plan(): produces an ordered execution plan
     Project: one buildable unit inside a checkout
     detect_projects(): finds manifests and infers boundaries
+    build_outline(): renders a compact per-file outline
 """
 
 import json
@@ -19,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from agent.llm_client import LLMClient, Message
+from agent.repo_map import RepoMap
 
 logger = logging.getLogger(__name__)
 
@@ -182,3 +184,19 @@ def detect_projects(summary: RepoSummary) -> list[Project]:
             kind = name.split(".")[0] if "." in name else name
             projects.append(Project(manifest_path=info.rel_path, kind=kind))
     return projects
+
+def build_outline(summary: RepoSummary, repo_map: RepoMap) -> str:
+    """Renders a compact per-file outline for the planning prompt.
+
+    Args:
+        summary: Repo scan holding the files to outline.
+        repo_map: Cache of per-file outlines keyed by path and mtime.
+
+    Returns:
+        outline: One line per file with its top-level definitions.
+    """
+    lines = []
+    for info in summary.files:
+        outline = repo_map.outline_for(summary.root / info.rel_path)
+        lines.append(f"{info.rel_path}: {outline}")
+    return "\n".join(lines)

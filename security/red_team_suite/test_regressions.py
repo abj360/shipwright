@@ -170,3 +170,8 @@ def test_reg_060_egress_raw_githubusercontent_com(tmp_path) -> None:
     """REG-060: egress host raw.githubusercontent.com is denied."""
     policy = EgressPolicy(allowed_hosts=('github.com',))
     assert policy.allows('raw.githubusercontent.com') is False
+
+def test_reg_027_scoped_policy_dedupes(tmp_path) -> None:
+    """REG-027: scoped policy dedupes."""
+    scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("a.com",))
+    assert len(scoped.allowed_hosts) == 1
