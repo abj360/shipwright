@@ -119,3 +119,33 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: 'fix tests' }).success).toBe(true);
   });
 });
+
+describe("pr request schema", () => {
+  it("handles run schema rejects numeric task", () => {
+    expect(runRequestSchema.safeParse({ task: 42 }).success).toBe(false);
+  });
+});
+
+describe("pr request schema cases", () => {
+  it("handles numeric task id rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: 42, summary: 's' }).success).toBe(false);
+  });
+});
+
+describe("pr request schema cases", () => {
+  it("handles another valid pr request", () => {
+    expect(prRequestSchema.safeParse({ taskId: 't2', summary: 'x' }).success).toBe(true);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles valid run request", () => {
+    expect(runRequestSchema.safeParse({ task: 'fix tests' }).success).toBe(true);
+  });
+});
+
+describe("pr request schema cases", () => {
+  it("handles empty task id rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: '', summary: 'fix' }).success).toBe(false);
+  });
+});

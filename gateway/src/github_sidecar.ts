@@ -75,7 +75,8 @@ export async function commitAndPush(
    * @param message - Commit message.
    */
   await run(`git -C ${repoDir} add -A`);
-  await run(`git -C ${repoDir} commit -m "${message}"`);
+  const trailer = "\n\nTask-Id: " + branch.replace(BRANCH_PREFIX, "");
+  await run(`git -C ${repoDir} commit -m "${message}${trailer}"`);
   await run(`git -C ${repoDir} push -u origin ${branch}`);
 }
 
