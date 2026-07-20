@@ -74,7 +74,7 @@ EVENT_EGRESS_DENIED = "egress_denied"
 EVENT_TEARDOWN = "teardown"
 EVENT_LIMIT_TRIPPED = "limit_tripped"
 
-MAX_LOG_BYTES = 10 * 1024 * 1024
+MAX_LOG_BYTES = 20 * 1024 * 1024
 
 
 def rotate_if_needed(path: Path) -> None:
