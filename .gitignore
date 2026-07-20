@@ -16,3 +16,5 @@ docker-compose.override.yml
 .coverage
 build/
 .ruff_cache/
+*.egg-info/
+.vscode/
