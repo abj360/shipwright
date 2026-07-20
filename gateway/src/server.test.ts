@@ -119,3 +119,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: 'fix tests' }).success).toBe(true);
   });
 });
+
+describe("pr request schema", () => {
+  it("handles run schema rejects numeric task", () => {
+    expect(runRequestSchema.safeParse({ task: 42 }).success).toBe(false);
+  });
+});
