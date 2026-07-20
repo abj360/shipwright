@@ -145,3 +145,8 @@ def test_sbox_mx2_e4_0() -> None:
 def test_sbox_mx2_c0() -> None:
     """Verifies policy: cgroup cpu_quota_micros accepts 100_000."""
     CgroupLimits(cpu_quota_micros=100_000)
+
+def test_sbox_mx_e14() -> None:
+    """Verifies policy: egress denies requestbin.net."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('requestbin.net') is False

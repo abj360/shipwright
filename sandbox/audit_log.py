@@ -7,10 +7,12 @@ Contains:
     AuditLog: appends events to a hash-chained JSONL log
     AuditLog.record(): appends one event to the chain
     EVENT_*: audit event categories
+    rotate_if_needed(): rotates oversized logs
 """
 
 import hashlib
 import json
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -71,3 +73,16 @@ EVENT_EXEC = "exec"
 EVENT_EGRESS_DENIED = "egress_denied"
 EVENT_TEARDOWN = "teardown"
 EVENT_LIMIT_TRIPPED = "limit_tripped"
+
+MAX_LOG_BYTES = 20 * 1024 * 1024
+
+
+def rotate_if_needed(path: Path) -> None:
+    """Rotates the log once it grows past MAX_LOG_BYTES.
+
+    Args:
+        path: Log file to check and rotate.
+    """
+    if path.exists() and path.stat().st_size > MAX_LOG_BYTES:
+        rotated = path.with_suffix(f".{int(time.time())}.jsonl")
+        os.rename(path, rotated)
