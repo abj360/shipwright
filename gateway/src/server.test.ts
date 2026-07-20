@@ -125,3 +125,9 @@ describe("pr request schema", () => {
     expect(runRequestSchema.safeParse({ task: 42 }).success).toBe(false);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles numeric task id rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: 42, summary: 's' }).success).toBe(false);
+  });
+});
