@@ -17,3 +17,4 @@ docker-compose.override.yml
 build/
 .ruff_cache/
 *.egg-info/
+.vscode/
