@@ -13,6 +13,7 @@
 import "node:crypto";
 
 import { loadConfig } from "./config";
+import { createPrFromRun } from "./github_sidecar";
 import { TaskQueue } from "./task_queue";
 import express from "express";
 import pino from "pino";
@@ -24,6 +25,11 @@ const app = express.default();
 app.use(express.json());
 
 const queue = new TaskQueue({ concurrency: 2 });
+
+const prRequestSchema = z.object({
+  taskId: z.string().min(1),
+  summary: z.string().min(1),
+});
 
 const runRequestSchema = z.object({
   task: z.string().min(1),
@@ -86,4 +92,14 @@ app.get("/runs", (req, res) => {
   const perPage = Math.min(100, Math.max(1, Number(req.query.perPage ?? 20)));
   const all = Array.from(runs.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   res.json({ runs: all.slice((page - 1) * perPage, page * perPage), total: all.length, page });
+});
+
+app.post("/prs", async (req, res) => {
+  const parsed = prRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+  const result = await createPrFromRun(sidecarConfig, parsed.data.taskId, parsed.data.summary);
+  res.status(result.prUrl === null ? 502 : 201).json(result);
 });
