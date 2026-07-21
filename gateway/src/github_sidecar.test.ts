@@ -176,3 +176,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/77')).toBe('Closes #77');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 1", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/1')).toBe('Closes #1');
+  });
+});
