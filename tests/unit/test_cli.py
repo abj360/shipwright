@@ -162,3 +162,8 @@ def test_cli_case_json_step_fields(capsys: pytest.CaptureFixture[str], tmp_path)
     assert _run_headless(loop, as_json=True) == EXIT_OK
     line = next(l for l in capsys.readouterr().out.splitlines() if l.startswith('{'))
     assert 'index' in json.loads(line)
+
+def test_cli_mx_6_1() -> None:
+    """Verifies parsing of --resume r.json with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--resume', 'r.json', '--headless'])
+    assert args.resume == 'r.json'
