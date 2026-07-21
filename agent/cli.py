@@ -47,7 +47,7 @@ def _run_headless(loop: AgentLoop) -> int:
             chunks.append(step.observation + "\n")
     chunks.append(f"final: {result.final_answer}\n")
     sys.stdout.write("".join(chunks))
-    return 0 if result.final_answer else 1
+    return EXIT_OK if result.final_answer else EXIT_FAILED
 
 
 def _run_interactive(loop: AgentLoop) -> int:
@@ -63,7 +63,7 @@ def _run_interactive(loop: AgentLoop) -> int:
     for step in result.steps:
         print(_format_step(step))
     print(f"final: {result.final_answer}")
-    return 0 if result.final_answer else 1
+    return EXIT_OK if result.final_answer else EXIT_FAILED
 
 def main(argv: list[str] | None = None) -> int:
     """Runs one agent task from the command line.
@@ -77,7 +77,11 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     task = args.task or f"resolve issue at {args.issue_url}"
     config = AgentConfig(repo_path=args.repo, task=task)
-    client = HttpLLMClient(api_key=os.environ["ANTHROPIC_API_KEY"])
+    try:
+        client = HttpLLMClient(api_key=os.environ["ANTHROPIC_API_KEY"])
+    except KeyError:
+        print("ANTHROPIC_API_KEY is not set", file=sys.stderr)
+        return EXIT_INFRA
     loop = AgentLoop(client, config)
     if args.headless:
         return _run_headless(loop)
@@ -98,3 +102,7 @@ def _format_step(step: Step) -> str:
     """
     tool = step.tool_name or "final"
     return f"[step {step.index}] {tool}"
+
+EXIT_OK = 0
+EXIT_FAILED = 1
+EXIT_INFRA = 2
