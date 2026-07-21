@@ -208,3 +208,8 @@ def test_reg_100_egress_files_pythonhosted_org(tmp_path) -> None:
     """REG-100: egress treats files.pythonhosted.org as allowed."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('files.pythonhosted.org') is True
+
+def test_reg_021_heavy_preset_validates(tmp_path) -> None:
+    """REG-021: heavy preset validates."""
+    heavy = CgroupLimits(cpu_quota_micros=400_000)
+    assert heavy.mem_bytes > 0
