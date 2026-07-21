@@ -198,3 +198,8 @@ def test_reg_089_audit_retention_window_positive(tmp_path) -> None:
     """REG-089: audit retention window positive."""
     from sandbox.audit_log import RETENTION_DAYS
     assert RETENTION_DAYS > 0
+
+def test_reg_085_scoped_policy_keeps_base_hosts(tmp_path) -> None:
+    """REG-085: scoped policy keeps base hosts."""
+    scoped = EgressPolicy(allowed_hosts=('a.com',)).scoped_for_task(('b.com',))
+    assert scoped.allows('a.com')
