@@ -175,3 +175,16 @@ def test_reg_027_scoped_policy_dedupes(tmp_path) -> None:
     """REG-027: scoped policy dedupes."""
     scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("a.com",))
     assert len(scoped.allowed_hosts) == 1
+
+def test_reg_005_audit_chain_detects_tampering(tmp_path) -> None:
+    """REG-005: rewriting one audit line breaks the hash chain."""
+    from sandbox.audit_log import AuditLog, verify_chain
+
+    log_path = tmp_path / "audit.jsonl"
+    log = AuditLog(log_path)
+    log.record("container_started", "abc123")
+    assert verify_chain(log_path)
+
+    lines = log_path.read_text().splitlines()
+    log_path.write_text(lines[0].replace("abc123", "xyz999") + "\n")
+    assert not verify_chain(log_path)
