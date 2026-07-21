@@ -167,3 +167,8 @@ def test_cli_mx_6_1() -> None:
     """Verifies parsing of --resume r.json with --headless."""
     args = build_parser().parse_args(['--task', 'x', '--resume', 'r.json', '--headless'])
     assert args.resume == 'r.json'
+
+def test_cli_mx_4_0() -> None:
+    """Verifies parsing of --max-cost 0.1."""
+    args = build_parser().parse_args(['--task', 'x', '--max-cost', '0.1'])
+    assert args.max_cost == 0.1
