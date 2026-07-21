@@ -22,6 +22,7 @@ PRICE_PER_MTOK: dict[str, tuple[float, float]] = {
 }
 FALLBACK_PRICE_PER_MTOK = (3.0, 15.0)
 DEFAULT_BUDGET_USD = 5.0
+WARN_THRESHOLD = 0.8
 
 @dataclass(frozen=True)
 class Usage:
@@ -68,7 +69,10 @@ class CostTracker:
         self._entries.append(
             Usage(model=model, input_tokens=input_tokens, output_tokens=output_tokens)
         )
-        return self.total_usd()
+        total = self.total_usd()
+        if total > self.budget_usd * WARN_THRESHOLD:
+            logger.warning("run cost $%.2f exceeds %.0f%% of budget", total, WARN_THRESHOLD * 100)
+        return total
 
     def total_usd(self) -> float:
         """Computes total spend in USD across all recorded usage.

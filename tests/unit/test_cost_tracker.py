@@ -71,3 +71,21 @@ def test_cost_mx_4_2() -> None:
     tracker = CostTracker()
     total = tracker.record("unknown-x", 1, 1)
     assert total >= 0.0
+
+def test_cost_mx2_2_0() -> None:
+    """Verifies pricing for claude-haiku-4-5 100/10 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 100, 10)
+    assert total > 0.0
+
+def test_cost_mx_3_2() -> None:
+    """Verifies recording usage for scripted 1/1 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("scripted", 1, 1)
+    assert total >= 0.0
+
+def test_price_claude_sonnet_4_5_1_000_000_0() -> None:
+    """Verifies pricing for claude-sonnet-4-5 1_000_000/0 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-sonnet-4-5", 1_000_000, 0)
+    assert total == 3.0
