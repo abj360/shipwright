@@ -203,3 +203,8 @@ def test_reg_085_scoped_policy_keeps_base_hosts(tmp_path) -> None:
     """REG-085: scoped policy keeps base hosts."""
     scoped = EgressPolicy(allowed_hosts=('a.com',)).scoped_for_task(('b.com',))
     assert scoped.allows('a.com')
+
+def test_reg_100_egress_files_pythonhosted_org(tmp_path) -> None:
+    """REG-100: egress treats files.pythonhosted.org as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('files.pythonhosted.org') is True
