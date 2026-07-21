@@ -7,10 +7,12 @@ Contains:
     JudgelineClient: calls the judgeline scoring service
     JudgelineClient.score_diff(): scores one PR diff, fail-closed
     JudgelineClient.is_ready(): decides readiness against the threshold
+    JudgelineClient._post_with_retry(): retries 5xx, never timeouts
 """
 
 import httpx
 import logging
+import time
 from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
@@ -66,18 +68,8 @@ class JudgelineClient:
         Returns:
             result: Score and verdict, or None on transport failure.
         """
-        try:
-            response = httpx.post(
-                f"{self.base_url}{SCORE_ENDPOINT}",
-                json={"diff": diff_text},
-                timeout=REQUEST_TIMEOUT_S,
-            )
-            response.raise_for_status()
-        except httpx.TimeoutException:
-            logger.error("judgeline timed out; treating PR as not ready")
-            return None
-        except httpx.HTTPError as exc:
-            logger.error("judgeline request failed: %s", exc)
+        response = self._post_with_retry(diff_text)
+        if response is None:
             return None
         data = response.json()
         return ScoreResult(
@@ -98,3 +90,35 @@ class JudgelineClient:
         if result is None:
             return False
         return result.score >= READY_THRESHOLD
+
+    def _post_with_retry(self, diff_text: str) -> httpx.Response | None:
+        """Posts the diff, retrying only 5xx responses with backoff.
+
+        Timeouts are never retried: the gate fails closed instead of waiting
+        out an overloaded scorer and letting a stale PR through.
+
+        Args:
+            diff_text: Unified diff of the PR to score.
+
+        Returns:
+            response: Successful HTTP response, or None to signal fail-closed.
+        """
+        for attempt in range(3):
+            try:
+                response = httpx.post(
+                    f"{self.base_url}{SCORE_ENDPOINT}",
+                    json={"diff": diff_text},
+                    timeout=REQUEST_TIMEOUT_S,
+                )
+            except httpx.TimeoutException:
+                logger.error("judgeline timed out; treating PR as not ready")
+                return None
+            except httpx.HTTPError as exc:
+                logger.error("judgeline request failed: %s", exc)
+                return None
+            if response.status_code < 500:
+                response.raise_for_status()
+                return response
+            time.sleep(2**attempt)
+        logger.error("judgeline kept returning 5xx; failing closed")
+        return None
