@@ -154,3 +154,39 @@ def test_cli_mx2_6_1() -> None:
     else:
         args = build_parser().parse_args(['--task', 'multi word task'])
         assert args.task == 'multi word task'
+
+def test_cli_case_json_step_fields(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: json steps carry an index field."""
+    import json
+    loop = make_loop(['t\nAction: list_dir\npath=.', 'FINAL: ok'])
+    assert _run_headless(loop, as_json=True) == EXIT_OK
+    line = next(l for l in capsys.readouterr().out.splitlines() if l.startswith('{'))
+    assert 'index' in json.loads(line)
+
+def test_cli_mx_6_1() -> None:
+    """Verifies parsing of --resume r.json with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--resume', 'r.json', '--headless'])
+    assert args.resume == 'r.json'
+
+def test_cli_mx_4_0() -> None:
+    """Verifies parsing of --max-cost 0.1."""
+    args = build_parser().parse_args(['--task', 'x', '--max-cost', '0.1'])
+    assert args.max_cost == 0.1
+
+def test_cli_mx2_7_1() -> None:
+    """Verifies parsing of issue url headless."""
+    if "['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/1', '--headless']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/1', '--headless'])
+        assert args.headless
+
+def test_cli_mx2_3_1() -> None:
+    """Verifies parsing of plan mode headless."""
+    if "['--task', 'x', '--plan-mode', '--headless']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--plan-mode', '--headless'])
+        assert args.plan_mode and args.headless
