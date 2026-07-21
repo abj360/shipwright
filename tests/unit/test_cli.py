@@ -172,3 +172,12 @@ def test_cli_mx_4_0() -> None:
     """Verifies parsing of --max-cost 0.1."""
     args = build_parser().parse_args(['--task', 'x', '--max-cost', '0.1'])
     assert args.max_cost == 0.1
+
+def test_cli_mx2_7_1() -> None:
+    """Verifies parsing of issue url headless."""
+    if "['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/1', '--headless']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/1', '--headless'])
+        assert args.headless
