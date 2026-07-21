@@ -175,3 +175,41 @@ def test_reg_027_scoped_policy_dedupes(tmp_path) -> None:
     """REG-027: scoped policy dedupes."""
     scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("a.com",))
     assert len(scoped.allowed_hosts) == 1
+
+def test_reg_005_audit_chain_detects_tampering(tmp_path) -> None:
+    """REG-005: rewriting one audit line breaks the hash chain."""
+    from sandbox.audit_log import AuditLog, verify_chain
+
+    log_path = tmp_path / "audit.jsonl"
+    log = AuditLog(log_path)
+    log.record("container_started", "abc123")
+    assert verify_chain(log_path)
+
+    lines = log_path.read_text().splitlines()
+    log_path.write_text(lines[0].replace("abc123", "xyz999") + "\n")
+    assert not verify_chain(log_path)
+
+def test_reg_075_nft_rules_open_a_table(tmp_path) -> None:
+    """REG-075: nft rules open a table."""
+    rules = EgressPolicy(allowed_hosts=()).render_nft_rules()
+    assert rules.startswith('table inet shipwright')
+
+def test_reg_089_audit_retention_window_positive(tmp_path) -> None:
+    """REG-089: audit retention window positive."""
+    from sandbox.audit_log import RETENTION_DAYS
+    assert RETENTION_DAYS > 0
+
+def test_reg_085_scoped_policy_keeps_base_hosts(tmp_path) -> None:
+    """REG-085: scoped policy keeps base hosts."""
+    scoped = EgressPolicy(allowed_hosts=('a.com',)).scoped_for_task(('b.com',))
+    assert scoped.allows('a.com')
+
+def test_reg_100_egress_files_pythonhosted_org(tmp_path) -> None:
+    """REG-100: egress treats files.pythonhosted.org as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('files.pythonhosted.org') is True
+
+def test_reg_021_heavy_preset_validates(tmp_path) -> None:
+    """REG-021: heavy preset validates."""
+    heavy = CgroupLimits(cpu_quota_micros=400_000)
+    assert heavy.mem_bytes > 0
