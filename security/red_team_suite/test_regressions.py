@@ -193,3 +193,8 @@ def test_reg_075_nft_rules_open_a_table(tmp_path) -> None:
     """REG-075: nft rules open a table."""
     rules = EgressPolicy(allowed_hosts=()).render_nft_rules()
     assert rules.startswith('table inet shipwright')
+
+def test_reg_089_audit_retention_window_positive(tmp_path) -> None:
+    """REG-089: audit retention window positive."""
+    from sandbox.audit_log import RETENTION_DAYS
+    assert RETENTION_DAYS > 0
