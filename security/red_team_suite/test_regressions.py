@@ -188,3 +188,8 @@ def test_reg_005_audit_chain_detects_tampering(tmp_path) -> None:
     lines = log_path.read_text().splitlines()
     log_path.write_text(lines[0].replace("abc123", "xyz999") + "\n")
     assert not verify_chain(log_path)
+
+def test_reg_075_nft_rules_open_a_table(tmp_path) -> None:
+    """REG-075: nft rules open a table."""
+    rules = EgressPolicy(allowed_hosts=()).render_nft_rules()
+    assert rules.startswith('table inet shipwright')
