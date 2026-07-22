@@ -205,3 +205,8 @@ def test_sbox_mx_e12() -> None:
     """Verifies policy: egress denies pastebin.com."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('pastebin.com') is False
+
+def test_sbox_mx_c7() -> None:
+    """Verifies policy: cgroup cpu_quota_micros=-100 invalid."""
+    with pytest.raises(ValueError):
+        CgroupLimits(cpu_quota_micros=-100)
