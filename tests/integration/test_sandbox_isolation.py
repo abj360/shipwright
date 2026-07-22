@@ -150,3 +150,12 @@ def test_sbox_mx_e14() -> None:
     """Verifies policy: egress denies requestbin.net."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('requestbin.net') is False
+
+def test_cgroup_case_cpu_quota_micros_0() -> None:
+    """Verifies cgroup validation for cpu_quota_micros=0."""
+    kwargs = {"cpu_quota_micros": 0}
+    if False:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
