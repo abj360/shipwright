@@ -199,3 +199,8 @@ def test_loop_mx_5_2() -> None:
     responses = ["think\nAction: git_diff\n", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].tool_name == 'git_diff'
+
+def test_loop_edge_empty_thought() -> None:
+    """Verifies loop behavior: empty thought tolerated."""
+    result = AgentLoop(ScriptedLLM(["\nAction: list_dir\npath=.", "FINAL: z"]), make_config()).run()
+    assert result.steps[0].thought == ''
