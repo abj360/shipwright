@@ -184,3 +184,8 @@ def test_mount_case_root_rejected() -> None:
     else:
         mounts = build_mounts("/")
         assert mounts[0].target == "/work"
+
+def test_sbox_mx2_e12_0() -> None:
+    """Verifies policy: egress denies c2.example (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('c2.example') is False
