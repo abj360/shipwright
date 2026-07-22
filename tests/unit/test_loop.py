@@ -204,3 +204,9 @@ def test_loop_edge_empty_thought() -> None:
     """Verifies loop behavior: empty thought tolerated."""
     result = AgentLoop(ScriptedLLM(["\nAction: list_dir\npath=.", "FINAL: z"]), make_config()).run()
     assert result.steps[0].thought == ''
+
+def test_loop_mx_1_1() -> None:
+    """Verifies loop behavior: read_file call records tool name."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'read_file'
