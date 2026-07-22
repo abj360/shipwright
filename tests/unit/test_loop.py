@@ -210,3 +210,9 @@ def test_loop_mx_1_1() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].tool_name == 'read_file'
+
+def test_loop_mx2_3_8() -> None:
+    """Verifies loop behavior: write_file call: thought recorded."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].thought == 'think'
