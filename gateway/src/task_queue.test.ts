@@ -122,3 +122,10 @@ describe("TaskQueue metrics", () => {
     expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
   });
 });
+
+describe("TaskQueue internals", () => {
+  it("handles dead letters start at zero", async () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    expect(queue.deadLetters()).toBe(0);
+  });
+});
