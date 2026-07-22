@@ -129,3 +129,10 @@ describe("TaskQueue internals", () => {
     expect(queue.deadLetters()).toBe(0);
   });
 });
+
+describe("TaskQueue metrics", () => {
+  it("handles metrics shape with concurrency 3 (case 3)", () => {
+    const queue = new TaskQueue({ concurrency: 3 });
+    expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
+  });
+});
