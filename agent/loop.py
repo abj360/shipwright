@@ -21,6 +21,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
 from agent.llm_client import Completion, LLMClient, Message
 from agent.planner import Plan, RepoPlanner
@@ -93,6 +94,7 @@ class AgentConfig:
     system_prompt: str = ""
     mode: str = "react"
     planner: RepoPlanner | None = None
+    breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
     cost_tracker: CostTracker | None = None
 
 class AgentLoop:
@@ -126,6 +128,7 @@ class AgentLoop:
             return self._run_plan_mode()
         started = time.time()
         while True:
+            self.config.breaker.check(len(self._transcript), self._cost_usd)
             step = self._think()
             self._transcript.append(step)
             if not step.tool_name:

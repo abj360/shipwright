@@ -8,6 +8,7 @@ Contains:
 
 import pytest
 
+from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
 from agent.llm_client import ScriptedLLM
 from agent.loop import AgentConfig, AgentLoop, Step
@@ -168,3 +169,50 @@ def test_loop_mx_3_0() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.final_answer == 'done'
+
+def test_breaker_halts_runaway_iterations() -> None:
+    """Verifies the run halts once the iteration ceiling trips."""
+    responses = ["think\nAction: list_dir\npath=." for _ in range(60)]
+    config = AgentConfig(repo_path=".", task="loop forever")
+    config.breaker = CircuitBreaker(max_iterations=5, max_cost_usd=1000.0)
+    loop = AgentLoop(ScriptedLLM(responses), config)
+    with pytest.raises(RunawayRunError):
+        loop.run()
+
+def test_breaker_halts_runaway_cost() -> None:
+    """Verifies the run halts once the cost ceiling trips."""
+    responses = ["think\nAction: list_dir\npath=." for _ in range(60)]
+    tracker = CostTracker()
+    config = AgentConfig(repo_path=".", task="burn budget", cost_tracker=tracker)
+    config.breaker = CircuitBreaker(max_iterations=1000, max_cost_usd=0.0)
+    loop = AgentLoop(ScriptedLLM(responses), config)
+    with pytest.raises(RunawayRunError):
+        loop.run()
+
+def test_loop_case_many_steps() -> None:
+    """Verifies loop behavior: six steps then final."""
+    result = AgentLoop(ScriptedLLM(["t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "FINAL: end"]), make_config()).run()
+    assert len(result.steps) == 7
+
+def test_loop_mx_5_2() -> None:
+    """Verifies loop behavior: git_diff call stores args."""
+    responses = ["think\nAction: git_diff\n", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'git_diff'
+
+def test_loop_edge_empty_thought() -> None:
+    """Verifies loop behavior: empty thought tolerated."""
+    result = AgentLoop(ScriptedLLM(["\nAction: list_dir\npath=.", "FINAL: z"]), make_config()).run()
+    assert result.steps[0].thought == ''
+
+def test_loop_mx_1_1() -> None:
+    """Verifies loop behavior: read_file call records tool name."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'read_file'
+
+def test_loop_mx2_3_8() -> None:
+    """Verifies loop behavior: write_file call: thought recorded."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].thought == 'think'

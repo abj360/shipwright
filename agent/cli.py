@@ -14,6 +14,7 @@ import argparse
 import os
 import sys
 
+from agent.circuit_breaker import RunawayRunError
 from agent.llm_client import HttpLLMClient
 from agent.loop import AgentConfig, AgentLoop, Step
 
@@ -83,9 +84,13 @@ def main(argv: list[str] | None = None) -> int:
         print("ANTHROPIC_API_KEY is not set", file=sys.stderr)
         return EXIT_INFRA
     loop = AgentLoop(client, config)
-    if args.headless:
-        return _run_headless(loop)
-    return _run_interactive(loop)
+    try:
+        if args.headless:
+            return _run_headless(loop)
+        return _run_interactive(loop)
+    except RunawayRunError as exc:
+        print(f"run flagged as runaway and halted: {exc}", file=sys.stderr)
+        return EXIT_FAILED
 
 
 if __name__ == "__main__":
