@@ -11,6 +11,7 @@ Contains:
     SandboxHandle.exec_stream(): yields output chunks live
     DockerRuntime: launches short-lived sandbox containers
     DockerRuntime.launch(): starts one sandbox container
+    DockerRuntime.ensure_image(): pulls the image when missing
 """
 
 import docker
@@ -137,6 +138,7 @@ class DockerRuntime:
         Returns:
             handle: Live sandbox ready for exec calls.
         """
+        self.ensure_image(config.image)
         kwargs = self._container_kwargs(config)
         container = self._client.containers.run(**kwargs)  # type: ignore[attr-defined]
         return SandboxHandle(container=container, config=config)
@@ -163,3 +165,15 @@ class DockerRuntime:
             **rootfs_kwargs(),
             **config.limits.to_docker_kwargs(),
         }
+
+    def ensure_image(self, image: str) -> None:
+        """Pulls the sandbox image unless it is already present locally.
+
+        Args:
+            image: Image reference to ensure.
+        """
+        try:
+            self._client.images.get(image)  # type: ignore[attr-defined]
+        except docker.errors.ImageNotFound:
+            logger.info("pulling sandbox image %s", image)
+            self._client.images.pull(image)  # type: ignore[attr-defined]
