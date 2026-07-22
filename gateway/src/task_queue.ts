@@ -12,6 +12,7 @@ import pino from "pino";
 
 const logger = pino.default({ name: "task-queue" });
 const DEFAULT_MAX_ATTEMPTS = 3;
+const DEFAULT_TASK_TIMEOUT_MS = 3_600_000;
 
 export interface QueuedTask {
   id: string;
@@ -24,6 +25,7 @@ export interface QueuedTask {
 export interface TaskQueueOptions {
   concurrency: number;
   maxAttempts?: number;
+  taskTimeoutMs?: number;
 }
 
 export class TaskQueue {
@@ -35,10 +37,12 @@ export class TaskQueue {
   private running = 0;
   private readonly concurrency: number;
   private readonly maxAttempts: number;
+  private readonly taskTimeoutMs: number;
 
   constructor(options: TaskQueueOptions) {
     this.concurrency = options.concurrency;
     this.maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+    this.taskTimeoutMs = options.taskTimeoutMs ?? DEFAULT_TASK_TIMEOUT_MS;
   }
 
   async enqueue(id: string, run: () => Promise<void>, priority = 0): Promise<void> {
@@ -78,6 +82,9 @@ export class TaskQueue {
   }
 
   private async execute(task: QueuedTask): Promise<void> {
+    const timeout = setTimeout(() => {
+      logger.error({ taskId: task.id }, "task exceeded time limit");
+    }, this.taskTimeoutMs);
     try {
       await task.run();
     } catch (error) {
@@ -89,6 +96,7 @@ export class TaskQueue {
         logger.error({ taskId: task.id, err: error }, "task failed permanently");
       }
     } finally {
+      clearTimeout(timeout);
       this.running -= 1;
       this.kick();
     }
