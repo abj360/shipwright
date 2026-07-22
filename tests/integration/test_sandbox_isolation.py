@@ -159,3 +159,49 @@ def test_cgroup_case_cpu_quota_micros_0() -> None:
     else:
         with pytest.raises(ValueError):
             CgroupLimits(**kwargs)
+
+def test_pids_limit_absorbs_fork_bomb() -> None:
+    """Verifies a fork bomb cannot destabilize the sandbox."""
+    handle = DockerRuntime().launch(make_config())
+    try:
+        result = handle.exec(":(){ :|:& };:")
+        assert result.exit_code != 0
+        alive = handle.exec("echo still-alive")
+        assert alive.exit_code == 0
+    finally:
+        handle.stop()
+
+def test_sbox_mx2_e8_0() -> None:
+    """Verifies policy: egress allows codeload.github.com (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('codeload.github.com') is True
+
+def test_mount_case_root_rejected() -> None:
+    """Verifies mount handling for root_rejected."""
+    if "error" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/")
+    else:
+        mounts = build_mounts("/")
+        assert mounts[0].target == "/work"
+
+def test_sbox_mx2_e12_0() -> None:
+    """Verifies policy: egress denies c2.example (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('c2.example') is False
+
+def test_egress_case_api_github_com() -> None:
+    """Verifies egress treatment of api.github.com."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("api.github.com") is True
+
+def test_sbox_mx2_e9_0() -> None:
+    """Verifies policy: egress denies bad.example (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('bad.example') is False
+
+def test_sbox_mx_e12() -> None:
+    """Verifies policy: egress denies pastebin.com."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('pastebin.com') is False

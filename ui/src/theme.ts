@@ -65,3 +65,5 @@ export const badgeWarnBg = "#9a670033";
 export const badgeErrBg = "#d1242f33";
 
 export const ansiBrightBlack = "#6e7681";
+
+export const ansiBrightBlue = "#79c0ff";

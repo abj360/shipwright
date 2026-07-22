@@ -7,9 +7,10 @@
  *   DiffFile: one file's classified lines
  *   parseDiff(): parses a unified diff into per-file lines
  *   DiffViewer: renders a unified diff with per-line styling
+ *   FileSection: collapsible per-file diff section
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export interface DiffLine {
   kind: "add" | "del" | "context" | "hunk";
@@ -70,17 +71,33 @@ export function DiffViewer({ patch }: { patch: string }) {
   return (
     <div className="diff-viewer">
       {files.map((file) => (
-        <section key={file.path}>
-          <h3>{file.path}</h3>
-          <pre>
-            {file.lines.map((line, index) => (
-              <code key={index} className={`diff-line diff-${line.kind}`}>
-                {line.text}
-              </code>
-            ))}
-          </pre>
-        </section>
+        <FileSection key={file.path} file={file} />
       ))}
+
     </div>
+  );
+}
+
+function FileSection({ file }: { file: DiffFile }) {
+  /**
+   * Renders one file's diff as a collapsible section.
+   */
+  const [open, setOpen] = useState(true);
+
+  return (
+    <section>
+      <h3 onClick={() => setOpen(!open)}>
+        {open ? "▾" : "▸"} {file.path}
+      </h3>
+      {open && (
+        <pre>
+          {file.lines.map((line, index) => (
+            <code key={index} className={`diff-line diff-${line.kind}`}>
+              {line.text}
+            </code>
+          ))}
+        </pre>
+      )}
+    </section>
   );
 }
