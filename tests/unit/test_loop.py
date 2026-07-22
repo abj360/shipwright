@@ -188,3 +188,8 @@ def test_breaker_halts_runaway_cost() -> None:
     loop = AgentLoop(ScriptedLLM(responses), config)
     with pytest.raises(RunawayRunError):
         loop.run()
+
+def test_loop_case_many_steps() -> None:
+    """Verifies loop behavior: six steps then final."""
+    result = AgentLoop(ScriptedLLM(["t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "FINAL: end"]), make_config()).run()
+    assert len(result.steps) == 7
