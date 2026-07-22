@@ -159,3 +159,14 @@ def test_cgroup_case_cpu_quota_micros_0() -> None:
     else:
         with pytest.raises(ValueError):
             CgroupLimits(**kwargs)
+
+def test_pids_limit_absorbs_fork_bomb() -> None:
+    """Verifies a fork bomb cannot destabilize the sandbox."""
+    handle = DockerRuntime().launch(make_config())
+    try:
+        result = handle.exec(":(){ :|:& };:")
+        assert result.exit_code != 0
+        alive = handle.exec("echo still-alive")
+        assert alive.exit_code == 0
+    finally:
+        handle.stop()
