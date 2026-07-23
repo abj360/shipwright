@@ -190,3 +190,8 @@ def test_cli_mx2_3_1() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--plan-mode', '--headless'])
         assert args.plan_mode and args.headless
+
+def test_parser_exposes_headless_and_json_flags() -> None:
+    """Verifies the parser knows the CI-facing flags."""
+    args = build_parser().parse_args(["--task", "x", "--headless", "--json"])
+    assert args.headless and args.json
