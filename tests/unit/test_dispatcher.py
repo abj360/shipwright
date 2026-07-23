@@ -103,3 +103,9 @@ def test_disp_mx2_6(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_shell", {"command": "true"})
     assert result.ok is True
+
+def test_disp_mx_3_0(tmp_path) -> None:
+    """Verifies dispatch: write_file fails without args."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("write_file", {})
+    assert result.ok is False
