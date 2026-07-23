@@ -109,3 +109,9 @@ def test_disp_mx_3_0(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("write_file", {})
     assert result.ok is False
+
+def test_disp_mx_final(tmp_path) -> None:
+    """Verifies dispatch: read of missing file fails."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("read_file", {"path": "x"})
+    assert result.ok is False

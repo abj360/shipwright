@@ -40,3 +40,11 @@ and the stop conditions. Everything that can vary independently of the loop
   explicit opt-in mode instead.
 - **Letting tool errors raise.** Rejected. An exception is a control-flow
   dead end; an observation is information the model can reason about.
+
+## Cost controls
+
+Every completion is priced through the CostTracker at record time. A soft
+budget logs a warning at 80%; nothing downstream of the warning changes
+behavior. Hard limits were deliberately left out of the first cut — the
+thinking was that cost visibility would be enough. (See the follow-up note
+below; it was not.)
