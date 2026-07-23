@@ -210,3 +210,8 @@ def test_sbox_mx_c7() -> None:
     """Verifies policy: cgroup cpu_quota_micros=-100 invalid."""
     with pytest.raises(ValueError):
         CgroupLimits(cpu_quota_micros=-100)
+
+def test_sbox_case_config_image() -> None:
+    """Verifies sandbox policy behavior: image override respected."""
+    config = SandboxConfig(image='x:y')
+    assert config.image == 'x:y'
