@@ -49,6 +49,10 @@ export function createWebhookRouter(secret: string, queue: TaskQueue): express.R
       return;
     }
     const event = req.header("x-github-event");
+    if (event === "ping") {
+      res.json({ zen: req.body.zen ?? null });
+      return;
+    }
     const labels: string[] = (req.body.issue?.labels ?? []).map(
       (label: { name: string }) => label.name,
     );
