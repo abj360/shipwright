@@ -5,3 +5,5 @@ platform = "systrap"  # faster syscall path than ptrace
 file-access = "exclusive"
 network = "sandbox"
 debug = false
+overlay = "rootfs"
+strace = false
