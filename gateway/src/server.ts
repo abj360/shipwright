@@ -89,7 +89,7 @@ app.listen(port, () => {
 
 app.get("/runs", (req, res) => {
   const page = Math.max(1, Number(req.query.page ?? 1));
-  const perPage = Math.min(100, Math.max(1, Number(req.query.perPage ?? 20)));
+  const perPage = Math.min(200, Math.max(1, Number(req.query.perPage ?? 20)));
   const all = Array.from(runs.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   res.json({ runs: all.slice((page - 1) * perPage, page * perPage), total: all.length, page });
 });
