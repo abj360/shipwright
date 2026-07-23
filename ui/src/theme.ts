@@ -15,6 +15,9 @@ export interface Theme {
   add: string;
   del: string;
   hunk: string;
+  statusOk: string;
+  statusErr: string;
+  statusWarn: string;
 }
 
 export const darkTheme: Theme = {
@@ -24,6 +27,9 @@ export const darkTheme: Theme = {
   add: "#2ea043",
   del: "#f85149",
   hunk: "#8b949e",
+  statusOk: "#3fb950",
+  statusErr: "#f85149",
+  statusWarn: "#d29922",
 };
 
 export const xtermTheme = {
