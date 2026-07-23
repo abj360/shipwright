@@ -216,3 +216,8 @@ def test_loop_mx2_3_8() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].thought == 'think'
+
+def test_loop_case_case_sensitive_final() -> None:
+    """Verifies loop behavior: FINAL is case sensitive."""
+    result = AgentLoop(ScriptedLLM(["final: lower", "FINAL: upper"]), make_config()).run()
+    assert result.final_answer == 'upper'
