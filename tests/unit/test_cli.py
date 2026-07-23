@@ -195,3 +195,12 @@ def test_parser_exposes_headless_and_json_flags() -> None:
     """Verifies the parser knows the CI-facing flags."""
     args = build_parser().parse_args(["--task", "x", "--headless", "--json"])
     assert args.headless and args.json
+
+def test_cli_mx2_0_2() -> None:
+    """Verifies parsing of headless plus json."""
+    if "['--task', 'x', '--headless', '--json']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--headless', '--json'])
+        assert args.headless and args.json
