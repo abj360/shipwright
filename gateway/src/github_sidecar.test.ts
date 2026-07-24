@@ -222,3 +222,9 @@ describe("sidecar rendering cases", () => {
     expect(renderRunStats({ steps: 3, durationS: 2.0, costUsd: 0.01 })).toContain('3');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 1", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/1')).toBe('Closes #1');
+  });
+});
