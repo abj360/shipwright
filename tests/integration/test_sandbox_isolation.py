@@ -219,3 +219,8 @@ def test_sbox_case_config_image() -> None:
 def test_sbox_mx_c6() -> None:
     """Verifies policy: cgroup pids_max=1024 valid."""
     CgroupLimits(pids_max=1024)
+
+def test_sbox_mx2_c3() -> None:
+    """Verifies policy: cgroup cpu_quota_micros rejects 0."""
+    with pytest.raises(ValueError):
+        CgroupLimits(cpu_quota_micros=0)
