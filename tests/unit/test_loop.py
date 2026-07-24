@@ -226,3 +226,9 @@ def test_empty_task_still_runs() -> None:
     """Verifies an empty task string does not crash the loop."""
     loop = AgentLoop(ScriptedLLM(["FINAL: nothing to do"]), make_config(task=""))
     assert loop.run().final_answer == "nothing to do"
+
+def test_loop_mx_2_1() -> None:
+    """Verifies loop behavior: run_shell call records tool name."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'run_shell'
