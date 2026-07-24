@@ -150,3 +150,10 @@ describe("TaskQueue setup", () => {
     expect(queue.size()).toEqual({ pending: 0, running: 0 });
   });
 });
+
+describe("TaskQueue behavior", () => {
+  it("handles enqueue does not throw", async () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    expect(() => queue.enqueue('a', async () => {})).not.toThrow();
+  });
+});

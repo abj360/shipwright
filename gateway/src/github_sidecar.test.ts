@@ -3,7 +3,7 @@
  * github_sidecar.test.ts --- integration tests for the draft PR creation flow
  */
 
-import { closesIssueLine, renderPrBody } from "./github_sidecar";
+import { closesIssueLine, mapWithLimit, renderPrBody } from "./github_sidecar";
 import { describe, expect, it, vi } from "vitest";
 
 import { closesIssueLine, renderPrBody, renderRunStats } from "./github_sidecar";
@@ -190,6 +190,40 @@ describe("sidecar rendering cases", () => {
 });
 
 describe("sidecar rendering", () => {
+  it("handles closes trailer for issue 1", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/1')).toBe('Closes #1');
+  });
+});
+
+describe("mapWithLimit", () => {
+  it("preserves order while bounding concurrency", async () => {
+    let inFlight = 0;
+    let peak = 0;
+    const results = await mapWithLimit([1, 2, 3, 4, 5], 2, async (n) => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      inFlight -= 1;
+      return n * 10;
+    });
+    expect(results).toEqual([10, 20, 30, 40, 50]);
+    expect(peak).toBeLessThanOrEqual(2);
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'improve logging'", () => {
+    expect(renderPrBody('improve logging', ['pytest -q'])).toContain('improve logging');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 3 steps", () => {
+    expect(renderRunStats({ steps: 3, durationS: 2.0, costUsd: 0.01 })).toContain('3');
+  });
+});
+
+describe("sidecar rendering cases", () => {
   it("handles closes trailer for issue 1", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/1')).toBe('Closes #1');
   });
