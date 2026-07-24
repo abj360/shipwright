@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Autonomous coding agent with a hardened sandboxed execution environment"
 requires-python = ">=3.12"
 dependencies = [
-  "httpx>=0.27",
+  "httpx>=0.28",
   "pyyaml>=6.0.2",
   "docker>=7.1",
 ]
