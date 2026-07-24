@@ -173,3 +173,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: 'y'.repeat(3) }).success).toBe(true);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles empty summary rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: 't4', summary: '' }).success).toBe(false);
+  });
+});

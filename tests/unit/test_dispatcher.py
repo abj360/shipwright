@@ -145,3 +145,9 @@ def test_disp_case_shell_stderr() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('run_shell', {'command': 'echo e >&2'})
     assert 'e' in result.output
+
+def test_disp_mx2_8(tmp_path) -> None:
+    """Verifies dispatch: empty command rejected."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_shell", {"command": ""})
+    assert result.ok is False

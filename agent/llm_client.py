@@ -14,7 +14,7 @@ import httpx
 from dataclasses import dataclass
 from typing import Protocol
 
-DEFAULT_MODEL = "claude-sonnet-4-5"
+DEFAULT_MODEL = "claude-haiku-4-5"
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 DEFAULT_MAX_TOKENS = 8192
 REQUEST_TIMEOUT_S = 90

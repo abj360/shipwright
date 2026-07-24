@@ -213,3 +213,8 @@ def test_reg_021_heavy_preset_validates(tmp_path) -> None:
     """REG-021: heavy preset validates."""
     heavy = CgroupLimits(cpu_quota_micros=400_000)
     assert heavy.mem_bytes > 0
+
+def test_reg_105_egress_bad_example(tmp_path) -> None:
+    """REG-105: egress treats bad.example as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('bad.example') is False
