@@ -127,3 +127,9 @@ def test_disp_case_resolve_dotdot() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('read_file', {'path': 'a/../../etc/passwd'})
     assert not result.ok
+
+def test_disp_case_error_is_toolresult() -> None:
+    """Verifies dispatcher behavior: errors carry a message."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch('read_file', {})
+    assert result.error
