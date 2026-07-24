@@ -215,3 +215,7 @@ def test_sbox_case_config_image() -> None:
     """Verifies sandbox policy behavior: image override respected."""
     config = SandboxConfig(image='x:y')
     assert config.image == 'x:y'
+
+def test_sbox_mx_c6() -> None:
+    """Verifies policy: cgroup pids_max=1024 valid."""
+    CgroupLimits(pids_max=1024)
