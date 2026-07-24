@@ -115,3 +115,9 @@ def test_disp_mx_final(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {"path": "x"})
     assert result.ok is False
+
+def test_dispatch_list_dir_missing_dir() -> None:
+    """Verifies dispatch behavior: missing dir."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "missing-dir"})
+    assert result.ok is False
