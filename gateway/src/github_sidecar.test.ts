@@ -216,3 +216,9 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('improve logging', ['pytest -q'])).toContain('improve logging');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 3 steps", () => {
+    expect(renderRunStats({ steps: 3, durationS: 2.0, costUsd: 0.01 })).toContain('3');
+  });
+});
