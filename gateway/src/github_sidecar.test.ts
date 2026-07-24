@@ -210,3 +210,9 @@ describe("mapWithLimit", () => {
     expect(peak).toBeLessThanOrEqual(2);
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'improve logging'", () => {
+    expect(renderPrBody('improve logging', ['pytest -q'])).toContain('improve logging');
+  });
+});
