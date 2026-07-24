@@ -17,7 +17,7 @@ from typing import Protocol
 DEFAULT_MODEL = "claude-sonnet-4-5"
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 DEFAULT_MAX_TOKENS = 8192
-REQUEST_TIMEOUT_S = 60
+REQUEST_TIMEOUT_S = 90
 # Pin the API version: unversioned calls broke on us once during a provider rollout.
 API_VERSION_HEADER = "2023-06-01"
 
