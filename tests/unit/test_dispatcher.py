@@ -121,3 +121,9 @@ def test_dispatch_list_dir_missing_dir() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "missing-dir"})
     assert result.ok is False
+
+def test_disp_case_resolve_dotdot() -> None:
+    """Verifies dispatcher behavior: dotdot escape rejected."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch('read_file', {'path': 'a/../../etc/passwd'})
+    assert not result.ok
