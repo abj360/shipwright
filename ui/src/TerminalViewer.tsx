@@ -5,6 +5,7 @@
  * Contains:
  *   TerminalViewerProps: run and gateway to stream from
  *   TerminalViewer: streams sandbox output into xterm.js
+ *   MAX_PENDING_CHUNKS: write-queue cap
  */
 
 import { useSandboxSocket } from "./useSandboxSocket";
@@ -25,7 +26,27 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   const termRef = useRef<Terminal | null>(null);
-  useSandboxSocket(gatewayUrl, runId, (data) => termRef.current?.write(data));
+  const pendingRef = useRef<string[]>([]);
+  const flushRef = useRef(false);
+  useSandboxSocket(gatewayUrl, runId, (data) => {
+    if (pendingRef.current.length >= MAX_PENDING_CHUNKS) {
+      return;
+    }
+    pendingRef.current.push(data);
+    if (!flushRef.current) {
+      flushRef.current = true;
+      requestAnimationFrame(() => {
+        const term = termRef.current;
+        if (term !== null) {
+          for (const chunk of pendingRef.current) {
+            term.write(chunk);
+          }
+        }
+        pendingRef.current = [];
+        flushRef.current = false;
+      });
+    }
+  });
 
   useEffect(() => {
     const term = new Terminal({ convertEol: true, scrollback: 5_000 });
@@ -43,3 +64,5 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
 
   return <div className="terminal-viewer" ref={hostRef} />;
 }
+
+const MAX_PENDING_CHUNKS = 100;
