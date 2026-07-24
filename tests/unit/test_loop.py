@@ -221,3 +221,8 @@ def test_loop_case_case_sensitive_final() -> None:
     """Verifies loop behavior: FINAL is case sensitive."""
     result = AgentLoop(ScriptedLLM(["final: lower", "FINAL: upper"]), make_config()).run()
     assert result.final_answer == 'upper'
+
+def test_empty_task_still_runs() -> None:
+    """Verifies an empty task string does not crash the loop."""
+    loop = AgentLoop(ScriptedLLM(["FINAL: nothing to do"]), make_config(task=""))
+    assert loop.run().final_answer == "nothing to do"
