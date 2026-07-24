@@ -139,3 +139,9 @@ def test_dispatch_read_file_missing_path() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {})
     assert result.ok is False
+
+def test_disp_case_shell_stderr() -> None:
+    """Verifies dispatcher behavior: stderr is captured."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch('run_shell', {'command': 'echo e >&2'})
+    assert 'e' in result.output
