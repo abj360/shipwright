@@ -167,3 +167,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: 't2', summary: 'x' }).success).toBe(true);
   });
 });
+
+describe("run request schema", () => {
+  it("handles computed task accepted", () => {
+    expect(runRequestSchema.safeParse({ task: 'y'.repeat(3) }).success).toBe(true);
+  });
+});
