@@ -133,3 +133,9 @@ def test_disp_case_error_is_toolresult() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('read_file', {})
     assert result.error
+
+def test_dispatch_read_file_missing_path() -> None:
+    """Verifies dispatch behavior: missing path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("read_file", {})
+    assert result.ok is False
