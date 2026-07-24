@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_COMMAND_TIMEOUT_S = 120
 MAX_OUTPUT_CHARS = 6000
+REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
+    "read_file": ("path",),
+    "write_file": ("path", "content"),
+    "run_shell": ("command",),
+}
 
 @dataclass(frozen=True)
 class ToolResult:
@@ -72,6 +77,9 @@ class ToolDispatcher:
         tool = self._tools.get(name)
         if tool is None:
             return ToolResult(ok=False, output="", error=f"unknown tool {name!r}")
+        missing = [key for key in REQUIRED_ARGS.get(name, ()) if key not in args]
+        if missing:
+            return ToolResult(ok=False, output="", error=f"missing args: {', '.join(missing)}")
         try:
             output = tool(args)
         except ToolError as exc:
@@ -137,6 +145,7 @@ class ToolDispatcher:
         Returns:
             resolved: Absolute path guaranteed to live under repo_root.
         """
+        # resolve() also collapses ".." segments, which is what blocks escapes here
         resolved = (self.repo_root / rel_path).resolve()
         if self.repo_root not in resolved.parents and resolved != self.repo_root:
             raise ToolError(f"path escapes repo root: {rel_path}")

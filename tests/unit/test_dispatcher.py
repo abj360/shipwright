@@ -115,3 +115,27 @@ def test_disp_mx_final(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {"path": "x"})
     assert result.ok is False
+
+def test_dispatch_list_dir_missing_dir() -> None:
+    """Verifies dispatch behavior: missing dir."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "missing-dir"})
+    assert result.ok is False
+
+def test_disp_case_resolve_dotdot() -> None:
+    """Verifies dispatcher behavior: dotdot escape rejected."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch('read_file', {'path': 'a/../../etc/passwd'})
+    assert not result.ok
+
+def test_disp_case_error_is_toolresult() -> None:
+    """Verifies dispatcher behavior: errors carry a message."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch('read_file', {})
+    assert result.error
+
+def test_dispatch_read_file_missing_path() -> None:
+    """Verifies dispatch behavior: missing path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("read_file", {})
+    assert result.ok is False
