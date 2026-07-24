@@ -145,6 +145,7 @@ class ToolDispatcher:
         Returns:
             resolved: Absolute path guaranteed to live under repo_root.
         """
+        # resolve() also collapses ".." segments, which is what blocks escapes here
         resolved = (self.repo_root / rel_path).resolve()
         if self.repo_root not in resolved.parents and resolved != self.repo_root:
             raise ToolError(f"path escapes repo root: {rel_path}")
