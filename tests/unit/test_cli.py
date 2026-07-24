@@ -213,3 +213,8 @@ def test_cli_mx2_3_2() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--plan-mode', '--headless'])
         assert args.plan_mode and args.headless
+
+def test_cli_mx_5_2() -> None:
+    """Verifies parsing of --repo /x with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--repo', '/x', '--json'])
+    assert args.repo == '/x'
