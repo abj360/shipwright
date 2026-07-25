@@ -7,9 +7,11 @@ Contains:
     build_mounts(): read-only root plus one writable workdir
     rootfs_kwargs(): enforces the read-only root filesystem
     to_docker_volumes(): renders mounts for docker-py
+    WORKSPACE_ROOT: host directory all workdirs must live under
 """
 
 from dataclasses import dataclass
+from pathlib import Path
 
 @dataclass(frozen=True)
 class MountSpec:
@@ -66,3 +68,5 @@ def to_docker_volumes(mounts: list[MountSpec]) -> dict[str, dict[str, str]]:
         mode = "ro" if mount.read_only else "rw"
         volumes[mount.source] = {"bind": mount.target, "mode": mode}
     return volumes
+
+WORKSPACE_ROOT = Path("/tmp/shipwright-work")
