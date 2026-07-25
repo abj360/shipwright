@@ -34,7 +34,7 @@ STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
 PARSE_RETRY_HINT = (
     "Your last reply had no Action: and no FINAL:. "
-    "Respond with exactly one tool call or a final answer."
+    "Respond with exactly one Action: or one FINAL: and nothing else."
 )
 
 @dataclass
