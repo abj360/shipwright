@@ -1,5 +1,6 @@
 services:
   agent:
+    restart: unless-stopped
     build:
       context: ..
       dockerfile: docker/agent.Dockerfile
@@ -12,6 +13,7 @@ services:
         condition: service_healthy
 
   gateway:
+    restart: unless-stopped
     build:
       context: ..
       dockerfile: docker/gateway.Dockerfile
@@ -25,6 +27,7 @@ services:
       retries: 5
 
   ui:
+    restart: unless-stopped
     build:
       context: ..
       dockerfile: docker/ui.Dockerfile
