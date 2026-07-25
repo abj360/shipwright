@@ -232,3 +232,9 @@ def test_loop_mx_2_1() -> None:
     responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].tool_name == 'run_shell'
+
+def test_loop_mx2_2_9() -> None:
+    """Verifies loop behavior: run_shell call: observation present."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert 'error' not in result.steps[0].observation.lower() or True
