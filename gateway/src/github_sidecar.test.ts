@@ -240,3 +240,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('bump deps', ['make check'])).toContain('bump deps');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'add feature'", () => {
+    expect(renderPrBody('add feature', ['pytest -q'])).toContain('add feature');
+  });
+});
