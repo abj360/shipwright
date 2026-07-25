@@ -18,3 +18,4 @@ build/
 .ruff_cache/
 *.egg-info/
 .vscode/
+*.swp

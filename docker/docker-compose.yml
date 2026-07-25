@@ -1,5 +1,6 @@
 services:
   agent:
+    restart: unless-stopped
     build:
       context: ..
       dockerfile: docker/agent.Dockerfile
@@ -12,6 +13,7 @@ services:
         condition: service_healthy
 
   gateway:
+    restart: unless-stopped
     build:
       context: ..
       dockerfile: docker/gateway.Dockerfile
@@ -22,9 +24,10 @@ services:
       test: wget -qO- http://localhost:4000/health || exit 1
       interval: 10s
       timeout: 3s
-      retries: 5
+      retries: 10
 
   ui:
+    restart: unless-stopped
     build:
       context: ..
       dockerfile: docker/ui.Dockerfile
