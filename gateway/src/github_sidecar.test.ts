@@ -234,3 +234,21 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('add cache', ['npm test'])).toContain('add cache');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'bump deps' includes 'bump deps'", () => {
+    expect(renderPrBody('bump deps', ['make check'])).toContain('bump deps');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'add feature'", () => {
+    expect(renderPrBody('add feature', ['pytest -q'])).toContain('add feature');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles closes trailer for issue 99", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/99')).toBe('Closes #99');
+  });
+});

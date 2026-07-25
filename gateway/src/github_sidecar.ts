@@ -14,6 +14,8 @@
  *   batchGetFileContents(): fetches many files in one GraphQL query
  *   renderPrBody(): renders the PR body with test evidence
  *   getRefSha(): resolves a ref to a SHA, cached
+ *   TreeEntry: one file to commit
+ *   commitFiles(): commits many files as one tree
  */
 
 import { exec } from "node:child_process";
@@ -228,4 +230,52 @@ export async function getRefSha(config: SidecarConfig, ref: string): Promise<str
   const sha = response.data.object.sha;
   refsCache.set(cacheKey, { sha, fetchedAt: Date.now() });
   return sha;
+}
+
+export interface TreeEntry {
+  path: string;
+  content: string;
+}
+
+export async function commitFiles(
+  config: SidecarConfig,
+  branch: string,
+  entries: TreeEntry[],
+  message: string,
+): Promise<void> {
+  /**
+   * Commits many files as one tree/commit pair instead of one commit per file.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param branch - Branch to commit onto.
+   * @param entries - Files to write.
+   * @param message - Commit message.
+   */
+  const octokit = octokitFor(config.githubToken);
+  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const baseSha = await getRefSha(config, branch);
+  const tree = await octokit.git.createTree({
+    owner,
+    repo: repo.replace(/\.git$/, ""),
+    base_tree: baseSha,
+    tree: entries.map((entry) => ({
+      path: entry.path,
+      mode: "100644" as const,
+      type: "blob" as const,
+      content: entry.content,
+    })),
+  });
+  const commit = await octokit.git.createCommit({
+    owner,
+    repo: repo.replace(/\.git$/, ""),
+    message,
+    tree: tree.data.sha,
+    parents: [baseSha],
+  });
+  await octokit.git.updateRef({
+    owner,
+    repo: repo.replace(/\.git$/, ""),
+    ref: `heads/${branch}`,
+    sha: commit.data.sha,
+  });
 }
