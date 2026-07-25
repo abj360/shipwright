@@ -112,11 +112,13 @@ class PlanStep:
         index: Zero-based position in the plan.
         description: What the step should accomplish.
         file_hint: Primary file the step touches, when known.
+        status: Lifecycle marker: pending, done, or failed.
     """
 
     index: int
     description: str
     file_hint: str = ""
+    status: str = "pending"
 
 
 @dataclass
