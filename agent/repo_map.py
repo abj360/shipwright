@@ -17,6 +17,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 OUTLINE_MAX_SYMBOLS = 12
+OUTLINE_MAX_CHARS = 200
 CACHE_VERSION = 1
 
 @dataclass
@@ -83,7 +84,10 @@ class RepoMap:
         names = [node.name for node in tree.body if isinstance(node, ast.FunctionDef | ast.ClassDef)]
         if len(names) > OUTLINE_MAX_SYMBOLS:
             names = names[:OUTLINE_MAX_SYMBOLS]
-        return ", ".join(names) or "(no top-level symbols)"
+        outline = ", ".join(names)
+        if len(outline) > OUTLINE_MAX_CHARS:
+            outline = outline[:OUTLINE_MAX_CHARS].rsplit(",", 1)[0] + ", ..."
+        return outline or "(no top-level symbols)"
 
     def refresh(self, changed: list[str]) -> int:
         """Invalidates cache entries for files that changed on disk.
