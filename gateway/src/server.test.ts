@@ -179,3 +179,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: 't4', summary: '' }).success).toBe(false);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles extra keys tolerated", () => {
+    expect(prRequestSchema.safeParse({ taskId: 't5', summary: 's', extra: 1 }).success).toBe(true);
+  });
+});
