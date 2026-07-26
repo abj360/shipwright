@@ -218,3 +218,23 @@ def test_cli_mx_5_2() -> None:
     """Verifies parsing of --repo /x with --json."""
     args = build_parser().parse_args(['--task', 'x', '--repo', '/x', '--json'])
     assert args.repo == '/x'
+
+def test_cli_case_format_step_final(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: format step marks the final step."""
+    from agent.loop import Step
+    from agent.cli import _format_step
+    assert 'final' in _format_step(Step(index=0, thought='t'))
+
+def test_cli_case_parser_defaults(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: ceilings have safe defaults."""
+    args = build_parser().parse_args(['--task', 'x'])
+    assert args.max_steps == 50 and args.max_cost == 5.0
+
+def test_cli_mx2_2_2() -> None:
+    """Verifies parsing of higher cost ceiling."""
+    if "['--task', 'x', '--max-cost', '10']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--max-cost', '10'])
+        assert args.max_cost == 10.0

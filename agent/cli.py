@@ -8,9 +8,11 @@ Contains:
     _run_interactive(): runs the loop with live output
     main(): runs one agent task from the command line
     _format_step(): renders one step as a single line
+    _emit_json_step(): prints one step as a JSON line
 """
 
 import argparse
+import json
 import os
 import sys
 
@@ -29,9 +31,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--issue-url", help="GitHub issue URL to work on")
     parser.add_argument("--repo", default=".", help="path to the checkout to modify")
     parser.add_argument("--headless", action="store_true", help="CI-friendly plain output")
+    parser.add_argument("--json", action="store_true", help="emit steps as JSON lines")
     return parser
 
-def _run_headless(loop: AgentLoop) -> int:
+def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
     """Runs the loop, collecting all output before printing it at the end.
 
     Args:
@@ -43,6 +46,9 @@ def _run_headless(loop: AgentLoop) -> int:
     chunks: list[str] = []
     result = loop.run()
     for step in result.steps:
+        if as_json:
+            _emit_json_step(step)
+            continue
         chunks.append(f"[step {step.index}] {step.tool_name or 'final'}\n")
         if step.observation:
             chunks.append(step.observation + "\n")
@@ -85,6 +91,8 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_INFRA
     loop = AgentLoop(client, config)
     try:
+        if args.json:
+            return _run_headless(loop, as_json=True)
         if args.headless:
             return _run_headless(loop)
         return _run_interactive(loop)
@@ -111,3 +119,16 @@ def _format_step(step: Step) -> str:
 EXIT_OK = 0
 EXIT_FAILED = 1
 EXIT_INFRA = 2
+
+def _emit_json_step(step: Step) -> None:
+    """Prints one step as a JSON line for machine consumers.
+
+    Args:
+        step: Step to serialize.
+    """
+    payload = {
+        "index": step.index,
+        "tool": step.tool_name or "final",
+        "ok": not step.observation.startswith("error:"),
+    }
+    sys.stdout.write(json.dumps(payload) + "\n")
