@@ -8,6 +8,7 @@
  *   POST /runs: enqueues one agent run
  *   GET /runs/:id: fetches one run record
  *   GET /runs: lists run records
+ *   error middleware: logs and returns 500
  */
 
 import "node:crypto";
@@ -102,4 +103,9 @@ app.post("/prs", async (req, res) => {
   }
   const result = await createPrFromRun(sidecarConfig, parsed.data.taskId, parsed.data.summary);
   res.status(result.prUrl === null ? 502 : 201).json(result);
+});
+
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  logger.error({ err }, "unhandled route error");
+  res.status(500).json({ error: "internal error" });
 });
