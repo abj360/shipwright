@@ -16,6 +16,7 @@
  *   getRefSha(): resolves a ref to a SHA, cached
  *   TreeEntry: one file to commit
  *   commitFiles(): commits many files as one tree
+ *   octokitFor(): memoized Octokit client per token
  */
 
 import { exec } from "node:child_process";
@@ -118,7 +119,7 @@ export async function createDraftPr(
    */
   try {
     return await withRetry(async () => {
-      const octokit = new Octokit({ auth: config.githubToken });
+      const octokit = octokitFor(config.githubToken);
       const [owner, repo] = config.repoUrl.split("/").slice(-2);
       const response = await octokit.pulls.create({
         owner,
@@ -278,4 +279,19 @@ export async function commitFiles(
     ref: `heads/${branch}`,
     sha: commit.data.sha,
   });
+}
+
+let octokitInstance: Octokit | null = null;
+
+function octokitFor(token: string): Octokit {
+  /**
+   * Returns a memoized Octokit client per token.
+   *
+   * @param token - GitHub credential.
+   * @returns client - Shared Octokit instance.
+   */
+  if (octokitInstance === null) {
+    octokitInstance = new Octokit({ auth: token });
+  }
+  return octokitInstance;
 }
