@@ -14,6 +14,7 @@ Contains:
     AgentLoop._record_cost(): accumulates one completion's spend
     AgentLoop._run_plan_mode(): executes planner steps directly
     AgentLoop.transcript(): read-only view of steps taken
+    AgentLoop._trim_transcript(): drops oldest observations over budget
 """
 
 import logging
@@ -30,8 +31,11 @@ from agent.tool_dispatcher import ToolDispatcher
 logger = logging.getLogger(__name__)
 
 MAX_TOOL_OUTPUT_CHARS = 6000
+TRANSCRIPT_TOKEN_BUDGET = 24000
+CHARS_PER_TOKEN_ESTIMATE = 4
 STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
+TRUNCATED_OBSERVATION_NOTE = "[observation trimmed to fit context budget]"
 PARSE_RETRY_HINT = (
     "Your last reply had no Action: and no FINAL:. "
     "Respond with exactly one Action: or one FINAL: and nothing else."
@@ -149,6 +153,7 @@ class AgentLoop:
         Returns:
             step: Parsed step, with an empty tool name when the model is done.
         """
+        self._trim_transcript()
         messages = self._build_messages()
         completion = self._client.complete(messages, self.config.system_prompt, STEP_BUDGET_TOKENS)
         self._record_cost(completion)
@@ -274,3 +279,17 @@ class AgentLoop:
             steps: Copy of the current transcript.
         """
         return list(self._transcript)
+
+    def _trim_transcript(self) -> None:
+        """Drops oldest observations once the transcript outgrows its token budget.
+
+        Keeps the task message and every thought; only observations are truncated,
+        oldest first, because they are the bulkiest and least reusable context.
+        """
+        budget_chars = TRANSCRIPT_TOKEN_BUDGET * CHARS_PER_TOKEN_ESTIMATE
+        total = sum(len(s.thought) + len(s.observation) for s in self._transcript)
+        for step in self._transcript:
+            if total <= budget_chars:
+                return
+            total -= len(step.observation) - len(TRUNCATED_OBSERVATION_NOTE)
+            step.observation = TRUNCATED_OBSERVATION_NOTE
