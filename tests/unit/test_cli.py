@@ -224,3 +224,8 @@ def test_cli_case_format_step_final(capsys: pytest.CaptureFixture[str], tmp_path
     from agent.loop import Step
     from agent.cli import _format_step
     assert 'final' in _format_step(Step(index=0, thought='t'))
+
+def test_cli_case_parser_defaults(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: ceilings have safe defaults."""
+    args = build_parser().parse_args(['--task', 'x'])
+    assert args.max_steps == 50 and args.max_cost == 5.0
