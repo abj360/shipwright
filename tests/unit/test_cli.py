@@ -238,3 +238,8 @@ def test_cli_mx2_2_2() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--max-cost', '10'])
         assert args.max_cost == 10.0
+
+def test_cli_mx_0_0() -> None:
+    """Verifies parsing of --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--headless'])
+    assert args.headless
