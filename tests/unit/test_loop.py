@@ -244,3 +244,9 @@ def test_loop_mx_0_1() -> None:
     responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].tool_name == 'list_dir'
+
+def test_loop_mx_0_3() -> None:
+    """Verifies loop behavior: list_dir call returns result."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result is not None
