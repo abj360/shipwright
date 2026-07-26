@@ -238,3 +238,9 @@ def test_loop_mx2_2_9() -> None:
     responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert 'error' not in result.steps[0].observation.lower() or True
+
+def test_loop_mx_0_1() -> None:
+    """Verifies loop behavior: list_dir call records tool name."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'list_dir'
