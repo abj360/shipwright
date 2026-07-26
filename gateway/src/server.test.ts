@@ -179,3 +179,27 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: 't4', summary: '' }).success).toBe(false);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles extra keys tolerated", () => {
+    expect(prRequestSchema.safeParse({ taskId: 't5', summary: 's', extra: 1 }).success).toBe(true);
+  });
+});
+
+describe("pr request schema cases", () => {
+  it("handles numeric task id rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: 42, summary: 's' }).success).toBe(false);
+  });
+});
+
+describe("pr request schema cases", () => {
+  it("handles empty summary rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: 't4', summary: '' }).success).toBe(false);
+  });
+});
+
+describe("run request schema", () => {
+  it("handles empty task rejected", () => {
+    expect(runRequestSchema.safeParse({ task: '' }).success).toBe(false);
+  });
+});
