@@ -151,3 +151,9 @@ def test_disp_mx2_8(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_shell", {"command": ""})
     assert result.ok is False
+
+def test_disp_mx2_5(tmp_path) -> None:
+    """Verifies dispatch: hidden file write works."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("write_file", {"path": ".hidden", "content": "v"})
+    assert result.ok is True
