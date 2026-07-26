@@ -185,3 +185,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: 't5', summary: 's', extra: 1 }).success).toBe(true);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles numeric task id rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: 42, summary: 's' }).success).toBe(false);
+  });
+});
