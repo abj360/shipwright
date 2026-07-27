@@ -6,6 +6,7 @@ Contains:
     Finding: outcome of one red-team attempt
     RedTeamRunner: executes attempts inside real sandboxes
     RedTeamRunner.run_all(): runs every attempt and collects findings
+    RedTeamRunner.report(): renders findings as a table
 """
 
 import logging
@@ -75,3 +76,20 @@ class RedTeamRunner:
         if not contained:
             logger.error("BREAKOUT: %s escaped: %s", attempt.name, evidence)
         return Finding(attempt=attempt.name, contained=contained, evidence=evidence)
+
+    def report(self, findings: list[Finding]) -> str:
+        """Renders findings as a pass/fail table.
+
+        Args:
+            findings: Findings to render.
+
+        Returns:
+            report: One line per attempt plus a summary line.
+        """
+        lines = []
+        for finding in findings:
+            verdict = "CONTAINED" if finding.contained else "BREAKOUT"
+            lines.append(f"{verdict:9s} {finding.attempt}")
+        breakouts = sum(1 for f in findings if not f.contained)
+        lines.append(f"{len(findings) - breakouts}/{len(findings)} contained")
+        return "\n".join(lines)

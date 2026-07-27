@@ -233,3 +233,12 @@ def test_reg_135_cgroup_mem_bytes_134217728(tmp_path) -> None:
     """REG-135: cgroup mem_bytes=134217728 passes."""
     limits = CgroupLimits(mem_bytes=134217728)
     assert limits.cpu_quota_micros > 0
+
+def test_reg_108_egress_darkweb_onion(tmp_path) -> None:
+    """REG-108: egress treats darkweb.onion as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('darkweb.onion') is False
+
+def test_reg_046_describe_mentions_memory(tmp_path) -> None:
+    """REG-046: describe mentions memory."""
+    assert 'MiB' in CgroupLimits().describe()

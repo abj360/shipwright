@@ -95,3 +95,10 @@ def test_price_claude_sonnet_4_5_0_1_000_000() -> None:
     tracker = CostTracker()
     total = tracker.record("claude-sonnet-4-5", 0, 1_000_000)
     assert total == 15.0
+
+def test_cost_case_warn_logs() -> None:
+    """Verifies cost tracking: spend past budget is visible."""
+    import logging
+    tracker = CostTracker(budget_usd=0.0001)
+    tracker.record('claude-opus-4-1', 1_000_000, 1_000_000)
+    assert tracker.total_usd() > tracker.budget_usd

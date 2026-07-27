@@ -262,3 +262,12 @@ def test_sbox_mx_m1() -> None:
 def test_sbox_mx_c4() -> None:
     """Verifies policy: cgroup pids_max=16 valid."""
     CgroupLimits(pids_max=16)
+
+def test_mount_case_nested_task_dir() -> None:
+    """Verifies mount handling for nested_task_dir."""
+    if "task" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/tmp/shipwright-work/a/b")
+    else:
+        mounts = build_mounts("/tmp/shipwright-work/a/b")
+        assert mounts[0].target == "/work"
