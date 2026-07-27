@@ -253,3 +253,8 @@ def test_egress_case_gitlab_com() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("gitlab.com") is False
+
+def test_sbox_mx_m1() -> None:
+    """Verifies policy: mount accepted for /tmp/shipwright-work/a/b/c."""
+    mounts = build_mounts('/tmp/shipwright-work/a/b/c')
+    assert mounts[0].target == '/work'
