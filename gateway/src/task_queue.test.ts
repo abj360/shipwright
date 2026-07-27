@@ -157,3 +157,10 @@ describe("TaskQueue behavior", () => {
     expect(() => queue.enqueue('a', async () => {})).not.toThrow();
   });
 });
+
+describe("TaskQueue metrics", () => {
+  it("handles metrics shape with concurrency 3 (case 1)", () => {
+    const queue = new TaskQueue({ concurrency: 3 });
+    expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
+  });
+});
