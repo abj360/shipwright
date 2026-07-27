@@ -247,3 +247,9 @@ def test_cgroup_case_pids_max_0() -> None:
     else:
         with pytest.raises(ValueError):
             CgroupLimits(**kwargs)
+
+def test_egress_case_gitlab_com() -> None:
+    """Verifies egress treatment of gitlab.com."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("gitlab.com") is False
