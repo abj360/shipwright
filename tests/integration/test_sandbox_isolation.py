@@ -224,3 +224,8 @@ def test_sbox_mx2_c3() -> None:
     """Verifies policy: cgroup cpu_quota_micros rejects 0."""
     with pytest.raises(ValueError):
         CgroupLimits(cpu_quota_micros=0)
+
+def test_sbox_mx2_e10_0() -> None:
+    """Verifies policy: egress denies evil.io (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('evil.io') is False

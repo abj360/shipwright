@@ -8,6 +8,7 @@ Contains:
     JudgelineClient.score_diff(): scores one PR diff, fail-closed
     JudgelineClient.is_ready(): decides readiness against the threshold
     JudgelineClient._post_with_retry(): retries 5xx, never timeouts
+    format_score_comment(): renders a verdict as Markdown
 """
 
 import httpx
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "http://localhost:7700"
 SCORE_ENDPOINT = "/v1/score"
-READY_THRESHOLD = 0.75
+READY_THRESHOLD = 0.8
 REQUEST_TIMEOUT_S = 30
 RUBRIC_WEIGHTS: dict[str, float] = {
     "correctness": 0.5,
@@ -122,3 +123,19 @@ class JudgelineClient:
             time.sleep(2**attempt)
         logger.error("judgeline kept returning 5xx; failing closed")
         return None
+
+def format_score_comment(result: ScoreResult, ready: bool) -> str:
+    """Renders a score verdict as a Markdown PR comment.
+
+    Args:
+        result: Score to render.
+        ready: Whether the diff cleared the readiness gate.
+
+    Returns:
+        comment: Markdown body summarizing the verdict.
+    """
+    badge = "READY" if ready else "NOT READY"
+    lines = [f"**judgeline: {badge}** (score {result.score:.2f})", ""]
+    for reason in result.reasons:
+        lines.append(f"- {reason}")
+    return "\n".join(lines)

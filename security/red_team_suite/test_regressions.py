@@ -218,3 +218,18 @@ def test_reg_105_egress_bad_example(tmp_path) -> None:
     """REG-105: egress treats bad.example as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('bad.example') is False
+
+def test_reg_134_cgroup_mem_bytes_67108864(tmp_path) -> None:
+    """REG-134: cgroup mem_bytes=67108864 passes."""
+    limits = CgroupLimits(mem_bytes=67108864)
+    assert limits.cpu_quota_micros > 0
+
+def test_reg_035_docker_kwargs_include_pids_ceiling(tmp_path) -> None:
+    """REG-035: docker kwargs include pids ceiling."""
+    kwargs = CgroupLimits().to_docker_kwargs()
+    assert kwargs['pids_limit'] > 0
+
+def test_reg_135_cgroup_mem_bytes_134217728(tmp_path) -> None:
+    """REG-135: cgroup mem_bytes=134217728 passes."""
+    limits = CgroupLimits(mem_bytes=134217728)
+    assert limits.cpu_quota_micros > 0
