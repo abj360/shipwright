@@ -228,3 +228,8 @@ def test_reg_035_docker_kwargs_include_pids_ceiling(tmp_path) -> None:
     """REG-035: docker kwargs include pids ceiling."""
     kwargs = CgroupLimits().to_docker_kwargs()
     assert kwargs['pids_limit'] > 0
+
+def test_reg_135_cgroup_mem_bytes_134217728(tmp_path) -> None:
+    """REG-135: cgroup mem_bytes=134217728 passes."""
+    limits = CgroupLimits(mem_bytes=134217728)
+    assert limits.cpu_quota_micros > 0
