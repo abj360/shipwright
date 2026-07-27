@@ -248,3 +248,8 @@ def test_flag_plan_mode_on() -> None:
     """Verifies parsing: plan mode on."""
     args = build_parser().parse_args(["--task", "a", "--plan-mode"])
     assert args.plan_mode == True
+
+def test_flag_repo_path_parses() -> None:
+    """Verifies parsing: repo path parses."""
+    args = build_parser().parse_args(["--task", "a", "--repo", "/tmp/x"])
+    assert args.repo == "/tmp/x"
