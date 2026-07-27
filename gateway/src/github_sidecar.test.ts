@@ -252,3 +252,9 @@ describe("sidecar rendering", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/99')).toBe('Closes #99');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'fix bug'", () => {
+    expect(renderPrBody('fix bug', ['pytest -q'])).toContain('fix bug');
+  });
+});
