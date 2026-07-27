@@ -8,6 +8,7 @@ Contains:
     AuditLog.record(): appends one event to the chain
     EVENT_*: audit event categories
     rotate_if_needed(): rotates oversized logs
+    verify_chain(): replays and verifies the hash chain
 """
 
 import hashlib
@@ -86,3 +87,23 @@ def rotate_if_needed(path: Path) -> None:
     if path.exists() and path.stat().st_size > MAX_LOG_BYTES:
         rotated = path.with_suffix(f".{int(time.time())}.jsonl")
         os.rename(path, rotated)
+
+def verify_chain(path: Path) -> bool:
+    """Replays the log and verifies every hash-chain link.
+
+    Args:
+        path: Log file to verify.
+
+    Returns:
+        intact: True when every link matches its predecessor.
+    """
+    prev = "0" * 64
+    if not path.exists():
+        return True
+    for line in path.read_text().splitlines():
+        record = json.loads(line)
+        expected = hashlib.sha256((prev + record["event"]).encode()).hexdigest()
+        if record["chain"] != expected:
+            return False
+        prev = record["chain"]
+    return True
