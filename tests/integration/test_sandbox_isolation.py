@@ -229,3 +229,36 @@ def test_sbox_mx2_e10_0() -> None:
     """Verifies policy: egress denies evil.io (case 1)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('evil.io') is False
+
+def test_memory_limit_kills_allocator() -> None:
+    """Verifies allocations past the memory ceiling get killed."""
+    handle = DockerRuntime().launch(make_config())
+    try:
+        result = handle.exec("python3 -c 'x = bytearray(10**9)'")
+        assert result.exit_code != 0
+    finally:
+        handle.stop()
+
+def test_cgroup_case_pids_max_0() -> None:
+    """Verifies cgroup validation for pids_max=0."""
+    kwargs = {"pids_max": 0}
+    if False:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
+
+def test_egress_case_gitlab_com() -> None:
+    """Verifies egress treatment of gitlab.com."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("gitlab.com") is False
+
+def test_sbox_mx_m1() -> None:
+    """Verifies policy: mount accepted for /tmp/shipwright-work/a/b/c."""
+    mounts = build_mounts('/tmp/shipwright-work/a/b/c')
+    assert mounts[0].target == '/work'
+
+def test_sbox_mx_c4() -> None:
+    """Verifies policy: cgroup pids_max=16 valid."""
+    CgroupLimits(pids_max=16)
