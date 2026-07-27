@@ -258,3 +258,7 @@ def test_sbox_mx_m1() -> None:
     """Verifies policy: mount accepted for /tmp/shipwright-work/a/b/c."""
     mounts = build_mounts('/tmp/shipwright-work/a/b/c')
     assert mounts[0].target == '/work'
+
+def test_sbox_mx_c4() -> None:
+    """Verifies policy: cgroup pids_max=16 valid."""
+    CgroupLimits(pids_max=16)
