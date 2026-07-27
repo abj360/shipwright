@@ -27,6 +27,11 @@ logger = logging.getLogger(__name__)
 SKIPPED_DIRECTORIES = {".git", "node_modules", "__pycache__", ".venv", "dist", ".mypy_cache"}
 TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".lock", ".yml", ".md"}  # .gitignore handled separately
 MAX_FILE_BYTES = 200_000
+PLAN_SYSTEM_PROMPT = "You produce short, ordered implementation plans for code tasks."
+PLAN_FORMAT_INSTRUCTIONS = (
+    "Reply with one numbered step per line, at most 8 steps, each starting with "
+    "the file or area it touches."
+)
 
 @dataclass(frozen=True)
 class FileInfo:
@@ -152,7 +157,41 @@ class RepoPlanner:
         Returns:
             plan: Ordered steps the executor should carry out.
         """
-        return Plan(task=task, steps=[PlanStep(index=0, description=task)])
+        prompt = self._plan_prompt(task)
+        completion = self._client.complete(
+            [Message(role="user", content=prompt)], system=PLAN_SYSTEM_PROMPT
+        )
+        steps = self._parse_plan_text(completion.text)
+        if not steps:
+            steps = [PlanStep(index=0, description=task)]
+        return Plan(task=task, steps=steps)
+
+    def _plan_prompt(self, task: str) -> str:
+        """Builds the planning prompt with repo context injected.
+
+        Args:
+            task: Natural-language description of the goal.
+
+        Returns:
+            prompt: Full prompt text for the planning completion.
+        """
+        return f"Repo outline:\n{self._outline}\n\nTask: {task}\n\n{PLAN_FORMAT_INSTRUCTIONS}"
+
+    def _parse_plan_text(self, text: str) -> list[PlanStep]:
+        """Parses numbered plan lines into plan steps.
+
+        Args:
+            text: Raw completion text holding a numbered plan.
+
+        Returns:
+            steps: Parsed steps in order; empty when nothing parses.
+        """
+        steps = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped[:2] in {f"{n}." for n in range(1, 10)} and len(stripped) > 3:
+                steps.append(PlanStep(index=len(steps), description=stripped[3:].strip()))
+        return steps
 
 MANIFEST_NAMES = ("pyproject.toml", "package.json", "go.mod", "Cargo.toml")
 
