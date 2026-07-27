@@ -238,3 +238,12 @@ def test_memory_limit_kills_allocator() -> None:
         assert result.exit_code != 0
     finally:
         handle.stop()
+
+def test_cgroup_case_pids_max_0() -> None:
+    """Verifies cgroup validation for pids_max=0."""
+    kwargs = {"pids_max": 0}
+    if False:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
