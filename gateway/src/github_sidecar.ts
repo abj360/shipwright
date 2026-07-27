@@ -17,6 +17,7 @@
  *   TreeEntry: one file to commit
  *   commitFiles(): commits many files as one tree
  *   octokitFor(): memoized Octokit client per token
+ *   markPrReady(): flips a draft PR to ready-for-review
  */
 
 import { exec } from "node:child_process";
@@ -294,4 +295,24 @@ function octokitFor(token: string): Octokit {
     octokitInstance = new Octokit({ auth: token });
   }
   return octokitInstance;
+}
+
+export async function markPrReady(config: SidecarConfig, prUrl: string): Promise<void> {
+  /**
+   * Flips a draft PR to ready-for-review after quality gates pass.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param prUrl - HTML URL of the draft PR.
+   */
+  const octokit = octokitFor(config.githubToken);
+  const match = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+  if (match === null) {
+    throw new Error(`unparseable PR url: ${prUrl}`);
+  }
+  await octokit.pulls.update({
+    owner: match[1]!,
+    repo: match[2]!,
+    pull_number: Number(match[3]),
+    draft: false,
+  });
 }
