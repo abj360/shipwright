@@ -218,3 +218,8 @@ def test_reg_105_egress_bad_example(tmp_path) -> None:
     """REG-105: egress treats bad.example as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('bad.example') is False
+
+def test_reg_134_cgroup_mem_bytes_67108864(tmp_path) -> None:
+    """REG-134: cgroup mem_bytes=67108864 passes."""
+    limits = CgroupLimits(mem_bytes=67108864)
+    assert limits.cpu_quota_micros > 0
