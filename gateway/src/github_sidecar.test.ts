@@ -258,3 +258,9 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('fix bug', ['pytest -q'])).toContain('fix bug');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles closes trailer for issue 123", () => {
+    expect(closesIssueLine('https://github.com/a/b/issues/123')).toBe('Closes #123');
+  });
+});
