@@ -81,3 +81,5 @@ export const ansiBrightCyan = "#56d4dd";
 export const ansiBrightRed = "#ff7b72";
 
 export const selectionBg = "#264f78";
+
+export const ansiBrightYellow = "#e3b341";
