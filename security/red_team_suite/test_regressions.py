@@ -252,3 +252,8 @@ def test_reg_091_mount_cleanup_validates_containment(tmp_path) -> None:
     from sandbox.policies.mounts import cleanup_workspace
     with pytest.raises(ValueError):
         cleanup_workspace('/var/tmp/outside')
+
+def test_reg_026_scoped_policy_merges_hosts(tmp_path) -> None:
+    """REG-026: scoped policy merges hosts."""
+    scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("b.com",))
+    assert scoped.allows("b.com")
