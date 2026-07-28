@@ -283,3 +283,10 @@ def test_reg_122_mount_lib64(tmp_path) -> None:
     """REG-122: mount /lib64 is rejected."""
     with pytest.raises(MountError):
         build_mounts('/lib64')
+
+def test_reg_038_verify_passes_on_untampered_log(tmp_path) -> None:
+    """REG-038: verify passes on untampered log."""
+    from sandbox.audit_log import AuditLog, verify_chain
+    log = AuditLog(tmp_path / 'b.jsonl')
+    log.record('exec', 'ls')
+    assert verify_chain(tmp_path / 'b.jsonl')
