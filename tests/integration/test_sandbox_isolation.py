@@ -271,3 +271,8 @@ def test_mount_case_nested_task_dir() -> None:
     else:
         mounts = build_mounts("/tmp/shipwright-work/a/b")
         assert mounts[0].target == "/work"
+
+def test_sbox_mx_e0() -> None:
+    """Verifies policy: egress allows github.com."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('github.com') is True
