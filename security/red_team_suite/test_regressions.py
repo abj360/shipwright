@@ -257,3 +257,9 @@ def test_reg_026_scoped_policy_merges_hosts(tmp_path) -> None:
     """REG-026: scoped policy merges hosts."""
     scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("b.com",))
     assert scoped.allows("b.com")
+
+def test_reg_006_memswap_matches_memory_ceiling() -> None:
+    """REG-006: swap cannot exceed the memory ceiling (no silent swap overflow)."""
+    limits = CgroupLimits()
+    kwargs = limits.to_docker_kwargs()
+    assert kwargs["memswap_limit"] == kwargs["mem_limit"]
