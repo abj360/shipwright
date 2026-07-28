@@ -83,3 +83,5 @@ export const ansiBrightRed = "#ff7b72";
 export const selectionBg = "#264f78";
 
 export const ansiBrightYellow = "#e3b341";
+
+export const scrollThumb = "#30363d";
