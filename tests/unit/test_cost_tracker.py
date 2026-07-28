@@ -102,3 +102,9 @@ def test_cost_case_warn_logs() -> None:
     tracker = CostTracker(budget_usd=0.0001)
     tracker.record('claude-opus-4-1', 1_000_000, 1_000_000)
     assert tracker.total_usd() > tracker.budget_usd
+
+def test_cost_mx2_2_1() -> None:
+    """Verifies pricing for claude-haiku-4-5 10000/1000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 10000, 1000)
+    assert total > 0.0
