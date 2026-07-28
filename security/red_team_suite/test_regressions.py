@@ -263,3 +263,8 @@ def test_reg_006_memswap_matches_memory_ceiling() -> None:
     limits = CgroupLimits()
     kwargs = limits.to_docker_kwargs()
     assert kwargs["memswap_limit"] == kwargs["mem_limit"]
+
+def test_reg_119_mount_tmp_shipwright_work__hidden(tmp_path) -> None:
+    """REG-119: mount /tmp/shipwright-work/.hidden is accepted."""
+    mounts = build_mounts('/tmp/shipwright-work/.hidden')
+    assert mounts[0].target == '/work'
