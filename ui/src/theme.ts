@@ -23,7 +23,7 @@ export interface Theme {
 export const darkTheme: Theme = {
   background: "#0d1117",
   foreground: "#c9d1d9",
-  accent: "#58a6ff",
+  accent: "#6cb6ff",
   add: "#2ea043",
   del: "#f85149",
   hunk: "#8b949e",
