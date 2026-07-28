@@ -242,3 +242,7 @@ def test_reg_108_egress_darkweb_onion(tmp_path) -> None:
 def test_reg_046_describe_mentions_memory(tmp_path) -> None:
     """REG-046: describe mentions memory."""
     assert 'MiB' in CgroupLimits().describe()
+
+def test_reg_152_rootfs_tmpfs_is_writable(tmp_path) -> None:
+    """REG-152: rootfs tmpfs is writable."""
+    assert 'rw' in rootfs_kwargs()['tmpfs']['/tmp']
