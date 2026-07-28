@@ -278,3 +278,8 @@ def test_reg_016_empty_allowlist_is_flagged(tmp_path) -> None:
     """REG-016: empty allowlist is flagged."""
     problems = EgressPolicy(allowed_hosts=()).validate()
     assert problems
+
+def test_reg_122_mount_lib64(tmp_path) -> None:
+    """REG-122: mount /lib64 is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/lib64')
