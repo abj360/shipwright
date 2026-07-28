@@ -8,6 +8,8 @@
  *   TaskQueue: bounded-concurrency queue with retries
  */
 
+import { appendFileSync } from "node:fs";
+
 import pino from "pino";
 
 const logger = pino.default({ name: "task-queue" });
@@ -26,6 +28,7 @@ export interface TaskQueueOptions {
   concurrency: number;
   maxAttempts?: number;
   taskTimeoutMs?: number;
+  deadLetterPath?: string;
 }
 
 export class TaskQueue {
@@ -38,11 +41,13 @@ export class TaskQueue {
   private readonly concurrency: number;
   private readonly maxAttempts: number;
   private readonly taskTimeoutMs: number;
+  private readonly deadLetterPath: string;
 
   constructor(options: TaskQueueOptions) {
     this.concurrency = options.concurrency;
     this.maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
     this.taskTimeoutMs = options.taskTimeoutMs ?? DEFAULT_TASK_TIMEOUT_MS;
+    this.deadLetterPath = options.deadLetterPath ?? "/tmp/shipwright-dead-letter.jsonl";
   }
 
   async enqueue(id: string, run: () => Promise<void>, priority = 0): Promise<void> {
@@ -94,6 +99,7 @@ export class TaskQueue {
         this.pending.push(task);
       } else {
         logger.error({ taskId: task.id, err: error }, "task failed permanently");
+        this.recordDeadLetter(task, error);
       }
     } finally {
       clearTimeout(timeout);
@@ -102,3 +108,13 @@ export class TaskQueue {
     }
   }
 }
+
+  private recordDeadLetter(task: QueuedTask, error: unknown): void {
+    const line = JSON.stringify({
+      id: task.id,
+      attempts: task.attempts,
+      error: error instanceof Error ? error.message : String(error),
+      at: new Date().toISOString(),
+    });
+    appendFileSync(this.deadLetterPath, line + "\n");
+  }
