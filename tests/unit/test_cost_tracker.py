@@ -114,3 +114,8 @@ def test_cost_mx_4_1() -> None:
     tracker = CostTracker()
     total = tracker.record("unknown-x", 50000, 5000)
     assert total >= 0.0
+
+def test_zero_budget_is_rejected() -> None:
+    """Verifies a non-positive budget fails fast."""
+    with pytest.raises(ValueError):
+        CostTracker(budget_usd=0)
