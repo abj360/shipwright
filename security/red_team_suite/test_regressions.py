@@ -242,3 +242,18 @@ def test_reg_108_egress_darkweb_onion(tmp_path) -> None:
 def test_reg_046_describe_mentions_memory(tmp_path) -> None:
     """REG-046: describe mentions memory."""
     assert 'MiB' in CgroupLimits().describe()
+
+def test_reg_152_rootfs_tmpfs_is_writable(tmp_path) -> None:
+    """REG-152: rootfs tmpfs is writable."""
+    assert 'rw' in rootfs_kwargs()['tmpfs']['/tmp']
+
+def test_reg_091_mount_cleanup_validates_containment(tmp_path) -> None:
+    """REG-091: mount cleanup validates containment."""
+    from sandbox.policies.mounts import cleanup_workspace
+    with pytest.raises(ValueError):
+        cleanup_workspace('/var/tmp/outside')
+
+def test_reg_026_scoped_policy_merges_hosts(tmp_path) -> None:
+    """REG-026: scoped policy merges hosts."""
+    scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("b.com",))
+    assert scoped.allows("b.com")

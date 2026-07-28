@@ -67,9 +67,18 @@ export function DiffViewer({ patch }: { patch: string }) {
    * Renders a unified diff with per-line styling.
    */
   const files = useMemo(() => parseDiff(patch), [patch]);
+  const [copied, setCopied] = useState(false);
 
   return (
     <div className="diff-viewer">
+      <button
+        onClick={() => {
+          void navigator.clipboard.writeText(patch);
+          setCopied(true);
+        }}
+      >
+        {copied ? "copied" : "copy patch"}
+      </button>
       {files.map((file) => (
         <FileSection key={file.path} file={file} />
       ))}
