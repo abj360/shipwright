@@ -8,10 +8,13 @@ Contains:
     CostTracker.record(): adds usage and returns the running total
     CostTracker.total_usd(): computes total spend in USD
     CostTracker.report(): renders a per-completion breakdown
+    CostTracker.export_report(): writes the breakdown to JSON
 """
 
+import json
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -99,3 +102,19 @@ class CostTracker:
             lines.append(f"  [{index}] {entry.model}: {entry.input_tokens}+{entry.output_tokens} tok = ${cost:.4f}")
         lines.append(f"total: ${self.total_usd():.4f}")
         return "\n".join(lines)
+
+    def export_report(self, dest: Path) -> None:
+        """Writes the spend breakdown to a JSON file.
+
+        Args:
+            dest: Path the report is written to.
+        """
+        payload = {
+            "budget_usd": self.budget_usd,
+            "total_usd": self.total_usd(),
+            "entries": [
+                {"model": e.model, "input_tokens": e.input_tokens, "output_tokens": e.output_tokens}
+                for e in self._entries
+            ],
+        }
+        dest.write_text(json.dumps(payload, indent=2))
