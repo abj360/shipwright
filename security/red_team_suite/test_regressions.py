@@ -268,3 +268,8 @@ def test_reg_119_mount_tmp_shipwright_work__hidden(tmp_path) -> None:
     """REG-119: mount /tmp/shipwright-work/.hidden is accepted."""
     mounts = build_mounts('/tmp/shipwright-work/.hidden')
     assert mounts[0].target == '/work'
+
+def test_reg_116_mount_tmp_shipwright_work_r1(tmp_path) -> None:
+    """REG-116: mount /tmp/shipwright-work/r1 is accepted."""
+    mounts = build_mounts('/tmp/shipwright-work/r1')
+    assert mounts[0].target == '/work'
