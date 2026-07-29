@@ -49,7 +49,7 @@ behavior. Hard limits were deliberately left out of the first cut — the
 thinking was that cost visibility would be enough. (See the follow-up note
 below; it was not.)
 
-## Follow-up: circuit breaker (shipped 2026-07-22)
+## Follow-up — circuit breaker (shipped 2026-07-22)
 
 The soft-budget-only design above was wrong. A stuck task looped for hours
 because nothing had the authority to stop it. The loop now runs under a
