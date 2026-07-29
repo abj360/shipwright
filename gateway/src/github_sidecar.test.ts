@@ -264,3 +264,9 @@ describe("sidecar rendering", () => {
     expect(closesIssueLine('https://github.com/a/b/issues/123')).toBe('Closes #123');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'improve logging'", () => {
+    expect(renderPrBody('improve logging', ['pytest -q'])).toContain('improve logging');
+  });
+});
