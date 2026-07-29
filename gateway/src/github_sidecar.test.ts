@@ -264,3 +264,33 @@ describe("sidecar rendering", () => {
     expect(closesIssueLine('https://github.com/a/b/issues/123')).toBe('Closes #123');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'improve logging'", () => {
+    expect(renderPrBody('improve logging', ['pytest -q'])).toContain('improve logging');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'refactor' includes '## Tests'", () => {
+    expect(renderPrBody('refactor', ['pytest tests/ -q'])).toContain('## Tests');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 2", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/2')).toBe('Closes #2');
+  });
+});
+
+describe("pr body rendering", () => {
+  it("handles stats render step count", () => {
+    expect(renderRunStats({ steps: 3, durationS: 1.5, costUsd: 0.01 })).toContain('3');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'tighten types'", () => {
+    expect(renderPrBody('tighten types', ['pytest -q'])).toContain('tighten types');
+  });
+});

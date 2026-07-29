@@ -7,7 +7,6 @@
  *   cloneRepo(): shallow-clones the target repository
  *   createBranch(): creates the agent working branch
  *   commitAndPush(): commits the tree and pushes the branch
- *   withRetry(): retries a failing operation immediately
  *   createDraftPr(): opens a draft pull request
  *   PrFlowResult: outcome of the PR creation flow
  *   createPrFromRun(): clone, branch, commit, push, open draft PR
@@ -23,6 +22,7 @@
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 
+import { RequestQueue } from "./rate_limiter";
 import { Octokit } from "@octokit/rest";
 import pino from "pino";
 
@@ -30,6 +30,7 @@ const run = promisify(exec);
 const logger = pino.default({ name: "github-sidecar" });
 
 const BRANCH_PREFIX = "shipwright/";
+const mutationQueue = new RequestQueue();
 const CLONE_DEPTH = 1;
 
 export interface SidecarConfig {
@@ -84,25 +85,6 @@ export async function commitAndPush(
   await run(`git -C ${repoDir} push -u origin ${branch}`);
 }
 
-async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
-  /**
-   * Retries a failing operation a fixed number of times, immediately.
-   *
-   * @param fn - Operation to retry.
-   * @param attempts - Maximum attempts before giving up.
-   * @returns result - First successful result.
-   */
-  let lastError: unknown;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError;
-}
-
 export async function createDraftPr(
   config: SidecarConfig,
   branch: string,
@@ -118,25 +100,20 @@ export async function createDraftPr(
    * @param body - PR body.
    * @returns url - HTML URL of the new PR, or null when creation failed.
    */
-  try {
-    return await withRetry(async () => {
-      const octokit = octokitFor(config.githubToken);
-      const [owner, repo] = config.repoUrl.split("/").slice(-2);
-      const response = await octokit.pulls.create({
-        owner,
-        repo: repo.replace(/\.git$/, ""),
-        head: branch,
-        base: config.baseBranch,
-        title,
-        body,
-        draft: true,
-      });
-      return response.data.html_url;
+  return mutationQueue.enqueue(async () => {
+    const octokit = octokitFor(config.githubToken);
+    const [owner, repo] = config.repoUrl.split("/").slice(-2);
+    const response = await octokit.pulls.create({
+      owner,
+      repo: repo.replace(/\.git$/, ""),
+      head: branch,
+      base: config.baseBranch,
+      title,
+      body,
+      draft: true,
     });
-  } catch (error) {
-    logger.warn({ err: error }, "draft PR creation failed; continuing without PR");
-    return null;
-  }
+    return response.data.html_url;
+  });
 }
 
 export interface PrFlowResult {

@@ -101,8 +101,13 @@ app.post("/prs", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues });
     return;
   }
-  const result = await createPrFromRun(sidecarConfig, parsed.data.taskId, parsed.data.summary);
-  res.status(result.prUrl === null ? 502 : 201).json(result);
+  try {
+    const result = await createPrFromRun(sidecarConfig, parsed.data.taskId, parsed.data.summary);
+    res.status(result.prUrl === null ? 502 : 201).json(result);
+  } catch (error) {
+    logger.error({ err: error }, "PR creation failed after retries");
+    res.status(502).json({ error: "github api unavailable; try again later" });
+  }
 });
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
