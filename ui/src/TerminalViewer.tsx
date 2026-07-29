@@ -56,6 +56,8 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
     if (hostRef.current !== null) {
       term.open(hostRef.current);
       fit.fit();
+      const observer = new ResizeObserver(() => fit.fit());
+      observer.observe(hostRef.current);
     }
     return () => {
       term.dispose();

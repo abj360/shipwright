@@ -163,3 +163,9 @@ def test_disp_mx_1_1(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {"path": null})
     assert result.ok is False
+
+def test_dispatch_write_file_missing_content_ok() -> None:
+    """Verifies dispatch behavior: missing content ok?."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("write_file", {"path": "x.txt"})
+    assert result.ok is False
