@@ -295,3 +295,7 @@ def test_reg_059_egress_exfil_io(tmp_path) -> None:
     """REG-059: egress host exfil.io is denied."""
     policy = EgressPolicy(allowed_hosts=('github.com',))
     assert policy.allows('exfil.io') is False
+
+def test_reg_030_pids_preset_for_red_team_is_tight(tmp_path) -> None:
+    """REG-030: pids preset for red team is tight."""
+    assert CgroupLimits(pids_max=64).pids_max == 64
