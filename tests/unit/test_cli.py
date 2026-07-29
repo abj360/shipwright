@@ -253,3 +253,9 @@ def test_flag_repo_path_parses() -> None:
     """Verifies parsing: repo path parses."""
     args = build_parser().parse_args(["--task", "a", "--repo", "/tmp/x"])
     assert args.repo == "/tmp/x"
+
+def test_parser_accepts_run_ceilings() -> None:
+    """Verifies --max-steps and --max-cost parse to numbers."""
+    args = build_parser().parse_args(["--task", "x", "--max-steps", "10", "--max-cost", "1.5"])
+    assert args.max_steps == 10
+    assert args.max_cost == 1.5
