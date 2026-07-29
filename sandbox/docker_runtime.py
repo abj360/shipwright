@@ -19,6 +19,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Iterator
 
+from sandbox.audit_log import AuditLog
 from sandbox.policies.cgroup_limits import CgroupLimits
 from sandbox.policies.egress import EgressPolicy
 from sandbox.policies.mounts import build_mounts, rootfs_kwargs, to_docker_volumes
@@ -121,13 +122,15 @@ class SandboxHandle:
 class DockerRuntime:
     """Launches short-lived sandbox containers through the docker daemon."""
 
-    def __init__(self, client: object | None = None) -> None:
+    def __init__(self, client: object | None = None, audit: AuditLog | None = None) -> None:
         """Connects to the docker daemon.
 
         Args:
             client: Injected docker client; defaults to the daemon from env.
+            audit: Optional audit log receiving sandbox lifecycle events.
         """
         self._client = client or docker.from_env()
+        self._audit = audit
 
     def launch(self, config: SandboxConfig) -> SandboxHandle:
         """Starts one sandbox container and returns its handle.
@@ -141,6 +144,8 @@ class DockerRuntime:
         self.ensure_image(config.image)
         kwargs = self._container_kwargs(config)
         container = self._client.containers.run(**kwargs)  # type: ignore[attr-defined]
+        if self._audit is not None:
+            self._audit.record("container_started", container.short_id)
         return SandboxHandle(container=container, config=config)
 
     def _container_kwargs(self, config: SandboxConfig) -> dict[str, object]:
