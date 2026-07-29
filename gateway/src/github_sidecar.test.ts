@@ -288,3 +288,9 @@ describe("pr body rendering", () => {
     expect(renderRunStats({ steps: 3, durationS: 1.5, costUsd: 0.01 })).toContain('3');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'tighten types'", () => {
+    expect(renderPrBody('tighten types', ['pytest -q'])).toContain('tighten types');
+  });
+});
