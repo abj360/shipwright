@@ -270,3 +270,9 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('improve logging', ['pytest -q'])).toContain('improve logging');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'refactor' includes '## Tests'", () => {
+    expect(renderPrBody('refactor', ['pytest tests/ -q'])).toContain('## Tests');
+  });
+});
