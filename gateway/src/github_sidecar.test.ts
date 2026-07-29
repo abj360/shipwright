@@ -282,3 +282,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/2')).toBe('Closes #2');
   });
 });
+
+describe("pr body rendering", () => {
+  it("handles stats render step count", () => {
+    expect(renderRunStats({ steps: 3, durationS: 1.5, costUsd: 0.01 })).toContain('3');
+  });
+});
