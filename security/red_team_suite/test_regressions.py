@@ -290,3 +290,8 @@ def test_reg_038_verify_passes_on_untampered_log(tmp_path) -> None:
     log = AuditLog(tmp_path / 'b.jsonl')
     log.record('exec', 'ls')
     assert verify_chain(tmp_path / 'b.jsonl')
+
+def test_reg_059_egress_exfil_io(tmp_path) -> None:
+    """REG-059: egress host exfil.io is denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('exfil.io') is False
