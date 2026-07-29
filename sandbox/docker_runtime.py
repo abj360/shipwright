@@ -141,6 +141,11 @@ class DockerRuntime:
         Returns:
             handle: Live sandbox ready for exec calls.
         """
+        logger.info(
+            "launching sandbox image=%s runtime=%s",
+            config.image,
+            "runsc" if config.gvisor else "runc",
+        )
         self.ensure_image(config.image)
         kwargs = self._container_kwargs(config)
         container = self._client.containers.run(**kwargs)  # type: ignore[attr-defined]
