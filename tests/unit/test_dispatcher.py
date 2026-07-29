@@ -169,3 +169,15 @@ def test_dispatch_write_file_missing_content_ok() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("write_file", {"path": "x.txt"})
     assert result.ok is False
+
+def test_disp_mx2_extra0(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 1)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
+
+def test_disp_mx2_3(tmp_path) -> None:
+    """Verifies dispatch: missing dotted file errors."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("read_file", {"path": "./f.txt"})
+    assert result.ok is False

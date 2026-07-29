@@ -162,6 +162,6 @@ class ScriptedLLM:
             completion: Next scripted response with synthetic token counts.
         """
         if not self.responses:
-            raise RuntimeError("ScriptedLLM ran out of scripted responses")
+            raise RuntimeError("ScriptedLLM exhausted: add another response for this test")
         text = self.responses.pop(0)
         return Completion(text=text, model="scripted", input_tokens=10, output_tokens=10)

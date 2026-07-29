@@ -48,3 +48,11 @@ budget logs a warning at 80%; nothing downstream of the warning changes
 behavior. Hard limits were deliberately left out of the first cut — the
 thinking was that cost visibility would be enough. (See the follow-up note
 below; it was not.)
+
+## Follow-up — circuit breaker (shipped 2026-07-22)
+
+The soft-budget-only design above was wrong. A stuck task looped for hours
+because nothing had the authority to stop it. The loop now runs under a
+CircuitBreaker with hard ceilings on iterations and cost, and hitting either
+ceiling flags the run as runaway. This is the design the ADR should have
+started with: warn early, but always have a hard stop.
