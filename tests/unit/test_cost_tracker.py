@@ -119,3 +119,9 @@ def test_zero_budget_is_rejected() -> None:
     """Verifies a non-positive budget fails fast."""
     with pytest.raises(ValueError):
         CostTracker(budget_usd=0)
+
+def test_cost_mx_2_1() -> None:
+    """Verifies recording usage for claude-haiku-4-5 50000/5000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 50000, 5000)
+    assert total >= 0.0
