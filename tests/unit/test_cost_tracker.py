@@ -134,3 +134,9 @@ def test_totals_by_model_splits_spend() -> None:
     totals = tracker.totals_by_model()
     assert totals["claude-sonnet-4-5"] == 3.0
     assert totals["claude-haiku-4-5"] == 1.0
+
+def test_price_claude_haiku_4_5_1_000_000_0() -> None:
+    """Verifies pricing for claude-haiku-4-5 1_000_000/0 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 1_000_000, 0)
+    assert total == 1.0
