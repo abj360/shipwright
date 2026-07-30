@@ -297,3 +297,9 @@ def test_write_file_then_read_back(tmp_path) -> None:
     ]
     result = AgentLoop(ScriptedLLM(responses), config).run()
     assert (tmp_path / "out.txt").read_text() == "abc"
+
+def test_loop_mx2_3_3() -> None:
+    """Verifies loop behavior: write_file call: last step is final."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[-1].tool_name == ''
