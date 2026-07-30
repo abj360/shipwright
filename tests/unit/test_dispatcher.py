@@ -181,3 +181,9 @@ def test_disp_mx2_3(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {"path": "./f.txt"})
     assert result.ok is False
+
+def test_disp_mx_0_1(tmp_path) -> None:
+    """Verifies dispatch: list_dir fails on null path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": null})
+    assert result.ok is False
