@@ -193,3 +193,9 @@ def test_disp_case_shell_cwd() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('run_shell', {'command': 'pwd'})
     assert str(tmp_path) in result.output
+
+def test_disp_mx2_extra4(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 5)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
