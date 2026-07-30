@@ -203,3 +203,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: '' }).success).toBe(false);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles valid pr request", () => {
+    expect(prRequestSchema.safeParse({ taskId: 't1', summary: 'fix' }).success).toBe(true);
+  });
+});
