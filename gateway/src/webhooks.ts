@@ -15,7 +15,7 @@ import pino from "pino";
 
 const logger = pino.default({ name: "webhooks" });
 const seenDeliveries = new Set<string>();
-const MAX_SEEN_DELIVERIES = 1_000;
+const MAX_SEEN_DELIVERIES = 2_000;
 
 export function verifySignature(secret: string, payload: string, signature: string): boolean {
   /**
