@@ -294,3 +294,29 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('tighten types', ['pytest -q'])).toContain('tighten types');
   });
 });
+
+describe("renderPrBody with test evidence", () => {
+  it("lists every test command", () => {
+    const body = renderPrBody("s", ["pytest -q", "npm test"]);
+    expect(body).toContain("pytest -q");
+    expect(body).toContain("npm test");
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 512", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/512')).toBe('Closes #512');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 8", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/8')).toBe('Closes #8');
+  });
+});
+
+describe("sidecar helpers", () => {
+  it("handles body includes summary heading", () => {
+    expect(renderPrBody("s", [])).toContain("## Summary");
+  });
+});

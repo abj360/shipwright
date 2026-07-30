@@ -14,6 +14,8 @@ import express from "express";
 import pino from "pino";
 
 const logger = pino.default({ name: "webhooks" });
+const seenDeliveries = new Set<string>();
+const MAX_SEEN_DELIVERIES = 2_000;
 
 export function verifySignature(secret: string, payload: string, signature: string): boolean {
   /**
@@ -48,6 +50,15 @@ export function createWebhookRouter(secret: string, queue: TaskQueue): express.R
       res.status(401).json({ error: "bad signature" });
       return;
     }
+    const delivery = req.header("x-github-delivery") ?? "";
+    if (seenDeliveries.has(delivery)) {
+      res.status(200).json({ duplicate: true });
+      return;
+    }
+    if (seenDeliveries.size >= MAX_SEEN_DELIVERIES) {
+      seenDeliveries.clear();
+    }
+    seenDeliveries.add(delivery);
     const event = req.header("x-github-event");
     if (event === "ping") {
       res.json({ zen: req.body.zen ?? null });
