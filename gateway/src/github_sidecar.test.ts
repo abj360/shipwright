@@ -302,3 +302,9 @@ describe("renderPrBody with test evidence", () => {
     expect(body).toContain("npm test");
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 512", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/512')).toBe('Closes #512');
+  });
+});
