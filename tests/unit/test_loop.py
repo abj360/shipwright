@@ -303,3 +303,11 @@ def test_loop_mx2_3_3() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[-1].tool_name == ''
+
+def test_tool_output_is_truncated_to_budget(tmp_path) -> None:
+    """Verifies oversized tool output is cut to the per-step budget."""
+    (tmp_path / "big.txt").write_text("y" * 9000)
+    config = AgentConfig(repo_path=str(tmp_path), task="read big")
+    responses = ["think\nAction: read_file\npath=big.txt", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), config).run()
+    assert len(result.steps[0].observation) <= 8000
