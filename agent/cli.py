@@ -17,6 +17,7 @@ import os
 import sys
 
 from agent.circuit_breaker import RunawayRunError
+from agent.cost_tracker import CostTracker
 from agent.llm_client import HttpLLMClient
 from agent.loop import AgentConfig, AgentLoop, Step
 
@@ -53,6 +54,7 @@ def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
         if step.observation:
             chunks.append(step.observation + "\n")
     chunks.append(f"final: {result.final_answer}\n")
+    chunks.append(f"took {result.duration_s:.1f}s, cost ${result.total_cost_usd:.4f}\n")
     sys.stdout.write("".join(chunks))
     return EXIT_OK if result.final_answer else EXIT_FAILED
 
@@ -83,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
     """
     args = build_parser().parse_args(argv)
     task = args.task or f"resolve issue at {args.issue_url}"
-    config = AgentConfig(repo_path=args.repo, task=task)
+    config = AgentConfig(repo_path=args.repo, task=task, cost_tracker=CostTracker())
     try:
         client = HttpLLMClient(api_key=os.environ["ANTHROPIC_API_KEY"])
     except KeyError:
