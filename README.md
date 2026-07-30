@@ -1,0 +1,208 @@
+# shipwright
+
+An autonomous coding agent: read the repo, plan, edit, run tests, iterate, and
+open a draft PR — executing entirely inside a hardened, isolated sandbox.
+
+Every command the agent runs executes in a short-lived, gVisor-isolated
+container with hard resource limits and a default-deny network egress policy.
+The agent host is outside the trust boundary; the sandbox is the product.
+
+## What it does
+
+- Reads a task (free text or a GitHub issue URL) and explores the target repo.
+- Thinks in a ReAct-style loop: thought → one tool call → observation, until a
+  final answer.
+- Optionally plans first (`--plan-mode`): a planner reads the repo map and
+  produces a capped, validated step list that the loop then executes verbatim.
+- Edits code, runs tests, and opens a **draft PR** through the gateway.
+- Scores the PR diff through `judgeline` before anything is marked ready for
+  review — and the gate fails closed on timeout or persistent 5xx.
+- Halts and flags runaway runs automatically (iteration and cost circuit
+  breaker), so a stuck task can never quietly burn budget for hours.
+
+## Architecture
+
+```
+┌────────┐   task    ┌──────────┐   runs/PRs    ┌─────────┐
+│  cli   │──────────▶│ gateway  │──────────────▶│  agent  │
+│ (head) │           │ (Express)│               │  loop   │
+└────────┘           └──────────┘               └────┬────┘
+     ▲                    │  ▲                       │ docker.sock
+     │ live stream        │  │ webhooks              ▼
+     │                    │  │                ┌─────────────────┐
+┌────────┐                │  └────────────────│ sandbox (runsc) │
+│   ui   │────────────────┘                   │ ro root, cgroup │
+│ xterm  │                                    │ egress allowlist│
+└────────┘                                    └─────────────────┘
+```
+
+| Component   | What it owns                                                        |
+| ----------- | ------------------------------------------------------------------- |
+| `agent/`    | ReAct loop, planner, tool dispatcher, cli, cost tracking, judgeline |
+| `sandbox/`  | Docker runtime, gVisor config, cgroup/mount/egress policies, audit  |
+| `gateway/`  | Express API, GitHub sidecar (clone/branch/push/PR), webhooks, queue |
+| `ui/`       | React + xterm.js live terminal and live diff viewer                 |
+| `security/` | Red-team suite and regression tests for prior findings              |
+| `docker/`   | One Dockerfile per service plus the compose file for the full stack |
+
+## Sandbox hardening
+
+- gVisor (`runsc`) container isolation — mandatory for every sandbox launch.
+- cgroups v2 hard limits (CPU/mem/pids), `memswap` pinned to the memory ceiling.
+- Read-only root filesystem; one explicit writable workdir under
+  `/tmp/shipwright-work`, resolved and verified against symlink escapes.
+- `/tmp` mounted as a small `noexec,nosuid` tmpfs.
+- Network egress default-denied except an explicit allowlist
+  (`sandbox/policies/egress_allowlist.yaml`); no policy, no launch.
+- Hash-chained JSONL audit log for every lifecycle event
+  (`sandbox/audit_log.py`), verifiable with `verify_chain()`.
+
+Validated against `security/red_team_suite/` (fork bombs, symlink escapes,
+network exfiltration attempts) with zero breakouts, and pinned by a growing
+regression suite (`security/red_team_suite/test_regressions.py`).
+
+## Quickstart (one command, fully dockerized)
+
+```bash
+cp .env.example .env          # then fill in ANTHROPIC_API_KEY and GITHUB_TOKEN
+docker compose -f docker/docker-compose.yml up --build
+# ui on :5173, gateway on :4000
+```
+
+No local Python/Node install needed. The `agent` container mounts the host's
+`/var/run/docker.sock` so it can launch each task's gVisor-isolated sandbox as a
+sibling container — this is the one piece that genuinely needs Docker-on-the-host,
+not just Docker-for-convenience, since the sandbox *is* the product here. The
+docker daemon on the host must have `runsc` registered as a runtime.
+
+To kick off a task once the stack is up:
+
+```bash
+docker compose -f docker/docker-compose.yml exec agent \
+  python -m agent.cli --issue-url https://github.com/org/repo/issues/123
+```
+
+## Running tasks
+
+### Headless / CI mode
+
+Streams sandbox output line by line, CI-friendly, with proper exit codes
+(`0` success, `1` run failed, `2` infra/config error):
+
+```bash
+docker compose -f docker/docker-compose.yml exec agent \
+  python -m agent.cli --headless --task "fix failing tests in checkout module"
+```
+
+### Plan-then-execute mode
+
+```bash
+python -m agent.cli --task "migrate the settings module to pydantic v2" --plan-mode
+```
+
+### All CLI flags
+
+| Flag           | Default | Meaning                                        |
+| -------------- | ------- | ---------------------------------------------- |
+| `--task`       | —       | Natural-language task to execute               |
+| `--issue-url`  | —       | GitHub issue URL to work on                    |
+| `--repo`       | `.`     | Path to the checkout to modify                 |
+| `--headless`   | off     | CI-friendly plain output                       |
+| `--json`       | off     | Emit steps as JSON lines                       |
+| `--max-steps`  | `50`    | Iteration ceiling per run (circuit breaker)    |
+| `--max-cost`   | `5.0`   | Cost ceiling per run in USD (circuit breaker)  |
+| `--resume`     | —       | Resume from a saved transcript JSON            |
+| `--plan-mode`  | off     | Plan first, then execute the plan              |
+| `--version`    | —       | Print version and exit                         |
+
+## Gateway API
+
+| Endpoint                  | Method | Purpose                                     |
+| ------------------------- | ------ | ------------------------------------------- |
+| `/health`                 | GET    | Liveness probe (unauthenticated)            |
+| `/runs`                   | POST   | Enqueue an agent run (`{task, issueUrl?}`)  |
+| `/runs`                   | GET    | List runs, paginated (`page`, `perPage`)    |
+| `/runs/:id`               | GET    | Fetch one run record                        |
+| `/runs/:id/logs`          | GET    | Stream run status over SSE                  |
+| `/prs`                    | POST   | Open a draft PR for a finished run          |
+| `/webhooks/github`        | POST   | HMAC-verified issue/comment triggers        |
+
+All endpoints except `/health` and `/webhooks/*` require
+`Authorization: Bearer $GATEWAY_TOKEN`. Webhook deliveries are verified with the
+HMAC-SHA256 signature and deduplicated by delivery id; agent-authored PR events
+are explicitly ignored so runs can never trigger themselves in a loop.
+
+## Live UI
+
+The React + xterm.js viewer (`ui/`) streams one run's sandbox output live over
+the gateway and renders the run's diff alongside it, with per-file collapsible
+sections, line numbers, add/remove stats, and a copy-patch button.
+
+## Quality gating
+
+PR diffs are scored by `judgeline` before being marked ready for review — see
+`docs/ci-integration.md`. A score at or above the readiness threshold (`0.75`
+by default, tunable via `JUDGELINE_THRESHOLD`) flips the PR to ready; anything
+below stays draft with the findings posted as a comment. A judgeline timeout or
+persistent 5xx is treated as *not ready*, never as a pass.
+
+## Cost and safety controls
+
+- Per-run cost tracking with per-model pricing; soft budget warning at 80%.
+- Hard circuit breaker on iterations (`--max-steps`) and spend (`--max-cost`);
+  tripping either flags the run as runaway and halts it (see ADR-001 follow-up).
+- Bounded-concurrency task queue with retries, per-task timeouts, and a
+  dead-letter file for permanently failed runs.
+- Retry-After-aware request queuing for all GitHub mutations, so secondary
+  rate limits back off politely instead of silently dropping PR creations.
+
+## Red-team suite
+
+```bash
+SHIPWRIGHT_INTEGRATION=1 pytest security/ -q
+```
+
+Launches real sandboxes and runs fork bombs, symlink escapes, and exfiltration
+attempts against them, reporting `CONTAINED` or `BREAKOUT` per attempt. The
+regression suite runs without the integration flag and pins every prior finding
+(`REG-001` onward) as a unit test.
+
+## Repo structure
+
+```
+agent/            ReAct loop, planner, dispatcher, cli, cost, judgeline, breaker
+sandbox/          docker runtime, gVisor config, cgroup/mount/egress, audit log
+gateway/          Express server, GitHub sidecar, webhooks, task queue, tests
+ui/               React + xterm.js live terminal and diff viewer
+security/         red-team payloads, runner, regression suite
+tests/            unit and integration suites mirroring the source tree
+docker/           per-service Dockerfiles + docker-compose.yml (whole stack)
+docs/             ADR-001 (agent loop & tool-use design), ci-integration.md
+.github/workflows ci: lint, typecheck, tests, docker build, red-team, merge-gate
+```
+
+## Development
+
+```bash
+pip install -e '.[dev]'
+ruff check . && ruff format --check .
+mypy agent sandbox security
+pytest tests/ -q
+(cd gateway && npm install && npm run lint && npm run typecheck && npm test)
+(cd ui && npm install && npm run lint && npm run typecheck)
+```
+
+Everything also runs in CI on every PR (`.github/workflows/ci.yml`), gated by a
+fail-closed `merge-gate` job. See `CONTRIBUTING.md` for the full engineering
+standards and the pre-merge checklist.
+
+## Design record
+
+`docs/adr/0001-agent-loop-and-tool-use.md` records the load-bearing decisions:
+the ReAct loop and tool contract, dispatcher extraction, plan-then-execute as an
+opt-in mode, and the mistake/fix history (soft budgets vs. hard stops,
+fail-open vs. fail-closed gates) that shaped them.
+
+## Maintainers
+
+Maintained by abj360. See `CONTRIBUTING.md` for how to get involved.
