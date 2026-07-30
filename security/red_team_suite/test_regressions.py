@@ -299,3 +299,8 @@ def test_reg_059_egress_exfil_io(tmp_path) -> None:
 def test_reg_030_pids_preset_for_red_team_is_tight(tmp_path) -> None:
     """REG-030: pids preset for red team is tight."""
     assert CgroupLimits(pids_max=64).pids_max == 64
+
+def test_reg_044_nft_rules_accept_only_443(tmp_path) -> None:
+    """REG-044: nft rules accept only 443."""
+    rules = EgressPolicy(allowed_hosts=('github.com',)).render_nft_rules()
+    assert '443' in rules
