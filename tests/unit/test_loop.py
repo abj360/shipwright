@@ -262,3 +262,52 @@ def test_loop_mx_5_0() -> None:
     responses = ["think\nAction: git_diff\n", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.final_answer == 'done'
+
+def test_read_file_tool_reads_checkout(tmp_path) -> None:
+    """Verifies the read_file tool returns file contents."""
+    (tmp_path / "hello.txt").write_text("hi there")
+    config = AgentConfig(repo_path=str(tmp_path), task="read it")
+    responses = ["think\nAction: read_file\npath=hello.txt", "FINAL: read"]
+    result = AgentLoop(ScriptedLLM(responses), config).run()
+    assert "hi there" in result.steps[0].observation
+
+def test_path_escape_is_blocked(tmp_path) -> None:
+    """Verifies tool paths cannot escape the checkout."""
+    config = AgentConfig(repo_path=str(tmp_path), task="escape")
+    responses = ["think\nAction: read_file\npath=../etc/passwd", "FINAL: stopped"]
+    result = AgentLoop(ScriptedLLM(responses), config).run()
+    assert "error:" in result.steps[0].observation
+
+def test_trim_drops_oldest_observations() -> None:
+    """Verifies transcript trimming replaces old observations first."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    for index in range(40):
+        loop._transcript.append(
+            Step(index=index, thought="t", observation="x" * 4000)
+        )
+    loop._trim_transcript()
+    assert loop._transcript[0].observation.startswith("[observation trimmed")
+
+def test_write_file_then_read_back(tmp_path) -> None:
+    """Verifies the write_file tool persists content the agent can re-read."""
+    config = AgentConfig(repo_path=str(tmp_path), task="write")
+    responses = [
+        "think\nAction: write_file\npath=out.txt; content=abc",
+        "FINAL: wrote",
+    ]
+    result = AgentLoop(ScriptedLLM(responses), config).run()
+    assert (tmp_path / "out.txt").read_text() == "abc"
+
+def test_loop_mx2_3_3() -> None:
+    """Verifies loop behavior: write_file call: last step is final."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[-1].tool_name == ''
+
+def test_tool_output_is_truncated_to_budget(tmp_path) -> None:
+    """Verifies oversized tool output is cut to the per-step budget."""
+    (tmp_path / "big.txt").write_text("y" * 9000)
+    config = AgentConfig(repo_path=str(tmp_path), task="read big")
+    responses = ["think\nAction: read_file\npath=big.txt", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), config).run()
+    assert len(result.steps[0].observation) <= 8000

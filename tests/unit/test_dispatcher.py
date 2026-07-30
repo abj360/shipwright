@@ -181,3 +181,21 @@ def test_disp_mx2_3(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {"path": "./f.txt"})
     assert result.ok is False
+
+def test_disp_mx_0_1(tmp_path) -> None:
+    """Verifies dispatch: list_dir fails on null path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": null})
+    assert result.ok is False
+
+def test_disp_case_shell_cwd() -> None:
+    """Verifies dispatcher behavior: shell runs in the checkout."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch('run_shell', {'command': 'pwd'})
+    assert str(tmp_path) in result.output
+
+def test_disp_mx2_extra4(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 5)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
