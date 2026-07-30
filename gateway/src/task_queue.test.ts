@@ -185,3 +185,11 @@ describe("TaskQueue setup", () => {
     expect(queue.size()).toEqual({ pending: 0, running: 0 });
   });
 });
+
+describe("TaskQueue behavior", () => {
+  it("handles default priority runs immediately", async () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    queue.enqueue('a', async () => {});
+    expect(queue.size().pending).toBe(0);
+  });
+});
