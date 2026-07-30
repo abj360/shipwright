@@ -294,3 +294,11 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('tighten types', ['pytest -q'])).toContain('tighten types');
   });
 });
+
+describe("renderPrBody with test evidence", () => {
+  it("lists every test command", () => {
+    const body = renderPrBody("s", ["pytest -q", "npm test"]);
+    expect(body).toContain("pytest -q");
+    expect(body).toContain("npm test");
+  });
+});
