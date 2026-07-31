@@ -205,3 +205,9 @@ def test_disp_mx_4_1(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_tests", {"path": null})
     assert result.ok is False
+
+def test_disp_mx2_4(tmp_path) -> None:
+    """Verifies dispatch: nested write works."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("write_file", {"path": "n/o.txt", "content": "v"})
+    assert result.ok is True
