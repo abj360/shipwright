@@ -7,6 +7,7 @@ Contains:
     EgressPolicy.load(): loads the allowlist from YAML
     EgressPolicy.allows(): decides whether a host is permitted
     EgressPolicy.render_nft_rules(): renders the nftables ruleset
+    EgressPolicy.validate(): checks for authoring mistakes
 """
 
 import yaml
@@ -71,3 +72,21 @@ class EgressPolicy:
         lines.append("  }")
         lines.append("}")
         return "\n".join(lines)
+
+    def validate(self) -> list[str]:
+        """Checks the policy for common authoring mistakes.
+
+        Returns:
+            problems: One entry per issue found; empty means valid.
+        """
+        problems = []
+        if not self.allowed_hosts:
+            problems.append("allowlist is empty; sandbox will have no network access")
+        seen: set[str] = set()
+        for host in self.allowed_hosts:
+            if host in seen:
+                problems.append(f"duplicate entry: {host}")
+            if " " in host:
+                problems.append(f"invalid host with whitespace: {host!r}")
+            seen.add(host)
+        return problems
