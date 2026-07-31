@@ -311,3 +311,9 @@ def test_tool_output_is_truncated_to_budget(tmp_path) -> None:
     responses = ["think\nAction: read_file\npath=big.txt", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), config).run()
     assert len(result.steps[0].observation) <= 8000
+
+def test_loop_mx2_0_3() -> None:
+    """Verifies loop behavior: list_dir call: last step is final."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[-1].tool_name == ''
