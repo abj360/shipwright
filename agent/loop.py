@@ -31,7 +31,7 @@ from agent.tool_dispatcher import ToolDispatcher
 logger = logging.getLogger(__name__)
 
 MAX_TOOL_OUTPUT_CHARS = 6000
-TRANSCRIPT_TOKEN_BUDGET = 24000
+TRANSCRIPT_TOKEN_BUDGET = 28000
 CHARS_PER_TOKEN_ESTIMATE = 4
 STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
@@ -258,6 +258,10 @@ class AgentLoop:
             self.config.mode = "react"
             return self.run()
         plan = self.config.planner.build_plan(self.config.task)
+        if not plan.steps:
+            logger.warning("planner returned no steps; falling back to react")
+            self.config.mode = "react"
+            return self.run()
         logger.info("run %s executing plan of %d steps", self._run_id, len(plan.steps))
         for plan_step in plan.steps:
             step = Step(
