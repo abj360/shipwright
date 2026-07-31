@@ -17,6 +17,7 @@
  *   commitFiles(): commits many files as one tree
  *   octokitFor(): memoized Octokit client per token
  *   markPrReady(): flips a draft PR to ready-for-review
+ *   getDefaultBranch(): resolves the default branch, cached
  */
 
 import { exec } from "node:child_process";
@@ -292,4 +293,23 @@ export async function markPrReady(config: SidecarConfig, prUrl: string): Promise
     pull_number: Number(match[3]),
     draft: false,
   });
+}
+
+let defaultBranchCache: string | null = null;
+
+export async function getDefaultBranch(config: SidecarConfig): Promise<string> {
+  /**
+   * Resolves the repository's default branch via the API, cached per process.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @returns branch - Default branch name.
+   */
+  if (defaultBranchCache !== null) {
+    return defaultBranchCache;
+  }
+  const octokit = octokitFor(config.githubToken);
+  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const response = await octokit.repos.get({ owner, repo: repo.replace(/\.git$/, "") });
+  defaultBranchCache = response.data.default_branch;
+  return defaultBranchCache;
 }
