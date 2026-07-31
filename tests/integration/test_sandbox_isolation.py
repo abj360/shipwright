@@ -299,3 +299,7 @@ def test_mount_case_workspace_root() -> None:
     else:
         mounts = build_mounts("/tmp/shipwright-work")
         assert mounts[0].target == "/work"
+
+def test_sbox_mx2_m1() -> None:
+    """Verifies policy: mount /tmp/shipwright-work/mx2/deep accepted."""
+    build_mounts('/tmp/shipwright-work/mx2/deep')
