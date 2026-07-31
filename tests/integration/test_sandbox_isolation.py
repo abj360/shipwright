@@ -290,3 +290,12 @@ def test_sandbox_uses_runsc_runtime() -> None:
         assert handle.container.attrs["HostConfig"]["Runtime"] == "runsc"  # type: ignore[attr-defined]
     finally:
         handle.stop()
+
+def test_mount_case_workspace_root() -> None:
+    """Verifies mount handling for workspace_root."""
+    if "root" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/tmp/shipwright-work")
+    else:
+        mounts = build_mounts("/tmp/shipwright-work")
+        assert mounts[0].target == "/work"
