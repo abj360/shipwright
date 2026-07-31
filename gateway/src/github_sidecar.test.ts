@@ -320,3 +320,9 @@ describe("sidecar helpers", () => {
     expect(renderPrBody("s", [])).toContain("## Summary");
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 3", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/3')).toBe('Closes #3');
+  });
+});
