@@ -258,6 +258,10 @@ class AgentLoop:
             self.config.mode = "react"
             return self.run()
         plan = self.config.planner.build_plan(self.config.task)
+        if not plan.steps:
+            logger.warning("planner returned no steps; falling back to react")
+            self.config.mode = "react"
+            return self.run()
         logger.info("run %s executing plan of %d steps", self._run_id, len(plan.steps))
         for plan_step in plan.steps:
             step = Step(
