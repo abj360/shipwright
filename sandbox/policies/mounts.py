@@ -79,4 +79,4 @@ def to_docker_volumes(mounts: list[MountSpec]) -> dict[str, dict[str, str]]:
         volumes[mount.source] = {"bind": mount.target, "mode": mode}
     return volumes
 
-WORKSPACE_ROOT = Path("/tmp/shipwright-work")
+WORKSPACE_ROOT = Path("/tmp/shipwright-work")  # all task workdirs live here
