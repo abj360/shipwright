@@ -309,3 +309,8 @@ def test_reg_048_mount_error_on_missing_root_parent(tmp_path) -> None:
     """REG-048: mount error on missing root parent."""
     with pytest.raises(MountError):
         build_mounts('/opt/elsewhere')
+
+def test_reg_017_whitespace_host_is_flagged(tmp_path) -> None:
+    """REG-017: whitespace host is flagged."""
+    problems = EgressPolicy(allowed_hosts=("bad host",)).validate()
+    assert any("whitespace" in p for p in problems)
