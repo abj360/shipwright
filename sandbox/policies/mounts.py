@@ -4,6 +4,7 @@ mounts.py --- read-only root filesystem plus one explicit writable workdir mount
 
 Contains:
     MountSpec: one bind mount for a sandbox container
+    MountSpec.render(): short human-readable mount string
     build_mounts(): read-only root plus one writable workdir
     rootfs_kwargs(): enforces the read-only root filesystem
     to_docker_volumes(): renders mounts for docker-py
@@ -26,6 +27,15 @@ class MountSpec:
     source: str
     target: str
     read_only: bool = True
+
+    def render(self) -> str:
+        """Renders the mount as a short human-readable string.
+
+        Returns:
+            summary: source, target, and mode in one line.
+        """
+        mode = "ro" if self.read_only else "rw"
+        return f"{self.source}:{self.target}:{mode}"
 
 def build_mounts(workdir: str, extra: list[MountSpec] | None = None) -> list[MountSpec]:
     """Builds the mount set: read-only root plus one writable workdir.
