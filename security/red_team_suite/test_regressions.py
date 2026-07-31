@@ -304,3 +304,8 @@ def test_reg_044_nft_rules_accept_only_443(tmp_path) -> None:
     """REG-044: nft rules accept only 443."""
     rules = EgressPolicy(allowed_hosts=('github.com',)).render_nft_rules()
     assert '443' in rules
+
+def test_reg_048_mount_error_on_missing_root_parent(tmp_path) -> None:
+    """REG-048: mount error on missing root parent."""
+    with pytest.raises(MountError):
+        build_mounts('/opt/elsewhere')
