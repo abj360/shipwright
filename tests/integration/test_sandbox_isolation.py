@@ -281,3 +281,25 @@ def test_sbox_mx_e2() -> None:
     """Verifies policy: egress allows pypi.org."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('pypi.org') is True
+
+def test_sandbox_uses_runsc_runtime() -> None:
+    """Verifies sandboxes launch under gVisor, not runc."""
+    runtime = DockerRuntime()
+    handle = runtime.launch(make_config())
+    try:
+        assert handle.container.attrs["HostConfig"]["Runtime"] == "runsc"  # type: ignore[attr-defined]
+    finally:
+        handle.stop()
+
+def test_mount_case_workspace_root() -> None:
+    """Verifies mount handling for workspace_root."""
+    if "root" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/tmp/shipwright-work")
+    else:
+        mounts = build_mounts("/tmp/shipwright-work")
+        assert mounts[0].target == "/work"
+
+def test_sbox_mx2_m1() -> None:
+    """Verifies policy: mount /tmp/shipwright-work/mx2/deep accepted."""
+    build_mounts('/tmp/shipwright-work/mx2/deep')
