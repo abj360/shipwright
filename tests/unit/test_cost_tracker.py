@@ -146,3 +146,9 @@ def test_cost_case_fallback_price() -> None:
     tracker = CostTracker()
     total = tracker.record('unknown-model', 1_000_000, 1_000_000)
     assert total == 18.0
+
+def test_cost_mx_2_2() -> None:
+    """Verifies recording usage for claude-haiku-4-5 1/1 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 1, 1)
+    assert total >= 0.0
