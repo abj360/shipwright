@@ -7,6 +7,7 @@ Contains:
     ToolError: malformed call or tool failure
     ToolDispatcher.dispatch(): executes and normalizes one tool call
     ToolDispatcher._resolve(): confines paths to the checkout
+    ToolDispatcher._run_tests(): runs the repo's test suite
     ToolDispatcher._write_file(): writes one file in the checkout
 """
 
@@ -24,6 +25,7 @@ REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
     "read_file": ("path",),
     "write_file": ("path", "content"),
     "run_shell": ("command",),
+    "run_tests": (),
 }
 
 @dataclass(frozen=True)
@@ -62,6 +64,7 @@ class ToolDispatcher:
             "list_dir": self._list_dir,
             "run_shell": self._run_shell,
             "write_file": self._write_file,
+            "run_tests": self._run_tests,
         }
 
     def dispatch(self, name: str, args: dict[str, str]) -> ToolResult:
@@ -150,6 +153,28 @@ class ToolDispatcher:
         if self.repo_root not in resolved.parents and resolved != self.repo_root:
             raise ToolError(f"path escapes repo root: {rel_path}")
         return resolved
+
+    def _run_tests(self, args: dict[str, str]) -> str:
+        """Runs the repo's test suite and reports the tail of the output.
+
+        Args:
+            args: Tool arguments; accepts an optional "selector" entry.
+
+        Returns:
+            output: Last lines of the test runner output.
+        """
+        selector = args.get("selector", "")
+        command = f"python -m pytest {selector} -q".strip()
+        proc = subprocess.run(
+            command,
+            shell=True,
+            cwd=self.repo_root,
+            capture_output=True,
+            text=True,
+            timeout=DEFAULT_COMMAND_TIMEOUT_S,
+        )
+        tail = "\n".join((proc.stdout + proc.stderr).splitlines()[-40:])
+        return tail or "no test output"
 
     def _write_file(self, args: dict[str, str]) -> str:
         """Writes text to one file in the checkout, creating parents as needed.
