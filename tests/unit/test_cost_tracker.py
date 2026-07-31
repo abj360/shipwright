@@ -140,3 +140,9 @@ def test_price_claude_haiku_4_5_1_000_000_0() -> None:
     tracker = CostTracker()
     total = tracker.record("claude-haiku-4-5", 1_000_000, 0)
     assert total == 1.0
+
+def test_cost_case_fallback_price() -> None:
+    """Verifies cost tracking: unknown model uses fallback pricing."""
+    tracker = CostTracker()
+    total = tracker.record('unknown-model', 1_000_000, 1_000_000)
+    assert total == 18.0
