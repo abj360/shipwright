@@ -211,3 +211,9 @@ def test_disp_mx2_4(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("write_file", {"path": "n/o.txt", "content": "v"})
     assert result.ok is True
+
+def test_disp_mx2_extra7(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 8)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
