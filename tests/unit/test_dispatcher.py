@@ -199,3 +199,9 @@ def test_disp_mx2_extra4(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "."})
     assert result.ok is True
+
+def test_disp_mx_4_1(tmp_path) -> None:
+    """Verifies dispatch: run_tests fails on null path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {"path": null})
+    assert result.ok is False
