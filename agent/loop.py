@@ -19,6 +19,7 @@ Contains:
 
 import logging
 import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -118,6 +119,7 @@ class AgentLoop:
         self.config = config
         self._client = client
         self._transcript: list[Step] = []
+        self._run_id = uuid.uuid4().hex[:8]
         self._cost_usd = 0.0
         self._dispatcher = ToolDispatcher(Path(config.repo_path))
         logger.debug("agent loop initialised for %s", config.repo_path)
@@ -131,12 +133,14 @@ class AgentLoop:
         if self.config.mode == "plan_execute":
             return self._run_plan_mode()
         started = time.time()
+        logger.info("run %s started: %s", self._run_id, self.config.task[:80])
         while True:
             self.config.breaker.check(len(self._transcript), self._cost_usd)
             step = self._think()
             self._transcript.append(step)
             if not step.tool_name:
                 ended = time.time()
+                logger.info("run %s finished after %d steps", self._run_id, len(self._transcript))
                 return RunResult(
                     final_answer=self._extract_final(step),
                     steps=self._transcript,
@@ -146,6 +150,7 @@ class AgentLoop:
                 )
             output = self._act(step)
             self._observe(step, output)
+            logger.info("run %s step %d tool=%s", self._run_id, step.index, step.tool_name)
 
     def _think(self) -> Step:
         """Asks the model for the next thought and action.
