@@ -314,3 +314,8 @@ def test_reg_017_whitespace_host_is_flagged(tmp_path) -> None:
     """REG-017: whitespace host is flagged."""
     problems = EgressPolicy(allowed_hosts=("bad host",)).validate()
     assert any("whitespace" in p for p in problems)
+
+def test_reg_157_limits_scaled_by_one_is_identity(tmp_path) -> None:
+    """REG-157: limits scaled by one is identity."""
+    limits = CgroupLimits()
+    assert limits.scaled(1.0) == limits
