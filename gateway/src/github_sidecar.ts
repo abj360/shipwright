@@ -18,6 +18,7 @@
  *   octokitFor(): memoized Octokit client per token
  *   markPrReady(): flips a draft PR to ready-for-review
  *   getDefaultBranch(): resolves the default branch, cached
+ *   deleteBranch(): deletes a remote branch on cleanup
  */
 
 import { exec } from "node:child_process";
@@ -312,4 +313,20 @@ export async function getDefaultBranch(config: SidecarConfig): Promise<string> {
   const response = await octokit.repos.get({ owner, repo: repo.replace(/\.git$/, "") });
   defaultBranchCache = response.data.default_branch;
   return defaultBranchCache;
+}
+
+export async function deleteBranch(config: SidecarConfig, branch: string): Promise<void> {
+  /**
+   * Deletes a remote branch once its task is fully cleaned up.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param branch - Branch to delete.
+   */
+  const octokit = octokitFor(config.githubToken);
+  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  await octokit.git.deleteRef({
+    owner,
+    repo: repo.replace(/\.git$/, ""),
+    ref: `heads/${branch}`,
+  });
 }
