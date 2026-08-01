@@ -6,7 +6,7 @@
 import { backoffMs, isRateLimitError, parseRetryAfter } from "./rate_limiter";
 import { describe, expect, it } from "vitest";
 
-import { isRateLimitError, parseRetryAfter } from "./rate_limiter";
+import { backoffMs, isRateLimitError, parseRetryAfter } from "./rate_limiter";
 
 describe("parseRetryAfter", () => {
   it("parses seconds into milliseconds", () => {
@@ -35,5 +35,11 @@ describe("backoffMs", () => {
 describe("rate limiter parsing", () => {
   it("handles status 502 is not a rate limit", () => {
     expect(isRateLimitError({ status: 502 })).toBe(false);
+  });
+});
+
+describe("rate limiter cases", () => {
+  it("handles backoff attempt 0 floor", () => {
+    expect(backoffMs(0)).toBeGreaterThanOrEqual(1_000);
   });
 });
