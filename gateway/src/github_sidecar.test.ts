@@ -338,3 +338,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/13')).toBe('Closes #13');
   });
 });
+
+describe("sidecar helpers", () => {
+  it("handles body notes draft status", () => {
+    expect(renderPrBody("s", [])).toContain("draft");
+  });
+});
