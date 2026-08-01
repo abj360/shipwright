@@ -6,11 +6,13 @@ Contains:
     OutlineEntry: cached outline with its modification time
     RepoMap: builds and caches per-file outlines
     RepoMap.outline_for(): cached outline, rebuilt on change
+    RepoMap.detect_changes(): lists files with uncommitted changes
     RepoMap.refresh(): invalidates entries for changed files
 """
 
 import ast
 import logging
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -88,6 +90,22 @@ class RepoMap:
         if len(outline) > OUTLINE_MAX_CHARS:
             outline = outline[:OUTLINE_MAX_CHARS].rsplit(",", 1)[0] + ", ..."
         return outline or "(no top-level symbols)"
+
+    def detect_changes(self) -> list[str]:
+        """Lists files with uncommitted changes, for targeted invalidation.
+
+        Returns:
+            changed: Repo-relative paths reported by git status.
+        """
+        proc = subprocess.run(
+            "git status --porcelain",
+            shell=True,
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        return [line[3:].strip() for line in proc.stdout.splitlines() if len(line) > 3]
 
     def refresh(self, changed: list[str]) -> int:
         """Invalidates cache entries for files that changed on disk.

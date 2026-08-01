@@ -259,3 +259,12 @@ def test_parser_accepts_run_ceilings() -> None:
     args = build_parser().parse_args(["--task", "x", "--max-steps", "10", "--max-cost", "1.5"])
     assert args.max_steps == 10
     assert args.max_cost == 1.5
+
+def test_cli_mx2_0_1() -> None:
+    """Verifies parsing of headless plus json."""
+    if "['--task', 'x', '--headless', '--json']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--headless', '--json'])
+        assert args.headless and args.json

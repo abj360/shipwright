@@ -329,3 +329,9 @@ def test_loop_mx2_3_2() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].observation is not None
+
+def test_scripted_model_costs_nothing() -> None:
+    """Verifies the scripted test model is priced at zero."""
+    tracker = CostTracker()
+    tracker.record("scripted", 1000, 1000)
+    assert tracker.total_usd() == 0.0
