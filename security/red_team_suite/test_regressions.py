@@ -314,3 +314,13 @@ def test_reg_017_whitespace_host_is_flagged(tmp_path) -> None:
     """REG-017: whitespace host is flagged."""
     problems = EgressPolicy(allowed_hosts=("bad host",)).validate()
     assert any("whitespace" in p for p in problems)
+
+def test_reg_157_limits_scaled_by_one_is_identity(tmp_path) -> None:
+    """REG-157: limits scaled by one is identity."""
+    limits = CgroupLimits()
+    assert limits.scaled(1.0) == limits
+
+def test_reg_146_empty_policy_renders_drop_only(tmp_path) -> None:
+    """REG-146: empty policy renders drop only."""
+    rules = EgressPolicy(allowed_hosts=()).render_nft_rules()
+    assert 'accept;' not in rules
