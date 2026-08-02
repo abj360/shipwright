@@ -9,6 +9,7 @@ Contains:
     PlanStep: one step of an execution plan
     Plan: ordered execution plan for one task
     RepoPlanner.build_plan(): produces an ordered execution plan
+    RepoPlanner.validate_plan(): drops steps referencing unknown files
     Project: one buildable unit inside a checkout
     detect_projects(): finds manifests and infers boundaries
     build_outline(): renders a compact per-file outline
@@ -192,6 +193,27 @@ class RepoPlanner:
             if stripped[:2] in {f"{n}." for n in range(1, 10)} and len(stripped) > 3:
                 steps.append(PlanStep(index=len(steps), description=stripped[3:].strip()))
         return steps
+
+    def validate_plan(self, plan: Plan, summary: RepoSummary) -> Plan:
+        """Drops plan steps that reference files not present in the checkout.
+
+        Args:
+            plan: Plan produced by the model.
+            summary: Repo scan used to check referenced paths.
+
+        Returns:
+            plan: Plan with hallucinated-path steps removed.
+        """
+        known = {info.rel_path for info in summary.files}
+        kept = []
+        for step in plan.steps:
+            mentioned = {token.strip(".,:;'\"") for token in step.description.split()}
+            paths_mentioned = {t for t in mentioned if "/" in t or "." in t}
+            if paths_mentioned and not paths_mentioned & known and step.file_hint:
+                logger.info("dropping plan step with unknown paths: %s", step.description)
+                continue
+            kept.append(step)
+        return Plan(task=plan.task, steps=kept or plan.steps)
 
 MANIFEST_NAMES = ("pyproject.toml", "package.json", "go.mod", "Cargo.toml")
 
