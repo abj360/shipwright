@@ -24,6 +24,11 @@ const logger = pino.default({ name: "gateway" });
 const config = loadConfig();
 const app = express.default();
 app.use(express.json());
+app.use((req, res, next) => {
+  req.headers["x-request-id"] = req.headers["x-request-id"] ?? crypto.randomUUID();
+  res.setHeader("x-request-id", String(req.headers["x-request-id"]));
+  next();
+});
 
 const queue = new TaskQueue({ concurrency: 2 });
 
