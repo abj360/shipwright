@@ -277,3 +277,9 @@ def test_cli_mx2_version() -> None:
     else:
         args = build_parser().parse_args(['--version'])
         assert True
+
+def test_missing_final_marker_exits_failed(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verifies a transcript without FINAL still terminates the run."""
+    loop = make_loop(["FINAL: "])
+    assert _run_headless(loop) == EXIT_OK
+    capsys.readouterr()
