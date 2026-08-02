@@ -329,3 +329,15 @@ def test_reg_160_describe_covers_all_three_ceilings(tmp_path) -> None:
     """REG-160: describe covers all three ceilings."""
     text = CgroupLimits().describe()
     assert 'cpu' in text and 'mem' in text and 'pids' in text
+
+def test_reg_009_subdomain_of_allowed_host_is_permitted() -> None:
+    """REG-009: subdomains of allowlisted hosts inherit the allowance."""
+    policy = EgressPolicy(allowed_hosts=("github.com",))
+    assert policy.allows("api.github.com")
+    assert not policy.allows("notgithub.com")
+
+def test_reg_010_policy_validation_catches_duplicates() -> None:
+    """REG-010: duplicate allowlist entries are flagged by validate()."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "github.com"))
+    problems = policy.validate()
+    assert any("duplicate" in p for p in problems)
