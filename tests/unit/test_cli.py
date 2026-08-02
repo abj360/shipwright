@@ -293,3 +293,8 @@ def test_cli_mx_0_1() -> None:
     """Verifies parsing of --headless with --headless."""
     args = build_parser().parse_args(['--task', 'x', '--headless', '--headless'])
     assert args.headless
+
+def test_cli_mx_1_2() -> None:
+    """Verifies parsing of --json with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--json', '--json'])
+    assert args.json
