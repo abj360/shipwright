@@ -346,3 +346,8 @@ def test_reg_161_sandbox_config_workdir_default(tmp_path) -> None:
     """REG-161: sandbox config workdir default."""
     from sandbox.docker_runtime import SandboxConfig
     assert SandboxConfig().workdir.startswith('/')
+
+def test_reg_131_cgroup_cpu_quota_micros_50_000(tmp_path) -> None:
+    """REG-131: cgroup cpu_quota_micros=50_000 passes."""
+    limits = CgroupLimits(cpu_quota_micros=50_000)
+    assert limits.cpu_quota_micros > 0
