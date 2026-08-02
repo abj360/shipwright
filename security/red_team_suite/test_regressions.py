@@ -324,3 +324,8 @@ def test_reg_146_empty_policy_renders_drop_only(tmp_path) -> None:
     """REG-146: empty policy renders drop only."""
     rules = EgressPolicy(allowed_hosts=()).render_nft_rules()
     assert 'accept;' not in rules
+
+def test_reg_160_describe_covers_all_three_ceilings(tmp_path) -> None:
+    """REG-160: describe covers all three ceilings."""
+    text = CgroupLimits().describe()
+    assert 'cpu' in text and 'mem' in text and 'pids' in text
