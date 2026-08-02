@@ -217,3 +217,9 @@ def test_disp_mx2_extra7(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "."})
     assert result.ok is True
+
+def test_disp_case_resolve_nested() -> None:
+    """Verifies dispatcher behavior: nested paths resolve."""
+    dispatcher = ToolDispatcher(tmp_path)
+    resolved = dispatcher._resolve('a/b/c')
+    assert str(resolved).endswith('a/b/c')

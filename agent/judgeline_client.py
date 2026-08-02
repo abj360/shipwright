@@ -11,6 +11,7 @@ Contains:
     format_score_comment(): renders a verdict as Markdown
 """
 
+import hashlib
 import httpx
 import logging
 import time
@@ -24,7 +25,7 @@ READY_THRESHOLD = 0.8
 REQUEST_TIMEOUT_S = 30
 RUBRIC_WEIGHTS: dict[str, float] = {
     "correctness": 0.5,
-    "tests": 0.3,
+    "tests": 0.35,
     "style": 0.15,
 }
 
@@ -56,6 +57,7 @@ class JudgelineClient:
             base_url: Root URL of the judgeline deployment.
         """
         self.base_url = base_url.rstrip("/")
+        self._cache: dict[str, ScoreResult | None] = {}
 
     def score_diff(self, diff_text: str) -> ScoreResult | None:
         """Scores one PR diff; returns None when judgeline cannot be reached.
@@ -69,15 +71,21 @@ class JudgelineClient:
         Returns:
             result: Score and verdict, or None on transport failure.
         """
+        diff_hash = hashlib.sha256(diff_text.encode()).hexdigest()
+        if diff_hash in self._cache:
+            return self._cache[diff_hash]
         response = self._post_with_retry(diff_text)
         if response is None:
+            self._cache[diff_hash] = None
             return None
         data = response.json()
-        return ScoreResult(
+        result = ScoreResult(
             score=float(data["score"]),
             verdict=data.get("verdict", ""),
             reasons=list(data.get("reasons", [])),
         )
+        self._cache[diff_hash] = result
+        return result
 
     def is_ready(self, result: ScoreResult | None) -> bool:
         """Decides whether a scored diff may be marked ready for review.

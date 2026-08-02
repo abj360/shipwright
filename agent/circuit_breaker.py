@@ -16,7 +16,7 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_ITERATIONS = 50
-DEFAULT_MAX_COST_USD = 5.0
+DEFAULT_MAX_COST_USD = 3.0
 
 class TripReason(str, Enum):
     """Identifies which limit tripped the breaker."""
