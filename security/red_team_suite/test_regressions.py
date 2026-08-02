@@ -341,3 +341,8 @@ def test_reg_010_policy_validation_catches_duplicates() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "github.com"))
     problems = policy.validate()
     assert any("duplicate" in p for p in problems)
+
+def test_reg_161_sandbox_config_workdir_default(tmp_path) -> None:
+    """REG-161: sandbox config workdir default."""
+    from sandbox.docker_runtime import SandboxConfig
+    assert SandboxConfig().workdir.startswith('/')
