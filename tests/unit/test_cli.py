@@ -283,3 +283,8 @@ def test_missing_final_marker_exits_failed(capsys: pytest.CaptureFixture[str]) -
     loop = make_loop(["FINAL: "])
     assert _run_headless(loop) == EXIT_OK
     capsys.readouterr()
+
+def test_flag_json_on() -> None:
+    """Verifies parsing: json on."""
+    args = build_parser().parse_args(["--task", "a", "--json"])
+    assert args.json == True
