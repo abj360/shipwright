@@ -277,3 +277,33 @@ def test_cli_mx2_version() -> None:
     else:
         args = build_parser().parse_args(['--version'])
         assert True
+
+def test_missing_final_marker_exits_failed(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verifies a transcript without FINAL still terminates the run."""
+    loop = make_loop(["FINAL: "])
+    assert _run_headless(loop) == EXIT_OK
+    capsys.readouterr()
+
+def test_flag_json_on() -> None:
+    """Verifies parsing: json on."""
+    args = build_parser().parse_args(["--task", "a", "--json"])
+    assert args.json == True
+
+def test_cli_mx_0_1() -> None:
+    """Verifies parsing of --headless with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--headless', '--headless'])
+    assert args.headless
+
+def test_cli_mx_1_2() -> None:
+    """Verifies parsing of --json with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--json', '--json'])
+    assert args.json
+
+def test_cli_mx2_7_0() -> None:
+    """Verifies parsing of issue url headless."""
+    if "['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/1', '--headless']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/1', '--headless'])
+        assert args.headless
