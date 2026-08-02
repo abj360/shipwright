@@ -288,3 +288,8 @@ def test_flag_json_on() -> None:
     """Verifies parsing: json on."""
     args = build_parser().parse_args(["--task", "a", "--json"])
     assert args.json == True
+
+def test_cli_mx_0_1() -> None:
+    """Verifies parsing of --headless with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--headless', '--headless'])
+    assert args.headless
