@@ -268,3 +268,12 @@ def test_cli_mx2_0_1() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--headless', '--json'])
         assert args.headless and args.json
+
+def test_cli_mx2_version() -> None:
+    """Verifies parsing of version flag parses (SystemExit)."""
+    if "['--version']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--version'])
+        assert True

@@ -56,6 +56,8 @@ class AuditLog:
         chain = self._chain_hash(payload)
         with self._path.open("a") as handle:
             handle.write(json.dumps({"event": payload, "chain": chain}) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
         self._prev_hash = chain
 
     def _chain_hash(self, payload: str) -> str:
