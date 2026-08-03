@@ -172,3 +172,10 @@ def test_price_scripted_1_000_000_1_000_000() -> None:
     tracker = CostTracker()
     total = tracker.record("scripted", 1_000_000, 1_000_000)
     assert total == 0.0
+
+def test_format_summary_includes_totals() -> None:
+    """Verifies the one-line summary mentions spend and count."""
+    tracker = CostTracker()
+    tracker.record("claude-sonnet-4-5", 1000, 100)
+    summary = tracker.format_summary()
+    assert "$" in summary and "1 completions" in summary
