@@ -374,3 +374,9 @@ describe("sidecar rendering cases", () => {
     expect(renderRunStats({ steps: 1, durationS: 0.5, costUsd: 0.001 })).toContain('1');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'bump deps'", () => {
+    expect(renderPrBody('bump deps', ['pytest -q'])).toContain('bump deps');
+  });
+});
