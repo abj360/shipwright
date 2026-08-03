@@ -12,7 +12,7 @@ import { useSandboxSocket } from "./useSandboxSocket";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface TerminalViewerProps {
   runId: string;
@@ -27,8 +27,12 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
 
   const termRef = useRef<Terminal | null>(null);
   const pendingRef = useRef<string[]>([]);
+  const pausedRef = useRef(false);
   const flushRef = useRef(false);
   useSandboxSocket(gatewayUrl, runId, (data) => {
+    if (pausedRef.current) {
+      return;
+    }
     if (pendingRef.current.length >= MAX_PENDING_CHUNKS) {
       return;
     }
@@ -64,7 +68,15 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
     };
   }, [runId, gatewayUrl]);
 
-  return <div className="terminal-viewer" ref={hostRef} />;
+  const [paused, setPaused] = useState(false);
+  pausedRef.current = paused;
+
+  return (
+    <div className="terminal-viewer">
+      <button onClick={() => setPaused(!paused)}>{paused ? "resume" : "pause"}</button>
+      <div ref={hostRef} />
+    </div>
+  );
 }
 
 const MAX_PENDING_CHUNKS = 100;

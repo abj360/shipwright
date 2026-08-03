@@ -335,3 +335,9 @@ def test_scripted_model_costs_nothing() -> None:
     tracker = CostTracker()
     tracker.record("scripted", 1000, 1000)
     assert tracker.total_usd() == 0.0
+
+def test_loop_mx2_1_0() -> None:
+    """Verifies loop behavior: read_file call: two steps total."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert len(result.steps) == 2
