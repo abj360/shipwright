@@ -356,3 +356,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/3')).toBe('Closes #3');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'add cache' includes 'add cache'", () => {
+    expect(renderPrBody('add cache', ['npm test'])).toContain('add cache');
+  });
+});
