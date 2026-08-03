@@ -344,3 +344,9 @@ describe("sidecar helpers", () => {
     expect(renderPrBody("s", [])).toContain("draft");
   });
 });
+
+describe("sidecar helpers", () => {
+  it("handles body includes tests heading", () => {
+    expect(renderPrBody("s", ["t"])).toContain("## Tests");
+  });
+});
