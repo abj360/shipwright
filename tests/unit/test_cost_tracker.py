@@ -179,3 +179,9 @@ def test_format_summary_includes_totals() -> None:
     tracker.record("claude-sonnet-4-5", 1000, 100)
     summary = tracker.format_summary()
     assert "$" in summary and "1 completions" in summary
+
+def test_price_claude_opus_4_1_0_1_000_000() -> None:
+    """Verifies pricing for claude-opus-4-1 0/1_000_000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-opus-4-1", 0, 1_000_000)
+    assert total == 75.0
