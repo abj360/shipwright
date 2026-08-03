@@ -152,3 +152,42 @@ def test_cost_mx_2_2() -> None:
     tracker = CostTracker()
     total = tracker.record("claude-haiku-4-5", 1, 1)
     assert total >= 0.0
+
+def test_reset_clears_usage() -> None:
+    """Verifies reset() empties the tracker."""
+    tracker = CostTracker()
+    tracker.record("claude-sonnet-4-5", 1000, 100)
+    tracker.reset()
+    assert tracker.total_usd() == 0.0
+
+def test_cost_case_report_lines() -> None:
+    """Verifies cost tracking: report ends with a total line."""
+    tracker = CostTracker()
+    tracker.record('claude-sonnet-4-5', 1000, 100)
+    report = tracker.report()
+    assert 'total:' in report
+
+def test_price_scripted_1_000_000_1_000_000() -> None:
+    """Verifies pricing for scripted 1_000_000/1_000_000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("scripted", 1_000_000, 1_000_000)
+    assert total == 0.0
+
+def test_format_summary_includes_totals() -> None:
+    """Verifies the one-line summary mentions spend and count."""
+    tracker = CostTracker()
+    tracker.record("claude-sonnet-4-5", 1000, 100)
+    summary = tracker.format_summary()
+    assert "$" in summary and "1 completions" in summary
+
+def test_price_claude_opus_4_1_0_1_000_000() -> None:
+    """Verifies pricing for claude-opus-4-1 0/1_000_000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-opus-4-1", 0, 1_000_000)
+    assert total == 75.0
+
+def test_cost_mx2_2_3() -> None:
+    """Verifies pricing for claude-haiku-4-5 2000/0 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 2000, 0)
+    assert total > 0.0
