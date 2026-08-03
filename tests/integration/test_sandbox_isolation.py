@@ -308,3 +308,9 @@ def test_sbox_mx_m0() -> None:
     """Verifies policy: mount accepted for /tmp/shipwright-work/a."""
     mounts = build_mounts('/tmp/shipwright-work/a')
     assert mounts[0].target == '/work'
+
+def test_egress_case_attacker_example() -> None:
+    """Verifies egress treatment of attacker.example."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("attacker.example") is False

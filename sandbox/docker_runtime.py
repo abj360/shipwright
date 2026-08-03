@@ -8,6 +8,7 @@ Contains:
     SandboxHandle: wraps a running sandbox container
     SandboxHandle.exec(): runs one command inside
     SandboxHandle.stop(): stops and removes the container
+    SandboxHandle.wait(): blocks until exit or deadline
     SandboxHandle.exec_stream(): yields output chunks live
     DockerRuntime: launches short-lived sandbox containers
     DockerRuntime.launch(): starts one sandbox container
@@ -16,6 +17,7 @@ Contains:
 
 import docker
 import logging
+import time
 from dataclasses import dataclass, field
 from typing import Iterator
 
@@ -103,6 +105,25 @@ class SandboxHandle:
             self.container.kill()  # type: ignore[attr-defined]
         finally:
             self.container.remove(force=True)  # type: ignore[attr-defined]
+
+    def wait(self, timeout_s: int) -> int:
+        """Blocks until the sandbox's main process exits or the deadline hits.
+
+        Args:
+            timeout_s: Maximum seconds to wait.
+
+        Returns:
+            exit_code: Container exit status.
+        """
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            self.container.reload()  # type: ignore[attr-defined]
+            status = self.container.status  # type: ignore[attr-defined]
+            if status in {"exited", "dead"}:
+                result = self.container.wait()  # type: ignore[attr-defined]
+                return int(result["StatusCode"])
+            time.sleep(0.2)
+        raise TimeoutError(f"sandbox did not exit within {timeout_s}s")
 
     def exec_stream(self, command: str) -> Iterator[str]:
         """Runs one command, yielding output chunks as they arrive.
