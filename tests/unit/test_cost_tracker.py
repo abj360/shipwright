@@ -166,3 +166,9 @@ def test_cost_case_report_lines() -> None:
     tracker.record('claude-sonnet-4-5', 1000, 100)
     report = tracker.report()
     assert 'total:' in report
+
+def test_price_scripted_1_000_000_1_000_000() -> None:
+    """Verifies pricing for scripted 1_000_000/1_000_000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("scripted", 1_000_000, 1_000_000)
+    assert total == 0.0
