@@ -386,3 +386,9 @@ describe("pr body rendering", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/1234')).toBe('Closes #1234');
   });
 });
+
+describe("sidecar helpers", () => {
+  it("handles closes trailer keeps issue number", () => {
+    expect(closesIssueLine("https://github.com/o/r/issues/7")).toBe("Closes #7");
+  });
+});
