@@ -344,3 +344,51 @@ describe("sidecar helpers", () => {
     expect(renderPrBody("s", [])).toContain("draft");
   });
 });
+
+describe("sidecar helpers", () => {
+  it("handles body includes tests heading", () => {
+    expect(renderPrBody("s", ["t"])).toContain("## Tests");
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 3", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/3')).toBe('Closes #3');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'add cache' includes 'add cache'", () => {
+    expect(renderPrBody('add cache', ['npm test'])).toContain('add cache');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 42", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/42')).toBe('Closes #42');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 1 steps", () => {
+    expect(renderRunStats({ steps: 1, durationS: 0.5, costUsd: 0.001 })).toContain('1');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'bump deps'", () => {
+    expect(renderPrBody('bump deps', ['pytest -q'])).toContain('bump deps');
+  });
+});
+
+describe("pr body rendering", () => {
+  it("handles closes keeps large issue numbers", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/1234')).toBe('Closes #1234');
+  });
+});
+
+describe("sidecar helpers", () => {
+  it("handles closes trailer keeps issue number", () => {
+    expect(closesIssueLine("https://github.com/o/r/issues/7")).toBe("Closes #7");
+  });
+});
