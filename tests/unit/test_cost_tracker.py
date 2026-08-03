@@ -185,3 +185,9 @@ def test_price_claude_opus_4_1_0_1_000_000() -> None:
     tracker = CostTracker()
     total = tracker.record("claude-opus-4-1", 0, 1_000_000)
     assert total == 75.0
+
+def test_cost_mx2_2_3() -> None:
+    """Verifies pricing for claude-haiku-4-5 2000/0 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-haiku-4-5", 2000, 0)
+    assert total > 0.0
