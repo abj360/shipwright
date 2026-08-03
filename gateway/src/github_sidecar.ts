@@ -127,6 +127,7 @@ export async function createPrFromRun(
   config: SidecarConfig,
   taskId: string,
   taskSummary: string,
+  testsRun: string[] = [],
 ): Promise<PrFlowResult> {
   /**
    * Runs the full flow: clone, branch, commit, push, open draft PR.
@@ -139,7 +140,12 @@ export async function createPrFromRun(
   const repoDir = await cloneRepo(config, taskId);
   const branch = await createBranch(repoDir, taskId);
   await commitAndPush(repoDir, branch, taskSummary);
-  const prUrl = await createDraftPr(config, branch, taskSummary, renderPrBody(taskSummary, []));
+  const prUrl = await createDraftPr(
+    config,
+    branch,
+    taskSummary,
+    renderPrBody(taskSummary, testsRun),
+  );
   return { prUrl, branch };
 }
 
