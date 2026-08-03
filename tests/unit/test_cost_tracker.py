@@ -152,3 +152,10 @@ def test_cost_mx_2_2() -> None:
     tracker = CostTracker()
     total = tracker.record("claude-haiku-4-5", 1, 1)
     assert total >= 0.0
+
+def test_reset_clears_usage() -> None:
+    """Verifies reset() empties the tracker."""
+    tracker = CostTracker()
+    tracker.record("claude-sonnet-4-5", 1000, 100)
+    tracker.reset()
+    assert tracker.total_usd() == 0.0
