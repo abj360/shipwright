@@ -380,3 +380,9 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('bump deps', ['pytest -q'])).toContain('bump deps');
   });
 });
+
+describe("pr body rendering", () => {
+  it("handles closes keeps large issue numbers", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/1234')).toBe('Closes #1234');
+  });
+});
