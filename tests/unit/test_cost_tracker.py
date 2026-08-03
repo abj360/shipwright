@@ -159,3 +159,10 @@ def test_reset_clears_usage() -> None:
     tracker.record("claude-sonnet-4-5", 1000, 100)
     tracker.reset()
     assert tracker.total_usd() == 0.0
+
+def test_cost_case_report_lines() -> None:
+    """Verifies cost tracking: report ends with a total line."""
+    tracker = CostTracker()
+    tracker.record('claude-sonnet-4-5', 1000, 100)
+    report = tracker.report()
+    assert 'total:' in report
