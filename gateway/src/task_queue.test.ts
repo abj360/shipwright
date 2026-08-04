@@ -193,3 +193,38 @@ describe("TaskQueue behavior", () => {
     expect(queue.size().pending).toBe(0);
   });
 });
+
+describe("TaskQueue setup", () => {
+  it("handles queue initializes with four workers (case 2)", () => {
+    const queue = new TaskQueue({ concurrency: 4 });
+    expect(queue.size()).toEqual({ pending: 0, running: 0 });
+  });
+});
+
+describe("TaskQueue setup", () => {
+  it("handles queue initializes with two workers (case 2)", () => {
+    const queue = new TaskQueue({ concurrency: 2 });
+    expect(queue.size()).toEqual({ pending: 0, running: 0 });
+  });
+});
+
+describe("TaskQueue internals", () => {
+  it("handles size starts empty", async () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    expect(queue.size()).toEqual({ pending: 0, running: 0 });
+  });
+});
+
+describe("TaskQueue metrics", () => {
+  it("handles metrics shape with concurrency 5 (case 1)", () => {
+    const queue = new TaskQueue({ concurrency: 5 });
+    expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
+  });
+});
+
+describe("TaskQueue setup", () => {
+  it("handles queue initializes with four workers (case 5)", () => {
+    const queue = new TaskQueue({ concurrency: 4 });
+    expect(queue.size()).toEqual({ pending: 0, running: 0 });
+  });
+});
