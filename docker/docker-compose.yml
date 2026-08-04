@@ -22,7 +22,7 @@ services:
       - "4000:4000"
     healthcheck:
       test: wget -qO- http://localhost:4000/health || exit 1
-      interval: 10s
+      interval: 15s
       timeout: 3s
       retries: 10
 
