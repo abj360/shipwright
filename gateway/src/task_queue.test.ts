@@ -214,3 +214,10 @@ describe("TaskQueue internals", () => {
     expect(queue.size()).toEqual({ pending: 0, running: 0 });
   });
 });
+
+describe("TaskQueue metrics", () => {
+  it("handles metrics shape with concurrency 5 (case 1)", () => {
+    const queue = new TaskQueue({ concurrency: 5 });
+    expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
+  });
+});
