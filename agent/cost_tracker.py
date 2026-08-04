@@ -57,7 +57,6 @@ class CostTracker:
         """
         self.budget_usd = budget_usd
         self._entries: list[Usage] = []
-        logger.debug("cost tracker ready")
 
     def record(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Adds one completion's usage and returns the running total.
