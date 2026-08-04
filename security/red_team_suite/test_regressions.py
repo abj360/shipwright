@@ -357,3 +357,8 @@ def test_reg_144_audit_mirror_flag_defaults_off(tmp_path) -> None:
     from sandbox.audit_log import AuditLog
     log = AuditLog(tmp_path / 'q.jsonl')
     assert log._mirror is False
+
+def test_reg_043_nft_rules_list_allowed_hosts(tmp_path) -> None:
+    """REG-043: nft rules list allowed hosts."""
+    rules = EgressPolicy(allowed_hosts=('github.com',)).render_nft_rules()
+    assert 'github.com' in rules
