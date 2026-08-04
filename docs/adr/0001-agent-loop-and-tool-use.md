@@ -56,3 +56,10 @@ because nothing had the authority to stop it. The loop now runs under a
 CircuitBreaker with hard ceilings on iterations and cost, and hitting either
 ceiling flags the run as runaway. This is the design the ADR should have
 started with: warn early, but always have a hard stop.
+
+## Follow-up: dispatcher extraction (2026-07-11)
+
+The inline tool table in the loop was the first thing to outgrow its home.
+Dispatch now lives in ToolDispatcher with argument validation, path
+confinement, and per-tool timeouts. The loop talks to exactly one seam and
+no longer knows which tools exist.

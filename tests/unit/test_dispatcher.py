@@ -223,3 +223,9 @@ def test_disp_case_resolve_nested() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     resolved = dispatcher._resolve('a/b/c')
     assert str(resolved).endswith('a/b/c')
+
+def test_apply_patch_rejects_empty_patch(tmp_path) -> None:
+    """Verifies an empty patch is rejected before invoking git."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("apply_patch", {"patch": " "})
+    assert not result.ok
