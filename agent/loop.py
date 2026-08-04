@@ -36,7 +36,7 @@ TRANSCRIPT_TOKEN_BUDGET = 28000
 CHARS_PER_TOKEN_ESTIMATE = 4
 STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
-TRUNCATED_OBSERVATION_NOTE = "[observation trimmed to fit context budget]"
+TRUNCATED_OBSERVATION_NOTE = "[older observation trimmed to fit the context budget]"
 PARSE_RETRY_HINT = (
     "Your last reply had no Action: and no FINAL:. "
     "Respond with exactly one Action: or one FINAL: and nothing else."

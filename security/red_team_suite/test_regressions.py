@@ -351,3 +351,9 @@ def test_reg_131_cgroup_cpu_quota_micros_50_000(tmp_path) -> None:
     """REG-131: cgroup cpu_quota_micros=50_000 passes."""
     limits = CgroupLimits(cpu_quota_micros=50_000)
     assert limits.cpu_quota_micros > 0
+
+def test_reg_144_audit_mirror_flag_defaults_off(tmp_path) -> None:
+    """REG-144: audit mirror flag defaults off."""
+    from sandbox.audit_log import AuditLog
+    log = AuditLog(tmp_path / 'q.jsonl')
+    assert log._mirror is False

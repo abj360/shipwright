@@ -341,3 +341,9 @@ def test_loop_mx2_1_0() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert len(result.steps) == 2
+
+def test_loop_mx2_0_1() -> None:
+    """Verifies loop behavior: list_dir call: final answer returned."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'
