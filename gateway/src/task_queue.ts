@@ -42,6 +42,7 @@ export class TaskQueue {
   private readonly maxAttempts: number;
   private readonly taskTimeoutMs: number;
   private readonly deadLetterPath: string;
+  private readonly counters = { completed: 0, failed: 0, retried: 0 };
 
   constructor(options: TaskQueueOptions) {
     this.concurrency = options.concurrency;
@@ -77,6 +78,15 @@ export class TaskQueue {
     return { pending: this.pending.length, running: this.running };
   }
 
+  metrics(): { completed: number; failed: number; retried: number } {
+    /**
+     * Reports cumulative task outcome counters.
+     *
+     * @returns metrics - Completed, failed, and retried counts.
+     */
+    return { ...this.counters };
+  }
+
   private kick(): void {
     while (this.running < this.concurrency && this.pending.length > 0) {
       // length checked by the loop guard; shift() returns a task
@@ -92,12 +102,15 @@ export class TaskQueue {
     }, this.taskTimeoutMs);
     try {
       await task.run();
+      this.counters.completed += 1;
     } catch (error) {
       task.attempts += 1;
       if (task.attempts < this.maxAttempts) {
+        this.counters.retried += 1;
         logger.warn({ taskId: task.id, attempts: task.attempts }, "task failed; retrying");
         this.pending.push(task);
       } else {
+        this.counters.failed += 1;
         logger.error({ taskId: task.id, err: error }, "task failed permanently");
         this.recordDeadLetter(task, error);
       }
