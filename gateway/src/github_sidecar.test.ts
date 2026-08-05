@@ -398,3 +398,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/2')).toBe('Closes #2');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'tighten types'", () => {
+    expect(renderPrBody('tighten types', ['pytest -q'])).toContain('tighten types');
+  });
+});
