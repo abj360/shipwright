@@ -321,3 +321,9 @@ def test_cli_mx2_1_0() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--max-steps', '100'])
         assert args.max_steps == 100
+
+def test_cli_case_format_step_tool(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: format step names the tool."""
+    from agent.loop import Step
+    from agent.cli import _format_step
+    assert 'list_dir' in _format_step(Step(index=1, thought='t', tool_name='list_dir'))
