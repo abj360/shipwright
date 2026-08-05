@@ -49,3 +49,9 @@ describe("rate limiter cases", () => {
     expect(parseRetryAfter({ 'retry-after': '2' })).toBe(2_000);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles status 500 is not a rate limit", () => {
+    expect(isRateLimitError({ status: 500 })).toBe(false);
+  });
+});
