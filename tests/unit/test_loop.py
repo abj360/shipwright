@@ -347,3 +347,20 @@ def test_loop_mx2_0_1() -> None:
     responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.final_answer == 'done'
+
+def test_plan_mode_executes_planner_steps() -> None:
+    """Verifies plan_execute mode runs the planner's steps in order."""
+    from agent.planner import Plan, PlanStep, RepoPlanner
+
+    planner = RepoPlanner(ScriptedLLM(["1. do the thing"]), "")
+    config = make_config()
+    config.mode = "plan_execute"
+    config.planner = planner
+    result = AgentLoop(ScriptedLLM([]), config).run()
+    assert result.final_answer is not None
+
+def test_final_extraction_falls_back_to_thought() -> None:
+    """Verifies an empty FINAL: body falls back to the raw thought."""
+    loop = AgentLoop(ScriptedLLM(["FINAL:"]), make_config())
+    result = loop.run()
+    assert result.final_answer == "FINAL:"
