@@ -366,3 +366,8 @@ def test_reg_043_nft_rules_list_allowed_hosts(tmp_path) -> None:
 def test_reg_050_policy_validate_passes_clean_list(tmp_path) -> None:
     """REG-050: policy validate passes clean list."""
     assert EgressPolicy(allowed_hosts=('github.com',)).validate() == []
+
+def test_reg_133_cgroup_cpu_quota_micros_0(tmp_path) -> None:
+    """REG-133: cgroup cpu_quota_micros=0 fails."""
+    with pytest.raises(ValueError):
+        CgroupLimits(cpu_quota_micros=0)

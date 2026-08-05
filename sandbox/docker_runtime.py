@@ -47,6 +47,7 @@ class SandboxConfig:
     env: dict[str, str] = field(default_factory=dict)
     limits: CgroupLimits = field(default_factory=CgroupLimits)
     host_workdir: str = "/tmp/shipwright-work"
+    tmp_size: str = "64m"
     egress: EgressPolicy | None = None
     gvisor: bool = False
 
@@ -193,7 +194,7 @@ class DockerRuntime:
             "runtime": "runsc" if config.gvisor else None,
             "network": config.egress.network_name() if config.egress else None,
             "volumes": to_docker_volumes(build_mounts(config.host_workdir)),
-            **rootfs_kwargs(),
+            **rootfs_kwargs(tmp_size=config.tmp_size),
             **config.limits.to_docker_kwargs(),
         }
 
