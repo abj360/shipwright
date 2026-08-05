@@ -16,7 +16,7 @@ import json
 import os
 import sys
 
-from agent.circuit_breaker import RunawayRunError
+from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
 from agent.llm_client import HttpLLMClient
 from agent.loop import AgentConfig, AgentLoop, Step
@@ -33,6 +33,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", default=".", help="path to the checkout to modify")
     parser.add_argument("--headless", action="store_true", help="CI-friendly plain output")
     parser.add_argument("--json", action="store_true", help="emit steps as JSON lines")
+    parser.add_argument("--max-steps", type=int, default=50, help="iteration ceiling per run")
+    parser.add_argument("--max-cost", type=float, default=5.0, help="cost ceiling per run in USD")
     return parser
 
 def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
@@ -86,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     task = args.task or f"resolve issue at {args.issue_url}"
     config = AgentConfig(repo_path=args.repo, task=task, cost_tracker=CostTracker())
+    config.breaker = CircuitBreaker(max_iterations=args.max_steps, max_cost_usd=args.max_cost)
     try:
         client = HttpLLMClient(api_key=os.environ["ANTHROPIC_API_KEY"])
     except KeyError:
