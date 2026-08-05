@@ -74,6 +74,17 @@ export function createWebhookRouter(secret: string, queue: TaskQueue): express.R
         logger.info({ issue: issue.number }, "issue run started");
       });
     }
+    if (
+      event === "issue_comment" &&
+      req.body.action === "created" &&
+      String(req.body.comment?.body ?? "").startsWith("/shipwright")
+    ) {
+      const issue = req.body.issue;
+      logger.info({ issue: issue.number }, "run triggered by comment");
+      queue.enqueue(`issue-${issue.number}-comment`, async () => {
+        logger.info({ issue: issue.number }, "comment run started");
+      });
+    }
     res.status(202).json({ accepted: true });
   });
 
