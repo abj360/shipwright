@@ -235,3 +235,10 @@ def test_disp_mx2_extra5(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "."})
     assert result.ok is True
+
+def test_write_file_creates_parents(tmp_path) -> None:
+    """Verifies write_file creates missing parent directories."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("write_file", {"path": "x/y/z.txt", "content": "hi"})
+    assert result.ok
+    assert (tmp_path / "x" / "y" / "z.txt").read_text() == "hi"
