@@ -229,3 +229,9 @@ def test_apply_patch_rejects_empty_patch(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("apply_patch", {"patch": " "})
     assert not result.ok
+
+def test_disp_mx2_extra5(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 6)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
