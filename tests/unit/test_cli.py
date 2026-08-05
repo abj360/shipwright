@@ -312,3 +312,12 @@ def test_cli_mx_4_1() -> None:
     """Verifies parsing of --max-cost 0.1 with --headless."""
     args = build_parser().parse_args(['--task', 'x', '--max-cost', '0.1', '--headless'])
     assert args.max_cost == 0.1
+
+def test_cli_mx2_1_0() -> None:
+    """Verifies parsing of higher iteration ceiling."""
+    if "['--task', 'x', '--max-steps', '100']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--max-steps', '100'])
+        assert args.max_steps == 100
