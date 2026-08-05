@@ -364,3 +364,8 @@ def test_final_extraction_falls_back_to_thought() -> None:
     loop = AgentLoop(ScriptedLLM(["FINAL:"]), make_config())
     result = loop.run()
     assert result.final_answer == "FINAL:"
+
+def test_loop_case_final_with_colon() -> None:
+    """Verifies loop behavior: final answer containing a colon."""
+    result = AgentLoop(ScriptedLLM(["FINAL: ratio 1:2", "FINAL: later"]), make_config()).run()
+    assert result.final_answer == 'ratio 1:2'
