@@ -391,3 +391,8 @@ def test_reg_061_egress_pypi_org(tmp_path) -> None:
     """REG-061: egress host pypi.org is denied."""
     policy = EgressPolicy(allowed_hosts=('github.com',))
     assert policy.allows('pypi.org') is False
+
+def test_reg_068_cgroup_pids_max_2(tmp_path) -> None:
+    """REG-068: cgroup pids_max=2 fails validation."""
+    with pytest.raises(ValueError):
+        CgroupLimits(pids_max=2)
