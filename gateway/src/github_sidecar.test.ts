@@ -3,7 +3,7 @@
  * github_sidecar.test.ts --- integration tests for the draft PR creation flow
  */
 
-import { closesIssueLine, mapWithLimit, renderPrBody } from "./github_sidecar";
+import { closesIssueLine, mapWithLimit, markPrReady, renderPrBody } from "./github_sidecar";
 import { describe, expect, it, vi } from "vitest";
 
 import { closesIssueLine, renderPrBody, renderRunStats } from "./github_sidecar";
@@ -402,5 +402,16 @@ describe("sidecar rendering cases", () => {
 describe("sidecar rendering cases", () => {
   it("handles pr body for 'tighten types'", () => {
     expect(renderPrBody('tighten types', ['pytest -q'])).toContain('tighten types');
+  });
+});
+
+describe("markPrReady", () => {
+  it("rejects unparseable PR urls", async () => {
+    await expect(
+      markPrReady(
+        { repoUrl: "https://github.com/o/r", workDir: "/tmp", githubToken: "t", baseBranch: "main" },
+        "not-a-url",
+      ),
+    ).rejects.toThrow("unparseable");
   });
 });
