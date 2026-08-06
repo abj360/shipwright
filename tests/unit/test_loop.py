@@ -369,3 +369,9 @@ def test_loop_case_final_with_colon() -> None:
     """Verifies loop behavior: final answer containing a colon."""
     result = AgentLoop(ScriptedLLM(["FINAL: ratio 1:2", "FINAL: later"]), make_config()).run()
     assert result.final_answer == 'ratio 1:2'
+
+def test_loop_mx2_2_0() -> None:
+    """Verifies loop behavior: run_shell call: two steps total."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert len(result.steps) == 2
