@@ -7,6 +7,7 @@ Contains:
     ToolError: malformed call or tool failure
     ToolDispatcher.dispatch(): executes and normalizes one tool call
     ToolDispatcher._resolve(): confines paths to the checkout
+    ToolDispatcher._git_diff(): shows the working-tree diff
     ToolDispatcher._run_tests(): runs the repo's test suite
     ToolDispatcher._write_file(): writes one file in the checkout
 """
@@ -26,6 +27,7 @@ REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
     "write_file": ("path", "content"),
     "run_shell": ("command",),
     "run_tests": (),
+    "git_diff": (),
 }
 
 @dataclass(frozen=True)
@@ -65,6 +67,7 @@ class ToolDispatcher:
             "run_shell": self._run_shell,
             "write_file": self._write_file,
             "run_tests": self._run_tests,
+            "git_diff": self._git_diff,
         }
 
     def dispatch(self, name: str, args: dict[str, str]) -> ToolResult:
@@ -153,6 +156,28 @@ class ToolDispatcher:
         if self.repo_root not in resolved.parents and resolved != self.repo_root:
             raise ToolError(f"path escapes repo root: {rel_path}")
         return resolved
+
+    def _git_diff(self, args: dict[str, str]) -> str:
+        """Shows the working-tree diff of the checkout.
+
+        Args:
+            args: Tool arguments; accepts an optional "path" entry.
+
+        Returns:
+            diff: Unified diff text, or a note when the tree is clean.
+        """
+        command = "git diff --"
+        if args.get("path"):
+            command += f" {args['path']}"
+        proc = subprocess.run(
+            command,
+            shell=True,
+            cwd=self.repo_root,
+            capture_output=True,
+            text=True,
+            timeout=DEFAULT_COMMAND_TIMEOUT_S,
+        )
+        return proc.stdout or "working tree clean"
 
     def _run_tests(self, args: dict[str, str]) -> str:
         """Runs the repo's test suite and reports the tail of the output.
