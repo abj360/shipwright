@@ -79,3 +79,9 @@ describe("rate limiter helpers", () => {
     expect(isRateLimitError({ status: 404 })).toBe(false);
   });
 });
+
+describe("rate limiter helpers", () => {
+  it("handles backoff grows with attempts", () => {
+    expect(backoffMs(3)).toBeGreaterThan(backoffMs(2));
+  });
+});
