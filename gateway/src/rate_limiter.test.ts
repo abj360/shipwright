@@ -67,3 +67,21 @@ describe("rate limiter parsing", () => {
     expect(isRateLimitError({ status: 403 })).toBe(true);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles zero retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '0' })).toBe(0);
+  });
+});
+
+describe("rate limiter helpers", () => {
+  it("handles 404 is not a rate limit", () => {
+    expect(isRateLimitError({ status: 404 })).toBe(false);
+  });
+});
+
+describe("rate limiter helpers", () => {
+  it("handles backoff grows with attempts", () => {
+    expect(backoffMs(3)).toBeGreaterThan(backoffMs(2));
+  });
+});
