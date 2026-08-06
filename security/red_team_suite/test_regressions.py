@@ -376,3 +376,8 @@ def test_reg_028_suffix_match_blocks_similar_names(tmp_path) -> None:
     """REG-028: suffix match blocks similar names."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert not policy.allows("notgithub.com")
+
+def test_reg_127_mount_tmp____etc(tmp_path) -> None:
+    """REG-127: mount /tmp/../etc is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/tmp/../etc')
