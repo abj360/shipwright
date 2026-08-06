@@ -342,3 +342,14 @@ def test_sbox_mx_c8() -> None:
     """Verifies policy: cgroup mem_bytes=-1 invalid."""
     with pytest.raises(ValueError):
         CgroupLimits(mem_bytes=-1)
+
+def test_audit_log_records_lifecycle(tmp_path) -> None:
+    """Verifies launches write audit events when a log is attached."""
+    from sandbox.audit_log import AuditLog
+
+    audit = AuditLog(tmp_path / "audit.jsonl")
+    runtime = DockerRuntime(audit=audit)
+    handle = runtime.launch(make_config())
+    handle.stop()
+    content = (tmp_path / "audit.jsonl").read_text()
+    assert "container_started" in content
