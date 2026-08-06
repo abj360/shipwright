@@ -55,3 +55,9 @@ describe("rate limiter parsing", () => {
     expect(isRateLimitError({ status: 500 })).toBe(false);
   });
 });
+
+describe("rate limiter cases", () => {
+  it("handles backoff attempt 4 floor", () => {
+    expect(backoffMs(4)).toBeGreaterThanOrEqual(16_000);
+  });
+});

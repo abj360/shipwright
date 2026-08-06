@@ -371,3 +371,23 @@ def test_reg_133_cgroup_cpu_quota_micros_0(tmp_path) -> None:
     """REG-133: cgroup cpu_quota_micros=0 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(cpu_quota_micros=0)
+
+def test_reg_028_suffix_match_blocks_similar_names(tmp_path) -> None:
+    """REG-028: suffix match blocks similar names."""
+    policy = EgressPolicy(allowed_hosts=("github.com",))
+    assert not policy.allows("notgithub.com")
+
+def test_reg_127_mount_tmp____etc(tmp_path) -> None:
+    """REG-127: mount /tmp/../etc is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/tmp/../etc')
+
+def test_reg_023_volumes_mapping_mode(tmp_path) -> None:
+    """REG-023: volumes mapping mode."""
+    vols = to_docker_volumes(build_mounts("/tmp/shipwright-work/t"))
+    assert list(vols.values())[0]["mode"] == "rw"
+
+def test_reg_061_egress_pypi_org(tmp_path) -> None:
+    """REG-061: egress host pypi.org is denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('pypi.org') is False
