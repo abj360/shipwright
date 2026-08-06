@@ -358,3 +358,8 @@ def test_sbox_mx_m7() -> None:
     """Verifies policy: mount rejected for /home/x."""
     with pytest.raises(MountError):
         build_mounts('/home/x')
+
+def test_sbox_mx_e11() -> None:
+    """Verifies policy: egress denies darkweb.onion."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('darkweb.onion') is False
