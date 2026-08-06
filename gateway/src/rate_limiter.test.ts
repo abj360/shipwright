@@ -73,3 +73,9 @@ describe("rate limiter parsing", () => {
     expect(parseRetryAfter({ 'retry-after': '0' })).toBe(0);
   });
 });
+
+describe("rate limiter helpers", () => {
+  it("handles 404 is not a rate limit", () => {
+    expect(isRateLimitError({ status: 404 })).toBe(false);
+  });
+});
