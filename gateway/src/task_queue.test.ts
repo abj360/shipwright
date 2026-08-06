@@ -228,3 +228,10 @@ describe("TaskQueue setup", () => {
     expect(queue.size()).toEqual({ pending: 0, running: 0 });
   });
 });
+
+describe("TaskQueue setup", () => {
+  it("handles queue initializes with single worker (case 2)", () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    expect(queue.size()).toEqual({ pending: 0, running: 0 });
+  });
+});
