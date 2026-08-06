@@ -215,3 +215,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: 't3' }).success).toBe(false);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles missing task id rejected", () => {
+    expect(prRequestSchema.safeParse({ summary: 'fix' }).success).toBe(false);
+  });
+});
