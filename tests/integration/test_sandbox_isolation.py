@@ -328,3 +328,12 @@ def test_cgroup_case_pids_max_16() -> None:
     else:
         with pytest.raises(ValueError):
             CgroupLimits(**kwargs)
+
+def test_mount_case_sys_rejected() -> None:
+    """Verifies mount handling for sys_rejected."""
+    if "error" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/sys")
+    else:
+        mounts = build_mounts("/sys")
+        assert mounts[0].target == "/work"
