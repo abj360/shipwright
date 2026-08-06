@@ -415,3 +415,9 @@ describe("markPrReady", () => {
     ).rejects.toThrow("unparseable");
   });
 });
+
+describe("pr body rendering", () => {
+  it("handles body always has a tests heading", () => {
+    expect(renderPrBody('s', [])).toContain('## Tests');
+  });
+});
