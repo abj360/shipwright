@@ -61,3 +61,9 @@ describe("rate limiter cases", () => {
     expect(backoffMs(4)).toBeGreaterThanOrEqual(16_000);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles status 403 is a rate limit", () => {
+    expect(isRateLimitError({ status: 403 })).toBe(true);
+  });
+});
