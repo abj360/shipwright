@@ -371,3 +371,8 @@ def test_reg_133_cgroup_cpu_quota_micros_0(tmp_path) -> None:
     """REG-133: cgroup cpu_quota_micros=0 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(cpu_quota_micros=0)
+
+def test_reg_028_suffix_match_blocks_similar_names(tmp_path) -> None:
+    """REG-028: suffix match blocks similar names."""
+    policy = EgressPolicy(allowed_hosts=("github.com",))
+    assert not policy.allows("notgithub.com")
