@@ -9,6 +9,7 @@ Contains:
     PlanStep: one step of an execution plan
     Plan: ordered execution plan for one task
     RepoPlanner.build_plan(): produces an ordered execution plan
+    RepoPlanner.replan(): builds a recovery plan after a failure
     RepoPlanner.validate_plan(): drops steps referencing unknown files
     Project: one buildable unit inside a checkout
     detect_projects(): finds manifests and infers boundaries
@@ -193,6 +194,27 @@ class RepoPlanner:
             if stripped[:2] in {f"{n}." for n in range(1, 10)} and len(stripped) > 3:
                 steps.append(PlanStep(index=len(steps), description=stripped[3:].strip()))
         return steps
+
+    def replan(self, task: str, failed_step: PlanStep, error: str) -> Plan:
+        """Builds a recovery plan after a step failed during execution.
+
+        Args:
+            task: Original goal.
+            failed_step: Step that did not complete.
+            error: Observation produced by the failure.
+
+        Returns:
+            plan: Replacement plan starting from the failed step.
+        """
+        prompt = (
+            f"Step {failed_step.index + 1} failed with: {error}\n"
+            f"Original task: {task}\nReplan from here."
+        )
+        completion = self._client.complete(
+            [Message(role="user", content=prompt)], system=PLAN_SYSTEM_PROMPT
+        )
+        steps = self._parse_plan_text(completion.text)
+        return Plan(task=task, steps=steps or [PlanStep(index=0, description=task)])
 
     def validate_plan(self, plan: Plan, summary: RepoSummary) -> Plan:
         """Drops plan steps that reference files not present in the checkout.
