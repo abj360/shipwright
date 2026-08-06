@@ -386,3 +386,8 @@ def test_reg_023_volumes_mapping_mode(tmp_path) -> None:
     """REG-023: volumes mapping mode."""
     vols = to_docker_volumes(build_mounts("/tmp/shipwright-work/t"))
     assert list(vols.values())[0]["mode"] == "rw"
+
+def test_reg_061_egress_pypi_org(tmp_path) -> None:
+    """REG-061: egress host pypi.org is denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('pypi.org') is False
