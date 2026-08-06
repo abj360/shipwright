@@ -353,3 +353,8 @@ def test_audit_log_records_lifecycle(tmp_path) -> None:
     handle.stop()
     content = (tmp_path / "audit.jsonl").read_text()
     assert "container_started" in content
+
+def test_sbox_mx_m7() -> None:
+    """Verifies policy: mount rejected for /home/x."""
+    with pytest.raises(MountError):
+        build_mounts('/home/x')
