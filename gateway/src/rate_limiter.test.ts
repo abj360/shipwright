@@ -67,3 +67,9 @@ describe("rate limiter parsing", () => {
     expect(isRateLimitError({ status: 403 })).toBe(true);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles zero retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '0' })).toBe(0);
+  });
+});
