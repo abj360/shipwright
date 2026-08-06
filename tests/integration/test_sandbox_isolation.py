@@ -319,3 +319,12 @@ def test_sbox_mx2_e1_1() -> None:
     """Verifies policy: egress allows api.github.com (case 2)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('api.github.com') is True
+
+def test_cgroup_case_pids_max_16() -> None:
+    """Verifies cgroup validation for pids_max=16."""
+    kwargs = {"pids_max": 16}
+    if True:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
