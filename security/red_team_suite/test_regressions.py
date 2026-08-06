@@ -396,3 +396,9 @@ def test_reg_068_cgroup_pids_max_2(tmp_path) -> None:
     """REG-068: cgroup pids_max=2 fails validation."""
     with pytest.raises(ValueError):
         CgroupLimits(pids_max=2)
+
+def test_reg_077_policy_load_empty_yaml(tmp_path) -> None:
+    """REG-077: policy load empty yaml."""
+    (tmp_path / 'e.yml').write_text('allowed: []\n')
+    policy = EgressPolicy.load(tmp_path / 'e.yml')
+    assert policy.allowed_hosts == ()
