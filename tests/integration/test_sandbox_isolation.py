@@ -337,3 +337,8 @@ def test_mount_case_sys_rejected() -> None:
     else:
         mounts = build_mounts("/sys")
         assert mounts[0].target == "/work"
+
+def test_sbox_mx_c8() -> None:
+    """Verifies policy: cgroup mem_bytes=-1 invalid."""
+    with pytest.raises(ValueError):
+        CgroupLimits(mem_bytes=-1)
