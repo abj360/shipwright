@@ -421,3 +421,9 @@ describe("pr body rendering", () => {
     expect(renderPrBody('s', [])).toContain('## Tests');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'fix login' includes 'fix login'", () => {
+    expect(renderPrBody('fix login', ['pytest -q'])).toContain('fix login');
+  });
+});
