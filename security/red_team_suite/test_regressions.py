@@ -456,3 +456,8 @@ def test_reg_162_sandbox_config_env_default_empty(tmp_path) -> None:
     """REG-162: sandbox config env default empty."""
     from sandbox.docker_runtime import SandboxConfig
     assert SandboxConfig().env == {}
+
+def test_reg_138_cgroup_pids_max_256(tmp_path) -> None:
+    """REG-138: cgroup pids_max=256 passes."""
+    limits = CgroupLimits(pids_max=256)
+    assert limits.cpu_quota_micros > 0

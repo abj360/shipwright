@@ -363,3 +363,8 @@ def test_sbox_mx_e11() -> None:
     """Verifies policy: egress denies darkweb.onion."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('darkweb.onion') is False
+
+def test_sbox_mx2_c5() -> None:
+    """Verifies policy: cgroup pids_max rejects 0."""
+    with pytest.raises(ValueError):
+        CgroupLimits(pids_max=0)

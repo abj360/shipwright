@@ -83,6 +83,13 @@ export function DiffViewer({ patch }: { patch: string }) {
       >
         {copied ? "copied" : "copy patch"}
       </button>
+      <nav className="diff-tree">
+        {files.map((file) => (
+          <a key={file.path} href={`#diff-${file.path}`}>
+            {file.path}
+          </a>
+        ))}
+      </nav>
       {files.map((file) => (
         <FileSection key={file.path} file={file} />
       ))}
@@ -98,7 +105,7 @@ function FileSection({ file }: { file: DiffFile }) {
   const [open, setOpen] = useState(true);
 
   return (
-    <section>
+    <section id={`diff-${file.path}`}>
       <h3 onClick={() => setOpen(!open)}>
         {open ? "▾" : "▸"} {file.path}
       </h3>
