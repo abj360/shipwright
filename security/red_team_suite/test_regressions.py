@@ -446,3 +446,8 @@ def test_reg_053_audit_rotate_skips_small_logs(tmp_path) -> None:
     path.write_text('x')
     rotate_if_needed(path)
     assert path.exists()
+
+def test_reg_079_volume_map_includes_mode(tmp_path) -> None:
+    """REG-079: volume map includes mode."""
+    vols = to_docker_volumes(build_mounts('/tmp/shipwright-work/t'))
+    assert 'mode' in list(vols.values())[0]
