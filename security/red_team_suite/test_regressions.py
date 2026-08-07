@@ -433,3 +433,8 @@ def test_reg_072_audit_chain_head_changes_per_record(tmp_path) -> None:
     first = (tmp_path / 'x.jsonl').read_text()
     log.record('exec', 'b')
     assert (tmp_path / 'x.jsonl').read_text() != first
+
+def test_reg_056_egress_github_com(tmp_path) -> None:
+    """REG-056: egress host github.com is allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('github.com') is True
