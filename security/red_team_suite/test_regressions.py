@@ -402,3 +402,52 @@ def test_reg_077_policy_load_empty_yaml(tmp_path) -> None:
     (tmp_path / 'e.yml').write_text('allowed: []\n')
     policy = EgressPolicy.load(tmp_path / 'e.yml')
     assert policy.allowed_hosts == ()
+
+def test_reg_121_mount_sbin(tmp_path) -> None:
+    """REG-121: mount /sbin is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/sbin')
+
+def test_reg_112_egress_unknown_org(tmp_path) -> None:
+    """REG-112: egress treats unknown.org as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('unknown.org') is False
+
+def test_reg_039_per_task_audit_logs_separate(tmp_path) -> None:
+    """REG-039: per-task audit logs separate."""
+    from sandbox.audit_log import AuditLog
+    log = AuditLog.for_task(tmp_path, 'task-9')
+    log.record('exec', 'ls')
+    assert (tmp_path / 'task-9.jsonl').exists()
+
+def test_reg_130_mount_dev_null(tmp_path) -> None:
+    """REG-130: mount /dev/null is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/dev/null')
+
+def test_reg_072_audit_chain_head_changes_per_record(tmp_path) -> None:
+    """REG-072: audit chain head changes per record."""
+    from sandbox.audit_log import AuditLog
+    log = AuditLog(tmp_path / 'x.jsonl')
+    log.record('exec', 'a')
+    first = (tmp_path / 'x.jsonl').read_text()
+    log.record('exec', 'b')
+    assert (tmp_path / 'x.jsonl').read_text() != first
+
+def test_reg_056_egress_github_com(tmp_path) -> None:
+    """REG-056: egress host github.com is allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('github.com') is True
+
+def test_reg_053_audit_rotate_skips_small_logs(tmp_path) -> None:
+    """REG-053: audit rotate skips small logs."""
+    from sandbox.audit_log import rotate_if_needed
+    path = tmp_path / 'small.jsonl'
+    path.write_text('x')
+    rotate_if_needed(path)
+    assert path.exists()
+
+def test_reg_079_volume_map_includes_mode(tmp_path) -> None:
+    """REG-079: volume map includes mode."""
+    vols = to_docker_volumes(build_mounts('/tmp/shipwright-work/t'))
+    assert 'mode' in list(vols.values())[0]

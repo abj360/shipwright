@@ -69,8 +69,9 @@ class RedTeamRunner:
         handle = self._runtime.launch(self._config)
         try:
             result = handle.exec(attempt.payload())
+            stats = handle.stats()
             contained = attempt.is_contained(result)
-            evidence = result.output[-200:]
+            evidence = result.output[-200:] + f" | stats={stats}"
         finally:
             handle.stop()
         if not contained:
