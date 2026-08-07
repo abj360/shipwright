@@ -412,3 +412,10 @@ def test_reg_112_egress_unknown_org(tmp_path) -> None:
     """REG-112: egress treats unknown.org as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('unknown.org') is False
+
+def test_reg_039_per_task_audit_logs_separate(tmp_path) -> None:
+    """REG-039: per-task audit logs separate."""
+    from sandbox.audit_log import AuditLog
+    log = AuditLog.for_task(tmp_path, 'task-9')
+    log.record('exec', 'ls')
+    assert (tmp_path / 'task-9.jsonl').exists()
