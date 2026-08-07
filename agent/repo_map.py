@@ -6,6 +6,7 @@ Contains:
     OutlineEntry: cached outline with its modification time
     RepoMap: builds and caches per-file outlines
     RepoMap.outline_for(): cached outline, rebuilt on change
+    RepoMap.stats(): reports cache hit/miss counters
     RepoMap.detect_changes(): lists files with uncommitted changes
     RepoMap.refresh(): invalidates entries for changed files
 """
@@ -49,6 +50,8 @@ class RepoMap:
         """
         self.root = root
         self._cache: dict[str, OutlineEntry] = {}
+        self._hits = 0
+        self._misses = 0
 
     def outline_for(self, path: Path) -> str:
         """Returns a cached outline, rebuilding only when the file changed.
@@ -63,7 +66,9 @@ class RepoMap:
         mtime = path.stat().st_mtime
         entry = self._cache.get(key)
         if entry is not None and entry.mtime == mtime:
+            self._hits += 1
             return entry.outline
+        self._misses += 1
         outline = self._build_outline(path)
         self._cache[key] = OutlineEntry(mtime=mtime, outline=outline)
         return outline
@@ -90,6 +95,14 @@ class RepoMap:
         if len(outline) > OUTLINE_MAX_CHARS:
             outline = outline[:OUTLINE_MAX_CHARS].rsplit(",", 1)[0] + ", ..."
         return outline or "(no top-level symbols)"
+
+    def stats(self) -> dict[str, int]:
+        """Reports cache hit/miss counters.
+
+        Returns:
+            stats: Mapping with hits, misses, and cached entry count.
+        """
+        return {"hits": self._hits, "misses": self._misses, "entries": len(self._cache)}
 
     def detect_changes(self) -> list[str]:
         """Lists files with uncommitted changes, for targeted invalidation.
