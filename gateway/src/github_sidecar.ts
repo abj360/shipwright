@@ -20,6 +20,7 @@
  *   getDefaultBranch(): resolves the default branch, cached
  *   deleteBranch(): deletes a remote branch on cleanup
  *   mapWithLimit(): maps items with bounded concurrency
+ *   findOpenPr(): finds an already-open PR for a branch
  */
 
 import { exec } from "node:child_process";
@@ -363,4 +364,24 @@ export async function mapWithLimit<T, R>(
   }
   await Promise.all(Array.from({ length: limit }, worker));
   return results;
+}
+
+export async function findOpenPr(config: SidecarConfig, branch: string): Promise<string | null> {
+  /**
+   * Finds an already-open PR for a branch, if one exists.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param branch - Branch to look up.
+   * @returns url - HTML URL of the open PR, or null.
+   */
+  const octokit = octokitFor(config.githubToken);
+  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const response = await octokit.pulls.list({
+    owner,
+    repo: repo.replace(/\.git$/, ""),
+    head: `${owner}:${branch}`,
+    state: "open",
+  });
+  // length checked above: data[0] exists whenever the list is non-empty
+  return response.data.length > 0 ? response.data[0]!.html_url : null;
 }
