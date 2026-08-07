@@ -438,3 +438,11 @@ def test_reg_056_egress_github_com(tmp_path) -> None:
     """REG-056: egress host github.com is allowed."""
     policy = EgressPolicy(allowed_hosts=('github.com',))
     assert policy.allows('github.com') is True
+
+def test_reg_053_audit_rotate_skips_small_logs(tmp_path) -> None:
+    """REG-053: audit rotate skips small logs."""
+    from sandbox.audit_log import rotate_if_needed
+    path = tmp_path / 'small.jsonl'
+    path.write_text('x')
+    rotate_if_needed(path)
+    assert path.exists()
