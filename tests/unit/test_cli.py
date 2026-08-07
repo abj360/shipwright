@@ -327,3 +327,12 @@ def test_cli_case_format_step_tool(capsys: pytest.CaptureFixture[str], tmp_path)
     from agent.loop import Step
     from agent.cli import _format_step
     assert 'list_dir' in _format_step(Step(index=1, thought='t', tool_name='list_dir'))
+
+def test_cli_mx2_3_0() -> None:
+    """Verifies parsing of plan mode headless."""
+    if "['--task', 'x', '--plan-mode', '--headless']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--plan-mode', '--headless'])
+        assert args.plan_mode and args.headless
