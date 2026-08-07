@@ -19,6 +19,8 @@
  *   markPrReady(): flips a draft PR to ready-for-review
  *   getDefaultBranch(): resolves the default branch, cached
  *   deleteBranch(): deletes a remote branch on cleanup
+ *   mapWithLimit(): maps items with bounded concurrency
+ *   findOpenPr(): finds an already-open PR for a branch
  */
 
 import { exec } from "node:child_process";
@@ -335,4 +337,51 @@ export async function deleteBranch(config: SidecarConfig, branch: string): Promi
     repo: repo.replace(/\.git$/, ""),
     ref: `heads/${branch}`,
   });
+}
+
+export async function mapWithLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  /**
+   * Maps items with bounded concurrency to stay under rate limits.
+   *
+   * @param items - Items to map.
+   * @param limit - Maximum in-flight operations.
+   * @param fn - Async mapping function.
+   * @returns results - Mapped results in input order.
+   */
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  async function worker(): Promise<void> {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      // index < items.length by the loop guard; items[index] is defined
+      results[index] = await fn(items[index]!);
+    }
+  }
+  await Promise.all(Array.from({ length: limit }, worker));
+  return results;
+}
+
+export async function findOpenPr(config: SidecarConfig, branch: string): Promise<string | null> {
+  /**
+   * Finds an already-open PR for a branch, if one exists.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param branch - Branch to look up.
+   * @returns url - HTML URL of the open PR, or null.
+   */
+  const octokit = octokitFor(config.githubToken);
+  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const response = await octokit.pulls.list({
+    owner,
+    repo: repo.replace(/\.git$/, ""),
+    head: `${owner}:${branch}`,
+    state: "open",
+  });
+  // length checked above: data[0] exists whenever the list is non-empty
+  return response.data.length > 0 ? response.data[0]!.html_url : null;
 }

@@ -421,3 +421,27 @@ describe("pr body rendering", () => {
     expect(renderPrBody('s', [])).toContain('## Tests');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'fix login' includes 'fix login'", () => {
+    expect(renderPrBody('fix login', ['pytest -q'])).toContain('fix login');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'bump deps' includes 'bump deps'", () => {
+    expect(renderPrBody('bump deps', ['make check'])).toContain('bump deps');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'add cache' includes 'add cache'", () => {
+    expect(renderPrBody('add cache', ['npm test'])).toContain('add cache');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles closes trailer for issue 1", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/1')).toBe('Closes #1');
+  });
+});
