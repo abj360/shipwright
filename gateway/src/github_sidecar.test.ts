@@ -427,3 +427,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('fix login', ['pytest -q'])).toContain('fix login');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'bump deps' includes 'bump deps'", () => {
+    expect(renderPrBody('bump deps', ['make check'])).toContain('bump deps');
+  });
+});
