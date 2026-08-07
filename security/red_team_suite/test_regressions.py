@@ -402,3 +402,8 @@ def test_reg_077_policy_load_empty_yaml(tmp_path) -> None:
     (tmp_path / 'e.yml').write_text('allowed: []\n')
     policy = EgressPolicy.load(tmp_path / 'e.yml')
     assert policy.allowed_hosts == ()
+
+def test_reg_121_mount_sbin(tmp_path) -> None:
+    """REG-121: mount /sbin is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/sbin')
