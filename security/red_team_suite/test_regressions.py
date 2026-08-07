@@ -407,3 +407,8 @@ def test_reg_121_mount_sbin(tmp_path) -> None:
     """REG-121: mount /sbin is rejected."""
     with pytest.raises(MountError):
         build_mounts('/sbin')
+
+def test_reg_112_egress_unknown_org(tmp_path) -> None:
+    """REG-112: egress treats unknown.org as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('unknown.org') is False
