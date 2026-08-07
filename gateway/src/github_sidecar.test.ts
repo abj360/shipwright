@@ -439,3 +439,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('add cache', ['npm test'])).toContain('add cache');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles closes trailer for issue 1", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/1')).toBe('Closes #1');
+  });
+});
