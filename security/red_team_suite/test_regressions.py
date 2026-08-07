@@ -451,3 +451,8 @@ def test_reg_079_volume_map_includes_mode(tmp_path) -> None:
     """REG-079: volume map includes mode."""
     vols = to_docker_volumes(build_mounts('/tmp/shipwright-work/t'))
     assert 'mode' in list(vols.values())[0]
+
+def test_reg_162_sandbox_config_env_default_empty(tmp_path) -> None:
+    """REG-162: sandbox config env default empty."""
+    from sandbox.docker_runtime import SandboxConfig
+    assert SandboxConfig().env == {}
