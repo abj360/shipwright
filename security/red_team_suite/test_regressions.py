@@ -419,3 +419,8 @@ def test_reg_039_per_task_audit_logs_separate(tmp_path) -> None:
     log = AuditLog.for_task(tmp_path, 'task-9')
     log.record('exec', 'ls')
     assert (tmp_path / 'task-9.jsonl').exists()
+
+def test_reg_130_mount_dev_null(tmp_path) -> None:
+    """REG-130: mount /dev/null is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/dev/null')
