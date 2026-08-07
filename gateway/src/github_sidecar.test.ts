@@ -433,3 +433,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('bump deps', ['make check'])).toContain('bump deps');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'add cache' includes 'add cache'", () => {
+    expect(renderPrBody('add cache', ['npm test'])).toContain('add cache');
+  });
+});
