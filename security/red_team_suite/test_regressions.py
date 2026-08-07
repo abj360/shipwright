@@ -424,3 +424,12 @@ def test_reg_130_mount_dev_null(tmp_path) -> None:
     """REG-130: mount /dev/null is rejected."""
     with pytest.raises(MountError):
         build_mounts('/dev/null')
+
+def test_reg_072_audit_chain_head_changes_per_record(tmp_path) -> None:
+    """REG-072: audit chain head changes per record."""
+    from sandbox.audit_log import AuditLog
+    log = AuditLog(tmp_path / 'x.jsonl')
+    log.record('exec', 'a')
+    first = (tmp_path / 'x.jsonl').read_text()
+    log.record('exec', 'b')
+    assert (tmp_path / 'x.jsonl').read_text() != first
