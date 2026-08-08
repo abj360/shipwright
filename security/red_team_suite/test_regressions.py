@@ -461,3 +461,8 @@ def test_reg_138_cgroup_pids_max_256(tmp_path) -> None:
     """REG-138: cgroup pids_max=256 passes."""
     limits = CgroupLimits(pids_max=256)
     assert limits.cpu_quota_micros > 0
+
+def test_reg_067_cgroup_pids_max_256(tmp_path) -> None:
+    """REG-067: cgroup pids_max=256 passes validation."""
+    limits = CgroupLimits(pids_max=256)
+    assert limits.pids_max >= 16
