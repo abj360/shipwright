@@ -381,3 +381,8 @@ def test_loop_mx_3_3() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result is not None
+
+def test_loop_edge_final_mid_text() -> None:
+    """Verifies loop behavior: final marker mid-text."""
+    result = AgentLoop(ScriptedLLM(["here comes FINAL: mid", "FINAL: end"]), make_config()).run()
+    assert result.final_answer == 'mid'
