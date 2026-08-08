@@ -368,3 +368,12 @@ def test_sbox_mx2_c5() -> None:
     """Verifies policy: cgroup pids_max rejects 0."""
     with pytest.raises(ValueError):
         CgroupLimits(pids_max=0)
+
+def test_cgroup_case_cpu_quota_micros_50000() -> None:
+    """Verifies cgroup validation for cpu_quota_micros=50_000."""
+    kwargs = {"cpu_quota_micros": 50_000}
+    if True:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
