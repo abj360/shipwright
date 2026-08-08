@@ -461,3 +461,19 @@ def test_reg_138_cgroup_pids_max_256(tmp_path) -> None:
     """REG-138: cgroup pids_max=256 passes."""
     limits = CgroupLimits(pids_max=256)
     assert limits.cpu_quota_micros > 0
+
+def test_reg_067_cgroup_pids_max_256(tmp_path) -> None:
+    """REG-067: cgroup pids_max=256 passes validation."""
+    limits = CgroupLimits(pids_max=256)
+    assert limits.pids_max >= 16
+
+def test_reg_024_rootfs_tmpfs_present(tmp_path) -> None:
+    """REG-024: rootfs tmpfs present."""
+    kwargs = rootfs_kwargs()
+    assert "/tmp" in kwargs["tmpfs"]
+
+def test_reg_078_mount_extra_mounts_stay_read_only(tmp_path) -> None:
+    """REG-078: mount extra mounts stay read only."""
+    from sandbox.policies.mounts import MountSpec
+    mounts = build_mounts('/tmp/shipwright-work/t', extra=[MountSpec(source='/x', target='/x')])
+    assert mounts[-1].read_only is True
