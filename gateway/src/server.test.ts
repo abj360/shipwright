@@ -227,3 +227,9 @@ describe("request schemas", () => {
     expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'https://github.com/o/r/issues/1' }).success).toBe(true);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles numeric task id rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: 42, summary: 's' }).success).toBe(false);
+  });
+});
