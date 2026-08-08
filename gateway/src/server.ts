@@ -9,6 +9,7 @@
  *   GET /runs/:id: fetches one run record
  *   GET /runs: lists run records
  *   error middleware: logs and returns 500
+ *   GET /runs/:id/logs: streams run status over SSE
  */
 
 import "node:crypto";
@@ -118,4 +119,18 @@ app.post("/prs", async (req, res) => {
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   logger.error({ err }, "unhandled route error");
   res.status(500).json({ error: "internal error" });
+});
+
+app.get("/runs/:id/logs", (req, res) => {
+  const record = runs.get(req.params.id);
+  if (record === undefined) {
+    res.status(404).json({ error: "run not found" });
+    return;
+  }
+  res.setHeader("content-type", "text/event-stream");
+  res.write(`event: status\ndata: ${JSON.stringify(record)}\n\n`);
+  const timer = setInterval(() => {
+    res.write(`event: ping\ndata: {}\n\n`);
+  }, 5_000);
+  req.on("close", () => clearInterval(timer));
 });
