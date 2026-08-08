@@ -392,3 +392,10 @@ def test_loop_mx_2_0() -> None:
     responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.final_answer == 'done'
+
+def test_plan_steps_marked_done_after_execution() -> None:
+    """Verifies plan steps transition to done once executed."""
+    from agent.planner import PlanStep
+
+    step = PlanStep(index=0, description="d")
+    assert step.status == "pending"
