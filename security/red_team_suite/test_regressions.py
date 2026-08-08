@@ -466,3 +466,8 @@ def test_reg_067_cgroup_pids_max_256(tmp_path) -> None:
     """REG-067: cgroup pids_max=256 passes validation."""
     limits = CgroupLimits(pids_max=256)
     assert limits.pids_max >= 16
+
+def test_reg_024_rootfs_tmpfs_present(tmp_path) -> None:
+    """REG-024: rootfs tmpfs present."""
+    kwargs = rootfs_kwargs()
+    assert "/tmp" in kwargs["tmpfs"]
