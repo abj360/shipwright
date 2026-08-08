@@ -9,6 +9,7 @@ Contains:
     rootfs_kwargs(): enforces the read-only root filesystem
     to_docker_volumes(): renders mounts for docker-py
     WORKSPACE_ROOT: host directory all workdirs must live under
+    MountError: workdir would escape the workspace
 """
 
 from dataclasses import dataclass
@@ -37,7 +38,9 @@ class MountSpec:
         mode = "ro" if self.read_only else "rw"
         return f"{self.source}:{self.target}:{mode}"
 
-def build_mounts(workdir: str, extra: list[MountSpec] | None = None) -> list[MountSpec]:
+def build_mounts(
+    workdir: str, extra: list[MountSpec] | None = None
+) -> list[MountSpec]:
     """Builds the mount set: read-only root plus one writable workdir.
 
     Args:
@@ -47,7 +50,12 @@ def build_mounts(workdir: str, extra: list[MountSpec] | None = None) -> list[Mou
     Returns:
         mounts: Mount specs for the container.
     """
-    mounts = [MountSpec(source=workdir, target="/work", read_only=False)]
+    resolved = Path(workdir).resolve()
+    if Path(workdir).is_symlink() or str(resolved) != workdir:
+        raise MountError(f"workdir must not escape via symlink: {workdir}")
+    if WORKSPACE_ROOT not in resolved.parents and resolved != WORKSPACE_ROOT:
+        raise MountError(f"workdir must live under {WORKSPACE_ROOT}: {workdir}")
+    mounts = [MountSpec(source=str(resolved), target="/work", read_only=False)]
     mounts.extend(extra or [])
     return mounts
 
@@ -80,3 +88,6 @@ def to_docker_volumes(mounts: list[MountSpec]) -> dict[str, dict[str, str]]:
     return volumes
 
 WORKSPACE_ROOT = Path("/tmp/shipwright-work")  # all task workdirs live here
+
+class MountError(Exception):
+    """Raised when a workdir mount would escape the sandbox workspace."""

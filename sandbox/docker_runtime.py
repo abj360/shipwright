@@ -13,6 +13,7 @@ Contains:
     DockerRuntime: launches short-lived sandbox containers
     DockerRuntime.launch(): starts one sandbox container
     DockerRuntime.ensure_image(): pulls the image when missing
+    SandboxPolicyError: launch would violate security policy
 """
 
 import docker
@@ -163,11 +164,9 @@ class DockerRuntime:
         Returns:
             handle: Live sandbox ready for exec calls.
         """
-        logger.info(
-            "launching sandbox image=%s runtime=%s",
-            config.image,
-            "runsc" if config.gvisor else "runc",
-        )
+        if config.egress is None:
+            raise SandboxPolicyError("refusing to launch without an egress policy")
+        logger.info("launching sandbox image=%s runtime=runsc", config.image)
         self.ensure_image(config.image)
         kwargs = self._container_kwargs(config)
         container = self._client.containers.run(**kwargs)  # type: ignore[attr-defined]
@@ -191,8 +190,8 @@ class DockerRuntime:
             "labels": {CONTAINER_LABEL: "true"},
             "working_dir": config.workdir,
             "environment": config.env,
-            "runtime": "runsc" if config.gvisor else None,
-            "network": config.egress.network_name() if config.egress else None,
+            "runtime": "runsc",
+            "network": config.egress.network_name(),
             "volumes": to_docker_volumes(build_mounts(config.host_workdir)),
             **rootfs_kwargs(tmp_size=config.tmp_size),
             **config.limits.to_docker_kwargs(),
@@ -209,3 +208,6 @@ class DockerRuntime:
         except docker.errors.ImageNotFound:
             logger.info("pulling sandbox image %s", image)
             self._client.images.pull(image)  # type: ignore[attr-defined]
+
+class SandboxPolicyError(Exception):
+    """Raised when a launch would violate the sandbox security policy."""

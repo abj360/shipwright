@@ -39,6 +39,7 @@ class CgroupLimits:
             "nano_cpus": self.cpu_quota_micros * 10,
             "mem_limit": self.mem_bytes,
             "memswap_limit": self.mem_bytes,
+            "pids_limit": self.pids_max,
         }
 
     def scaled(self, factor: float) -> "CgroupLimits":
