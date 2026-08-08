@@ -15,6 +15,7 @@ Contains:
     AgentLoop._run_plan_mode(): executes planner steps directly
     AgentLoop.transcript(): read-only view of steps taken
     AgentLoop._trim_transcript(): drops oldest observations over budget
+    AgentLoop._build_system_prompt(): composes the steering prompt
 """
 
 import logging
@@ -36,6 +37,10 @@ TRANSCRIPT_TOKEN_BUDGET = 28000
 CHARS_PER_TOKEN_ESTIMATE = 4
 STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
+TOOL_USAGE_INSTRUCTIONS = (
+    "Think step by step. Reply with your reasoning, then either one tool call as "
+    "'Action: <name>' followed by 'key=value; ...' arguments, or 'FINAL: <answer>'."
+)
 TRUNCATED_OBSERVATION_NOTE = "[older observation trimmed to fit the context budget]"
 PARSE_RETRY_HINT = (
     "Your last reply had no Action: and no FINAL:. "
@@ -160,13 +165,13 @@ class AgentLoop:
         """
         self._trim_transcript()
         messages = self._build_messages()
-        completion = self._client.complete(messages, self.config.system_prompt, STEP_BUDGET_TOKENS)
+        completion = self._client.complete(messages, self._build_system_prompt(), STEP_BUDGET_TOKENS)
         self._record_cost(completion)
         step = self._parse_step(completion.text)
         if not step.tool_name and FINAL_ANSWER_PREFIX not in completion.text:
             messages.append(Message(role="user", content=PARSE_RETRY_HINT))
             completion = self._client.complete(
-                messages, self.config.system_prompt, STEP_BUDGET_TOKENS
+                messages, self._build_system_prompt(), STEP_BUDGET_TOKENS
             )
             self._record_cost(completion)
             step = self._parse_step(completion.text)
@@ -302,3 +307,12 @@ class AgentLoop:
                 return
             total -= len(step.observation) - len(TRUNCATED_OBSERVATION_NOTE)
             step.observation = TRUNCATED_OBSERVATION_NOTE
+
+    def _build_system_prompt(self) -> str:
+        """Composes the system prompt from config plus tool usage instructions.
+
+        Returns:
+            prompt: System prompt sent with every completion.
+        """
+        base = self.config.system_prompt or "You are an autonomous coding agent."
+        return f"{base}\n\n{TOOL_USAGE_INSTRUCTIONS}"
