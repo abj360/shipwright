@@ -336,3 +336,12 @@ def test_cli_mx2_3_0() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--plan-mode', '--headless'])
         assert args.plan_mode and args.headless
+
+def test_cli_mx2_0_0() -> None:
+    """Verifies parsing of headless plus json."""
+    if "['--task', 'x', '--headless', '--json']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--headless', '--json'])
+        assert args.headless and args.json
