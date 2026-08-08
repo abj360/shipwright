@@ -399,3 +399,9 @@ def test_plan_steps_marked_done_after_execution() -> None:
 
     step = PlanStep(index=0, description="d")
     assert step.status == "pending"
+
+def test_loop_mx2_1_2() -> None:
+    """Verifies loop behavior: read_file call: observation stored."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].observation is not None
