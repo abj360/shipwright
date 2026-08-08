@@ -7,6 +7,7 @@
  *   darkTheme: default palette
  *   xtermTheme: xterm.js theme
  *   fonts: UI and monospace font stacks
+ *   lightTheme: light-mode palette
  */
 
 export interface Theme {
@@ -91,3 +92,15 @@ export const fonts = {
   ui: "-apple-system, 'Segoe UI', sans-serif",
   mono: "'JetBrains Mono', ui-monospace, monospace",
 } as const;
+
+export const lightTheme: Theme = {
+  background: "#ffffff",
+  foreground: "#1f2328",
+  accent: "#0969da",
+  add: "#1a7f37",
+  del: "#d1242f",
+  hunk: "#59636e",
+  statusOk: "#1a7f37",
+  statusErr: "#d1242f",
+  statusWarn: "#9a6700",
+};
