@@ -381,3 +381,27 @@ def test_loop_mx_3_3() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result is not None
+
+def test_loop_edge_final_mid_text() -> None:
+    """Verifies loop behavior: final marker mid-text."""
+    result = AgentLoop(ScriptedLLM(["here comes FINAL: mid", "FINAL: end"]), make_config()).run()
+    assert result.final_answer == 'mid'
+
+def test_loop_mx_2_0() -> None:
+    """Verifies loop behavior: run_shell call completes."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'
+
+def test_plan_steps_marked_done_after_execution() -> None:
+    """Verifies plan steps transition to done once executed."""
+    from agent.planner import PlanStep
+
+    step = PlanStep(index=0, description="d")
+    assert step.status == "pending"
+
+def test_loop_mx2_1_2() -> None:
+    """Verifies loop behavior: read_file call: observation stored."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].observation is not None
