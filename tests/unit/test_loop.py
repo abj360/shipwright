@@ -386,3 +386,9 @@ def test_loop_edge_final_mid_text() -> None:
     """Verifies loop behavior: final marker mid-text."""
     result = AgentLoop(ScriptedLLM(["here comes FINAL: mid", "FINAL: end"]), make_config()).run()
     assert result.final_answer == 'mid'
+
+def test_loop_mx_2_0() -> None:
+    """Verifies loop behavior: run_shell call completes."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'
