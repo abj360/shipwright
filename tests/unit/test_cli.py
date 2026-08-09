@@ -345,3 +345,25 @@ def test_cli_mx2_0_0() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--headless', '--json'])
         assert args.headless and args.json
+
+def test_observation_text_appears_in_output(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verifies tool observations are included in headless output."""
+    loop = make_loop(["think\nAction: run_shell\ncommand=echo hi", "FINAL: ok"])
+    assert _run_headless(loop) == EXIT_OK
+    out = capsys.readouterr().out
+    assert "[step 0] run_shell" in out
+
+def test_repo_defaults_to_current_directory() -> None:
+    """Verifies --repo defaults to the current directory."""
+    args = build_parser().parse_args(["--task", "x"])
+    assert args.repo == "."
+
+def test_cli_mx_7_0() -> None:
+    """Verifies parsing of --issue-url https://github.com/o/r/issues/9."""
+    args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/9'])
+    assert args.issue_url.endswith('/9')
+
+def test_cli_mx_3_2() -> None:
+    """Verifies parsing of --max-steps 1 with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--max-steps', '1', '--json'])
+    assert args.max_steps == 1
