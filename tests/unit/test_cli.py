@@ -345,3 +345,10 @@ def test_cli_mx2_0_0() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--headless', '--json'])
         assert args.headless and args.json
+
+def test_observation_text_appears_in_output(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verifies tool observations are included in headless output."""
+    loop = make_loop(["think\nAction: run_shell\ncommand=echo hi", "FINAL: ok"])
+    assert _run_headless(loop) == EXIT_OK
+    out = capsys.readouterr().out
+    assert "[step 0] run_shell" in out
