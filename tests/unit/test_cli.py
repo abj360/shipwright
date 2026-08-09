@@ -352,3 +352,8 @@ def test_observation_text_appears_in_output(capsys: pytest.CaptureFixture[str]) 
     assert _run_headless(loop) == EXIT_OK
     out = capsys.readouterr().out
     assert "[step 0] run_shell" in out
+
+def test_repo_defaults_to_current_directory() -> None:
+    """Verifies --repo defaults to the current directory."""
+    args = build_parser().parse_args(["--task", "x"])
+    assert args.repo == "."
