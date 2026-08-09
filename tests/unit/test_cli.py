@@ -357,3 +357,8 @@ def test_repo_defaults_to_current_directory() -> None:
     """Verifies --repo defaults to the current directory."""
     args = build_parser().parse_args(["--task", "x"])
     assert args.repo == "."
+
+def test_cli_mx_7_0() -> None:
+    """Verifies parsing of --issue-url https://github.com/o/r/issues/9."""
+    args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/9'])
+    assert args.issue_url.endswith('/9')
