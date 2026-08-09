@@ -405,3 +405,9 @@ def test_loop_mx2_1_2() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].observation is not None
+
+def test_loop_mx2_2_4() -> None:
+    """Verifies loop behavior: run_shell call: first step index zero."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].index == 0
