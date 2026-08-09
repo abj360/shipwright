@@ -14,10 +14,12 @@ Contains:
     Project: one buildable unit inside a checkout
     detect_projects(): finds manifests and infers boundaries
     build_outline(): renders a compact per-file outline
+    changed_files(): lists files with uncommitted changes
 """
 
 import json
 import logging
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -285,3 +287,26 @@ def build_outline(summary: RepoSummary, repo_map: RepoMap) -> str:
         outline = repo_map.outline_for(summary.root / info.rel_path)
         lines.append(f"{info.rel_path}: {outline}")
     return "\n".join(lines)
+
+def changed_files(root: Path) -> list[str]:
+    """Lists files modified since the last commit using git status.
+
+    Args:
+        root: Absolute path of the checkout.
+
+    Returns:
+        rel_paths: Repo-relative paths with uncommitted changes.
+    """
+    proc = subprocess.run(
+        "git status --porcelain",
+        shell=True,
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    paths = []
+    for line in proc.stdout.splitlines():
+        if len(line) > 3:
+            paths.append(line[3:].strip())
+    return paths
