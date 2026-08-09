@@ -21,6 +21,8 @@
  *   deleteBranch(): deletes a remote branch on cleanup
  *   mapWithLimit(): maps items with bounded concurrency
  *   findOpenPr(): finds an already-open PR for a branch
+ *   RunStats: aggregated run statistics
+ *   renderRunStats(): renders stats for the PR body
  */
 
 import { exec } from "node:child_process";
@@ -384,4 +386,28 @@ export async function findOpenPr(config: SidecarConfig, branch: string): Promise
   });
   // length checked above: data[0] exists whenever the list is non-empty
   return response.data.length > 0 ? response.data[0]!.html_url : null;
+}
+
+export interface RunStats {
+  steps: number;
+  durationS: number;
+  costUsd: number;
+}
+
+export function renderRunStats(stats: RunStats): string {
+  /**
+   * Renders run statistics as a Markdown details block for the PR body.
+   *
+   * @param stats - Aggregated run statistics.
+   * @returns block - Markdown details block.
+   */
+  return [
+    "<details><summary>agent run stats</summary>",
+    "",
+    `- steps: ${stats.steps}`,
+    `- duration: ${stats.durationS.toFixed(1)}s`,
+    `- model cost: $${stats.costUsd.toFixed(4)}`,
+    "",
+    "</details>",
+  ].join("\n");
 }
