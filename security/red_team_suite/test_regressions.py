@@ -477,3 +477,7 @@ def test_reg_078_mount_extra_mounts_stay_read_only(tmp_path) -> None:
     from sandbox.policies.mounts import MountSpec
     mounts = build_mounts('/tmp/shipwright-work/t', extra=[MountSpec(source='/x', target='/x')])
     assert mounts[-1].read_only is True
+
+def test_reg_165_policy_hosts_stored_as_tuple(tmp_path) -> None:
+    """REG-165: policy hosts stored as tuple."""
+    assert isinstance(EgressPolicy(allowed_hosts=['a.com']).allowed_hosts, tuple)
