@@ -6,6 +6,7 @@ Contains:
     AuditEvent: one tamper-evident audit record
     AuditLog: appends events to a hash-chained JSONL log
     AuditLog.record(): appends one event to the chain
+    AuditLog.for_task(): opens a per-task audit log
     EVENT_*: audit event categories
     rotate_if_needed(): rotates oversized logs
     verify_chain(): replays and verifies the hash chain
@@ -70,6 +71,20 @@ class AuditLog:
             digest: New head of the hash chain.
         """
         return hashlib.sha256((self._prev_hash + payload).encode()).hexdigest()
+
+    @classmethod
+    def for_task(cls, base_dir: Path, task_id: str) -> "AuditLog":
+        """Opens a per-task audit log under a shared directory.
+
+        Args:
+            base_dir: Directory holding per-task logs.
+            task_id: Task identifier used in the file name.
+
+        Returns:
+            log: Audit log writing to base_dir/<task_id>.jsonl.
+        """
+        base_dir.mkdir(parents=True, exist_ok=True)
+        return cls(base_dir / f"{task_id}.jsonl")
 
 EVENT_CONTAINER_STARTED = "container_started"
 EVENT_EXEC = "exec"
