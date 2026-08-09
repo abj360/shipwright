@@ -362,3 +362,8 @@ def test_cli_mx_7_0() -> None:
     """Verifies parsing of --issue-url https://github.com/o/r/issues/9."""
     args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/9'])
     assert args.issue_url.endswith('/9')
+
+def test_cli_mx_3_2() -> None:
+    """Verifies parsing of --max-steps 1 with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--max-steps', '1', '--json'])
+    assert args.max_steps == 1
