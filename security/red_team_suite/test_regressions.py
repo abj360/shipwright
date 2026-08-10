@@ -515,3 +515,8 @@ def test_reg_090_audit_max_log_bytes_positive(tmp_path) -> None:
     """REG-090: audit max log bytes positive."""
     from sandbox.audit_log import MAX_LOG_BYTES
     assert MAX_LOG_BYTES > 0
+
+def test_reg_086_exec_result_default_error_empty(tmp_path) -> None:
+    """REG-086: exec result default error empty."""
+    from sandbox.docker_runtime import ExecResult
+    assert ExecResult(exit_code=0, output='x').error == ''
