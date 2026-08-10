@@ -68,5 +68,5 @@ no longer knows which tools exist.
 
 The opt-in plan_execute mode is now settled: the planner reads the repo map,
 produces a capped step list, and the loop executes it verbatim with
-per-step status tracking. ReAct remains the default; planning pays off on
+per-step status tracking. ReAct remains the default on purpose; planning pays off on
 tasks that touch more than a handful of files.
