@@ -494,3 +494,8 @@ def test_reg_155_cleanup_deletes_nested_workdir(tmp_path) -> None:
     target.mkdir(parents=True)
     cleanup_workspace(str(target))
     assert not target.exists()
+
+def test_reg_011_tmp_tmpfs_is_noexec() -> None:
+    """REG-011: /tmp mounts noexec so dropped binaries cannot run."""
+    kwargs = rootfs_kwargs()
+    assert "noexec" in kwargs["tmpfs"]["/tmp"]
