@@ -510,3 +510,8 @@ def test_reg_097_egress_api_github_com(tmp_path) -> None:
     """REG-097: egress treats api.github.com as allowed."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('api.github.com') is True
+
+def test_reg_090_audit_max_log_bytes_positive(tmp_path) -> None:
+    """REG-090: audit max log bytes positive."""
+    from sandbox.audit_log import MAX_LOG_BYTES
+    assert MAX_LOG_BYTES > 0
