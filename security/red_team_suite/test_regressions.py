@@ -494,3 +494,34 @@ def test_reg_155_cleanup_deletes_nested_workdir(tmp_path) -> None:
     target.mkdir(parents=True)
     cleanup_workspace(str(target))
     assert not target.exists()
+
+def test_reg_011_tmp_tmpfs_is_noexec() -> None:
+    """REG-011: /tmp mounts noexec so dropped binaries cannot run."""
+    kwargs = rootfs_kwargs()
+    assert "noexec" in kwargs["tmpfs"]["/tmp"]
+
+def test_reg_076_policy_load_from_yaml_round_trip(tmp_path) -> None:
+    """REG-076: policy load from yaml round trip."""
+    (tmp_path / 'p.yml').write_text('allowed:\n  - github.com\n')
+    policy = EgressPolicy.load(tmp_path / 'p.yml')
+    assert policy.allows('github.com')
+
+def test_reg_097_egress_api_github_com(tmp_path) -> None:
+    """REG-097: egress treats api.github.com as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('api.github.com') is True
+
+def test_reg_090_audit_max_log_bytes_positive(tmp_path) -> None:
+    """REG-090: audit max log bytes positive."""
+    from sandbox.audit_log import MAX_LOG_BYTES
+    assert MAX_LOG_BYTES > 0
+
+def test_reg_086_exec_result_default_error_empty(tmp_path) -> None:
+    """REG-086: exec result default error empty."""
+    from sandbox.docker_runtime import ExecResult
+    assert ExecResult(exit_code=0, output='x').error == ''
+
+def test_reg_019_describe_renders_one_line(tmp_path) -> None:
+    """REG-019: describe renders one line."""
+    text = CgroupLimits().describe()
+    assert "pids=" in text
