@@ -63,3 +63,10 @@ The inline tool table in the loop was the first thing to outgrow its home.
 Dispatch now lives in ToolDispatcher with argument validation, path
 confinement, and per-tool timeouts. The loop talks to exactly one seam and
 no longer knows which tools exist.
+
+## Follow-up: plan-then-execute mode (2026-08-06)
+
+The opt-in plan_execute mode is now settled: the planner reads the repo map,
+produces a capped step list, and the loop executes it verbatim with
+per-step status tracking. ReAct remains the default; planning pays off on
+tasks that touch more than a handful of files.
