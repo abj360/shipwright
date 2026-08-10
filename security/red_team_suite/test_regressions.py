@@ -499,3 +499,9 @@ def test_reg_011_tmp_tmpfs_is_noexec() -> None:
     """REG-011: /tmp mounts noexec so dropped binaries cannot run."""
     kwargs = rootfs_kwargs()
     assert "noexec" in kwargs["tmpfs"]["/tmp"]
+
+def test_reg_076_policy_load_from_yaml_round_trip(tmp_path) -> None:
+    """REG-076: policy load from yaml round trip."""
+    (tmp_path / 'p.yml').write_text('allowed:\n  - github.com\n')
+    policy = EgressPolicy.load(tmp_path / 'p.yml')
+    assert policy.allows('github.com')
