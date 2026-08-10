@@ -520,3 +520,8 @@ def test_reg_086_exec_result_default_error_empty(tmp_path) -> None:
     """REG-086: exec result default error empty."""
     from sandbox.docker_runtime import ExecResult
     assert ExecResult(exit_code=0, output='x').error == ''
+
+def test_reg_019_describe_renders_one_line(tmp_path) -> None:
+    """REG-019: describe renders one line."""
+    text = CgroupLimits().describe()
+    assert "pids=" in text
