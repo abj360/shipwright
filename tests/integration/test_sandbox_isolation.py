@@ -382,3 +382,12 @@ def test_sbox_mx2_m2() -> None:
     """Verifies policy: mount /boot rejected."""
     with pytest.raises(MountError):
         build_mounts('/boot')
+
+def test_mount_case_var_tmp_rejected() -> None:
+    """Verifies mount handling for var_tmp_rejected."""
+    if "error" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/var/tmp")
+    else:
+        mounts = build_mounts("/var/tmp")
+        assert mounts[0].target == "/work"
