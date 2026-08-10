@@ -78,6 +78,15 @@ export class TaskQueue {
     return { pending: this.pending.length, running: this.running };
   }
 
+  deadLetters(): number {
+    /**
+     * Reports how many tasks ended up in the dead-letter file.
+     *
+     * @returns count - Dead-lettered task count.
+     */
+    return this.counters.failed;
+  }
+
   metrics(): { completed: number; failed: number; retried: number } {
     /**
      * Reports cumulative task outcome counters.
