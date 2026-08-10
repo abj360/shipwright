@@ -481,3 +481,8 @@ def test_reg_078_mount_extra_mounts_stay_read_only(tmp_path) -> None:
 def test_reg_165_policy_hosts_stored_as_tuple(tmp_path) -> None:
     """REG-165: policy hosts stored as tuple."""
     assert isinstance(EgressPolicy(allowed_hosts=['a.com']).allowed_hosts, tuple)
+
+def test_reg_033_docker_kwargs_include_memory_ceiling(tmp_path) -> None:
+    """REG-033: docker kwargs include memory ceiling."""
+    kwargs = CgroupLimits().to_docker_kwargs()
+    assert kwargs['mem_limit'] > 0
