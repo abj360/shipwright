@@ -14,6 +14,7 @@ Contains:
 import hashlib
 import httpx
 import logging
+import os
 import time
 from dataclasses import dataclass, field
 
@@ -98,7 +99,8 @@ class JudgelineClient:
         """
         if result is None:
             return False
-        return result.score >= READY_THRESHOLD
+        threshold = float(os.environ.get("JUDGELINE_THRESHOLD", READY_THRESHOLD))
+        return result.score >= threshold
 
     def _post_with_retry(self, diff_text: str) -> httpx.Response | None:
         """Posts the diff, retrying only 5xx responses with backoff.
