@@ -505,3 +505,8 @@ def test_reg_076_policy_load_from_yaml_round_trip(tmp_path) -> None:
     (tmp_path / 'p.yml').write_text('allowed:\n  - github.com\n')
     policy = EgressPolicy.load(tmp_path / 'p.yml')
     assert policy.allows('github.com')
+
+def test_reg_097_egress_api_github_com(tmp_path) -> None:
+    """REG-097: egress treats api.github.com as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('api.github.com') is True
