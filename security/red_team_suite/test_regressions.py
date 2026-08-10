@@ -486,3 +486,11 @@ def test_reg_033_docker_kwargs_include_memory_ceiling(tmp_path) -> None:
     """REG-033: docker kwargs include memory ceiling."""
     kwargs = CgroupLimits().to_docker_kwargs()
     assert kwargs['mem_limit'] > 0
+
+def test_reg_155_cleanup_deletes_nested_workdir(tmp_path) -> None:
+    """REG-155: cleanup deletes nested workdir."""
+    from sandbox.policies.mounts import cleanup_workspace
+    target = tmp_path / 'shipwright-work' / 'a' / 'b'
+    target.mkdir(parents=True)
+    cleanup_workspace(str(target))
+    assert not target.exists()
