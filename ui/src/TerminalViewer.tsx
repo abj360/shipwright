@@ -29,7 +29,7 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
   const pendingRef = useRef<string[]>([]);
   const pausedRef = useRef(false);
   const flushRef = useRef(false);
-  useSandboxSocket(gatewayUrl, runId, (data) => {
+  const status = useSandboxSocket(gatewayUrl, runId, (data) => {
     if (pausedRef.current) {
       return;
     }
@@ -73,6 +73,7 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
 
   return (
     <div className="terminal-viewer">
+      <span className={`status-badge status-${status}`}>{status}</span>
       <button onClick={() => setPaused(!paused)}>{paused ? "resume" : "pause"}</button>
       <div ref={hostRef} />
     </div>
