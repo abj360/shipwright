@@ -377,3 +377,8 @@ def test_cgroup_case_cpu_quota_micros_50000() -> None:
     else:
         with pytest.raises(ValueError):
             CgroupLimits(**kwargs)
+
+def test_sbox_mx2_m2() -> None:
+    """Verifies policy: mount /boot rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/boot')
