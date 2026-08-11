@@ -411,3 +411,17 @@ def test_loop_mx2_2_4() -> None:
     responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].index == 0
+
+def test_on_step_callback_fires_per_step() -> None:
+    """Verifies the on_step callback observes every step."""
+    seen: list[int] = []
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    loop = AgentLoop(ScriptedLLM(responses), make_config())
+    loop.run(on_step=lambda step: seen.append(step.index))
+    assert seen == [0]
+
+def test_loop_mx_1_0() -> None:
+    """Verifies loop behavior: read_file call completes."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'

@@ -242,3 +242,15 @@ def test_write_file_creates_parents(tmp_path) -> None:
     result = dispatcher.dispatch("write_file", {"path": "x/y/z.txt", "content": "hi"})
     assert result.ok
     assert (tmp_path / "x" / "y" / "z.txt").read_text() == "hi"
+
+def test_dispatch_run_tests_no_selector_allowed() -> None:
+    """Verifies dispatch behavior: no selector allowed."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {})
+    assert result.ok is True
+
+def test_disp_mx_0_0(tmp_path) -> None:
+    """Verifies dispatch: list_dir fails without args."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {})
+    assert result.ok is False
