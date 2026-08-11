@@ -391,3 +391,9 @@ def test_mount_case_var_tmp_rejected() -> None:
     else:
         mounts = build_mounts("/var/tmp")
         assert mounts[0].target == "/work"
+
+def test_egress_case_example_com() -> None:
+    """Verifies egress treatment of example.com."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("example.com") is False
