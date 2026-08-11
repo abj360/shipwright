@@ -367,3 +367,8 @@ def test_cli_mx_3_2() -> None:
     """Verifies parsing of --max-steps 1 with --json."""
     args = build_parser().parse_args(['--task', 'x', '--max-steps', '1', '--json'])
     assert args.max_steps == 1
+
+def test_flag_resume_parses() -> None:
+    """Verifies parsing: resume parses."""
+    args = build_parser().parse_args(["--task", "a", "--resume", "r.json"])
+    assert args.resume == "r.json"
