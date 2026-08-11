@@ -215,3 +215,9 @@ def test_cost_case_usage_frozen() -> None:
     from agent.cost_tracker import Usage
     usage = Usage(model='m', input_tokens=1, output_tokens=2)
     assert usage.input_tokens == 1
+
+def test_cost_mx2_1_1() -> None:
+    """Verifies pricing for claude-opus-4-1 10000/1000 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-opus-4-1", 10000, 1000)
+    assert total > 0.0
