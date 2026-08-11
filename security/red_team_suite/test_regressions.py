@@ -531,3 +531,8 @@ def test_reg_080_describe_lists_one_line_per_mount(tmp_path) -> None:
     from sandbox.policies.mounts import describe_mounts
     text = describe_mounts(build_mounts('/tmp/shipwright-work/t'))
     assert len(text.splitlines()) == 1
+
+def test_reg_103_egress_proxy_golang_org(tmp_path) -> None:
+    """REG-103: egress treats proxy.golang.org as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('proxy.golang.org') is True
