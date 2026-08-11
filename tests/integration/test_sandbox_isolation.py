@@ -402,3 +402,12 @@ def test_sbox_mx_e4() -> None:
     """Verifies policy: egress allows files.pythonhosted.org."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('files.pythonhosted.org') is True
+
+def test_cgroup_case_mem_bytes_1024() -> None:
+    """Verifies cgroup validation for mem_bytes=1024."""
+    kwargs = {"mem_bytes": 1024}
+    if False:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
