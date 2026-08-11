@@ -525,3 +525,9 @@ def test_reg_019_describe_renders_one_line(tmp_path) -> None:
     """REG-019: describe renders one line."""
     text = CgroupLimits().describe()
     assert "pids=" in text
+
+def test_reg_080_describe_lists_one_line_per_mount(tmp_path) -> None:
+    """REG-080: describe lists one line per mount."""
+    from sandbox.policies.mounts import describe_mounts
+    text = describe_mounts(build_mounts('/tmp/shipwright-work/t'))
+    assert len(text.splitlines()) == 1
