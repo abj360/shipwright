@@ -397,3 +397,8 @@ def test_egress_case_example_com() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("example.com") is False
+
+def test_sbox_mx_e4() -> None:
+    """Verifies policy: egress allows files.pythonhosted.org."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('files.pythonhosted.org') is True
