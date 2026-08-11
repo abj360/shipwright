@@ -12,6 +12,7 @@ Contains:
     SandboxHandle.exec_stream(): yields output chunks live
     DockerRuntime: launches short-lived sandbox containers
     DockerRuntime.launch(): starts one sandbox container
+    DockerRuntime.reap_orphans(): removes leftover containers
     DockerRuntime.ensure_image(): pulls the image when missing
     SandboxPolicyError: launch would violate security policy
 """
@@ -196,6 +197,22 @@ class DockerRuntime:
             **rootfs_kwargs(tmp_size=config.tmp_size),
             **config.limits.to_docker_kwargs(),
         }
+
+    def reap_orphans(self) -> int:
+        """Removes sandbox containers left behind by crashed tasks.
+
+        Returns:
+            removed: Number of orphaned containers removed.
+        """
+        orphans = self._client.containers.list(  # type: ignore[attr-defined]
+            all=True, filters={"label": CONTAINER_LABEL}
+        )
+        removed = 0
+        for container in orphans:
+            logger.warning("reaping orphaned sandbox %s", container.short_id)
+            container.remove(force=True)
+            removed += 1
+        return removed
 
     def ensure_image(self, image: str) -> None:
         """Pulls the sandbox image unless it is already present locally.
