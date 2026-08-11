@@ -416,3 +416,12 @@ def test_sbox_case_rootfs_tmp_size() -> None:
     """Verifies sandbox policy behavior: tmp size is configurable."""
     kwargs = rootfs_kwargs(tmp_size='256m')
     assert '256m' in kwargs['tmpfs']['/tmp']
+
+def test_cgroup_case_cpu_quota_micros_neg1() -> None:
+    """Verifies cgroup validation for cpu_quota_micros=-1."""
+    kwargs = {"cpu_quota_micros": -1}
+    if False:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
