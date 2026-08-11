@@ -391,3 +391,37 @@ def test_mount_case_var_tmp_rejected() -> None:
     else:
         mounts = build_mounts("/var/tmp")
         assert mounts[0].target == "/work"
+
+def test_egress_case_example_com() -> None:
+    """Verifies egress treatment of example.com."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("example.com") is False
+
+def test_sbox_mx_e4() -> None:
+    """Verifies policy: egress allows files.pythonhosted.org."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('files.pythonhosted.org') is True
+
+def test_cgroup_case_mem_bytes_1024() -> None:
+    """Verifies cgroup validation for mem_bytes=1024."""
+    kwargs = {"mem_bytes": 1024}
+    if False:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
+
+def test_sbox_case_rootfs_tmp_size() -> None:
+    """Verifies sandbox policy behavior: tmp size is configurable."""
+    kwargs = rootfs_kwargs(tmp_size='256m')
+    assert '256m' in kwargs['tmpfs']['/tmp']
+
+def test_cgroup_case_cpu_quota_micros_neg1() -> None:
+    """Verifies cgroup validation for cpu_quota_micros=-1."""
+    kwargs = {"cpu_quota_micros": -1}
+    if False:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
