@@ -9,6 +9,7 @@ Contains:
     main(): runs one agent task from the command line
     _format_step(): renders one step as a single line
     _emit_json_step(): prints one step as a JSON line
+    _load_transcript(): loads prior steps from a transcript
 """
 
 import argparse
@@ -35,6 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--json", action="store_true", help="emit steps as JSON lines")
     parser.add_argument("--max-steps", type=int, default=50, help="iteration ceiling per run")
     parser.add_argument("--max-cost", type=float, default=5.0, help="cost ceiling per run in USD")
+    parser.add_argument("--resume", metavar="TRANSCRIPT", help="resume from a saved transcript")
     return parser
 
 def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
@@ -95,6 +97,8 @@ def main(argv: list[str] | None = None) -> int:
         print("ANTHROPIC_API_KEY is not set", file=sys.stderr)
         return EXIT_INFRA
     loop = AgentLoop(client, config)
+    if args.resume:
+        loop.resume(_load_transcript(args.resume))
     try:
         if args.json:
             return _run_headless(loop, as_json=True)
@@ -137,3 +141,16 @@ def _emit_json_step(step: Step) -> None:
         "ok": not step.observation.startswith("error:"),
     }
     sys.stdout.write(json.dumps(payload) + "\n")
+
+def _load_transcript(path: str) -> list[Step]:
+    """Loads prior steps from a saved transcript file.
+
+    Args:
+        path: JSON transcript produced by an earlier run.
+
+    Returns:
+        steps: Deserialized steps ready for AgentLoop.resume.
+    """
+    with open(path) as handle:
+        raw = json.load(handle)
+    return [Step(index=i, thought=s["thought"]) for i, s in enumerate(raw)]
