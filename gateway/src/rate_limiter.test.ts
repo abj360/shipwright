@@ -91,3 +91,21 @@ describe("rate limiter cases", () => {
     expect(parseRetryAfter({ 'retry-after': '15' })).toBe(15_000);
   });
 });
+
+describe("rate limiter", () => {
+  it("handles garbage retry-after", () => {
+    expect(parseRetryAfter({ "retry-after": "soon" })).toBeNull();
+  });
+});
+
+describe("rate limiter parsing", () => {
+  it("handles five minutes retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '300' })).toBe(300_000);
+  });
+});
+
+describe("rate limiter parsing", () => {
+  it("handles one second retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '1' })).toBe(1_000);
+  });
+});
