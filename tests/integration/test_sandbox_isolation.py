@@ -411,3 +411,8 @@ def test_cgroup_case_mem_bytes_1024() -> None:
     else:
         with pytest.raises(ValueError):
             CgroupLimits(**kwargs)
+
+def test_sbox_case_rootfs_tmp_size() -> None:
+    """Verifies sandbox policy behavior: tmp size is configurable."""
+    kwargs = rootfs_kwargs(tmp_size='256m')
+    assert '256m' in kwargs['tmpfs']['/tmp']
