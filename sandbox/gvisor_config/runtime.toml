@@ -7,3 +7,4 @@ network = "sandbox"  # no host networking, ever
 debug = false
 overlay = "rootfs"
 strace = false
+profile = false
