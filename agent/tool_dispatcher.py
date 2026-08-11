@@ -7,6 +7,7 @@ Contains:
     ToolError: malformed call or tool failure
     ToolDispatcher.dispatch(): executes and normalizes one tool call
     ToolDispatcher._resolve(): confines paths to the checkout
+    ToolDispatcher._apply_patch(): applies a unified diff
     ToolDispatcher._git_diff(): shows the working-tree diff
     ToolDispatcher._run_tests(): runs the repo's test suite
     ToolDispatcher._write_file(): writes one file in the checkout
@@ -28,6 +29,7 @@ REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
     "run_shell": ("command",),
     "run_tests": (),
     "git_diff": (),
+    "apply_patch": ("patch",),
 }
 
 @dataclass(frozen=True)
@@ -68,6 +70,7 @@ class ToolDispatcher:
             "write_file": self._write_file,
             "run_tests": self._run_tests,
             "git_diff": self._git_diff,
+            "apply_patch": self._apply_patch,
         }
 
     def dispatch(self, name: str, args: dict[str, str]) -> ToolResult:
@@ -156,6 +159,31 @@ class ToolDispatcher:
         if self.repo_root not in resolved.parents and resolved != self.repo_root:
             raise ToolError(f"path escapes repo root: {rel_path}")
         return resolved
+
+    def _apply_patch(self, args: dict[str, str]) -> str:
+        """Applies a unified diff to the checkout.
+
+        Args:
+            args: Tool arguments; expects a "patch" entry with the diff text.
+
+        Returns:
+            output: Patch tool output listing affected files.
+        """
+        patch = args.get("patch", "")
+        if not patch.strip():
+            raise ToolError("apply_patch requires a non-empty patch")
+        proc = subprocess.run(
+            "git apply --stat - && git apply -",
+            shell=True,
+            cwd=self.repo_root,
+            input=patch,
+            capture_output=True,
+            text=True,
+            timeout=DEFAULT_COMMAND_TIMEOUT_S,
+        )
+        if proc.returncode != 0:
+            raise ToolError(f"patch rejected: {proc.stderr.strip()}")
+        return proc.stdout.strip()
 
     def _git_diff(self, args: dict[str, str]) -> str:
         """Shows the working-tree diff of the checkout.
