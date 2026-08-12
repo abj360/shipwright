@@ -430,3 +430,20 @@ def test_sbox_mx_e6() -> None:
     """Verifies policy: egress allows codeload.github.com."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('codeload.github.com') is True
+
+def test_teardown_removes_container() -> None:
+    """Verifies stop() removes the container from the daemon."""
+    runtime = DockerRuntime()
+    handle = runtime.launch(make_config())
+    container_id = handle.container.short_id  # type: ignore[attr-defined]
+    handle.stop()
+    import docker
+
+    client = docker.from_env()
+    with pytest.raises(docker.errors.NotFound):
+        client.containers.get(container_id)
+
+def test_sbox_mx2_e11_1() -> None:
+    """Verifies policy: egress denies exfil.net (case 2)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('exfil.net') is False
