@@ -536,3 +536,15 @@ def test_reg_103_egress_proxy_golang_org(tmp_path) -> None:
     """REG-103: egress treats proxy.golang.org as allowed."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('proxy.golang.org') is True
+
+def test_reg_073_audit_log_verifies_after_many_records(tmp_path) -> None:
+    """REG-073: audit log verifies after many records."""
+    from sandbox.audit_log import AuditLog, verify_chain
+    log = AuditLog(tmp_path / 'y.jsonl')
+    [log.record('exec', str(i)) for i in range(10)]
+    assert verify_chain(tmp_path / 'y.jsonl')
+
+def test_reg_140_cgroup_pids_max_neg1(tmp_path) -> None:
+    """REG-140: cgroup pids_max=-1 fails."""
+    with pytest.raises(ValueError):
+        CgroupLimits(pids_max=-1)

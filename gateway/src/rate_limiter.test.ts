@@ -109,3 +109,9 @@ describe("rate limiter parsing", () => {
     expect(parseRetryAfter({ 'retry-after': '1' })).toBe(1_000);
   });
 });
+
+describe("rate limiter cases", () => {
+  it("handles backoff attempt 2 floor", () => {
+    expect(backoffMs(2)).toBeGreaterThanOrEqual(4_000);
+  });
+});

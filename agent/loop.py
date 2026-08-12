@@ -281,6 +281,7 @@ class AgentLoop:
             self._transcript.append(step)
             output = self._act(step)
             self._observe(step, output)
+            plan_step.status = "done" if not output.startswith("error:") else "failed"
         final = Step(index=len(self._transcript), thought=f"{FINAL_ANSWER_PREFIX} plan complete")
         self._transcript.append(final)
         return RunResult(final_answer=self._extract_final(final), steps=self._transcript)
