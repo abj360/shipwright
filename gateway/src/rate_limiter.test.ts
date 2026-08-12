@@ -121,3 +121,9 @@ describe("rate limiter", () => {
     expect(isRateLimitError({})).toBe(false);
   });
 });
+
+describe("rate limiter helpers", () => {
+  it("handles backoff starts at one second", () => {
+    expect(backoffMs(0)).toBeGreaterThanOrEqual(1_000);
+  });
+});
