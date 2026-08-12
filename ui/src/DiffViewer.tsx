@@ -8,6 +8,7 @@
  *   parseDiff(): parses a unified diff into per-file lines
  *   DiffViewer: renders a unified diff with per-line styling
  *   FileSection: collapsible per-file diff section
+ *   DiffLineView: one diff line with line numbers
  */
 
 import { useMemo, useState } from "react";
@@ -112,12 +113,23 @@ function FileSection({ file }: { file: DiffFile }) {
       {open && (
         <pre>
           {file.lines.map((line, index) => (
-            <code key={index} className={`diff-line diff-${line.kind}`}>
-              {line.text}
-            </code>
+            <DiffLineView key={index} line={line} />
           ))}
         </pre>
       )}
     </section>
+  );
+}
+
+function DiffLineView({ line }: { line: DiffLine }) {
+  /**
+   * Renders one diff line with old and new line numbers.
+   */
+  return (
+    <code className={`diff-line diff-${line.kind}`}>
+      <span className="line-no">{line.oldNo ?? ""}</span>
+      <span className="line-no">{line.newNo ?? ""}</span>
+      {line.text}
+    </code>
   );
 }
