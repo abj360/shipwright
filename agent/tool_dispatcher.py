@@ -25,7 +25,7 @@ DEFAULT_COMMAND_TIMEOUT_S = 120
 MAX_OUTPUT_CHARS = 6000
 REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
     "read_file": ("path",),
-    "write_file": ("path", "content"),
+    "write_file": ("path", "content"),  # content may be empty
     "run_shell": ("command",),
     "run_tests": (),
     "git_diff": (),
