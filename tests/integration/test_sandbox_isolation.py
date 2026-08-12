@@ -442,3 +442,8 @@ def test_teardown_removes_container() -> None:
     client = docker.from_env()
     with pytest.raises(docker.errors.NotFound):
         client.containers.get(container_id)
+
+def test_sbox_mx2_e11_1() -> None:
+    """Verifies policy: egress denies exfil.net (case 2)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('exfil.net') is False
