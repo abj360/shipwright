@@ -425,3 +425,8 @@ def test_cgroup_case_cpu_quota_micros_neg1() -> None:
     else:
         with pytest.raises(ValueError):
             CgroupLimits(**kwargs)
+
+def test_sbox_mx_e6() -> None:
+    """Verifies policy: egress allows codeload.github.com."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('codeload.github.com') is True
