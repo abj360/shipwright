@@ -437,3 +437,10 @@ def test_loop_mx2_1_3() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[-1].tool_name == ''
+
+def test_observe_attaches_output_to_step() -> None:
+    """Verifies _observe mutates the step in place."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = Step(index=0, thought="t")
+    loop._observe(step, "output text")
+    assert step.observation == "output text"
