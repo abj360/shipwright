@@ -85,6 +85,11 @@ export function createWebhookRouter(secret: string, queue: TaskQueue): express.R
         logger.info({ issue: issue.number }, "comment run started");
       });
     }
+    if (event === "pull_request") {
+      // agent-authored PR events must never trigger new runs (loop risk)
+      res.status(202).json({ ignored: true });
+      return;
+    }
     res.status(202).json({ accepted: true });
   });
 
