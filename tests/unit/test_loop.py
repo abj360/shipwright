@@ -431,3 +431,9 @@ def test_loop_mx_1_3() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result is not None
+
+def test_loop_mx2_1_3() -> None:
+    """Verifies loop behavior: read_file call: last step is final."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[-1].tool_name == ''
