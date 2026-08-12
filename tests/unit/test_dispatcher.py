@@ -254,3 +254,9 @@ def test_disp_mx_0_0(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {})
     assert result.ok is False
+
+def test_dispatch_run_shell_missing_command() -> None:
+    """Verifies dispatch behavior: missing command."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_shell", {})
+    assert result.ok is False
