@@ -553,3 +553,17 @@ def test_reg_125_mount_run(tmp_path) -> None:
     """REG-125: mount /run is rejected."""
     with pytest.raises(MountError):
         build_mounts('/run')
+
+def test_reg_055_cgroup_describe_mentions_pids(tmp_path) -> None:
+    """REG-055: cgroup describe mentions pids."""
+    assert 'pids=' in CgroupLimits().describe()
+
+def test_reg_142_tampered_middle_record_breaks_chain(tmp_path) -> None:
+    """REG-142: tampered middle record breaks chain."""
+    from sandbox.audit_log import AuditLog, verify_chain
+    log = AuditLog(tmp_path / 't.jsonl')
+    [log.record('exec', str(i)) for i in range(5)]
+    lines = (tmp_path / 't.jsonl').read_text().splitlines()
+    lines[2] = lines[2].replace('2', '9', 1)
+    (tmp_path / 't.jsonl').write_text(chr(10).join(lines) + chr(10))
+    assert not verify_chain(tmp_path / 't.jsonl')

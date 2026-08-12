@@ -451,3 +451,9 @@ describe("sidecar rendering cases", () => {
     expect(renderRunStats({ steps: 20, durationS: 120.0, costUsd: 1.5 })).toContain('20');
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'wip' includes 'draft'", () => {
+    expect(renderPrBody('wip', [])).toContain('draft');
+  });
+});

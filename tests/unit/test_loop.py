@@ -444,3 +444,9 @@ def test_observe_attaches_output_to_step() -> None:
     step = Step(index=0, thought="t")
     loop._observe(step, "output text")
     assert step.observation == "output text"
+
+def test_loop_mx2_1_5() -> None:
+    """Verifies loop behavior: read_file call: duration non-negative."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.duration_s >= 0.0

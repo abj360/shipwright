@@ -249,3 +249,10 @@ describe("TaskQueue setup", () => {
     expect(queue.size()).toEqual({ pending: 0, running: 0 });
   });
 });
+
+describe("TaskQueue internals", () => {
+  it("handles drain on empty queue resolves", async () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    await queue.drain();
+  });
+});
