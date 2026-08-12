@@ -543,3 +543,8 @@ def test_reg_073_audit_log_verifies_after_many_records(tmp_path) -> None:
     log = AuditLog(tmp_path / 'y.jsonl')
     [log.record('exec', str(i)) for i in range(10)]
     assert verify_chain(tmp_path / 'y.jsonl')
+
+def test_reg_140_cgroup_pids_max_neg1(tmp_path) -> None:
+    """REG-140: cgroup pids_max=-1 fails."""
+    with pytest.raises(ValueError):
+        CgroupLimits(pids_max=-1)
