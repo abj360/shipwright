@@ -115,3 +115,9 @@ describe("rate limiter cases", () => {
     expect(backoffMs(2)).toBeGreaterThanOrEqual(4_000);
   });
 });
+
+describe("rate limiter", () => {
+  it("handles missing status is not a rate limit", () => {
+    expect(isRateLimitError({})).toBe(false);
+  });
+});
