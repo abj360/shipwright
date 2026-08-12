@@ -5,6 +5,7 @@ cgroup_limits.py --- hard cgroup v2 resource limits applied to every sandbox
 Contains:
     CgroupLimits: hard resource limits per sandbox
     CgroupLimits.to_docker_kwargs(): renders limits for docker-py
+    CgroupLimits.describe(): one-line human summary
     CgroupLimits.scaled(): scales CPU and memory by a factor
     CgroupLimits.__post_init__(): rejects unusable limits
     DEFAULT_LIMITS / CI_LIMITS: limit presets
@@ -41,6 +42,16 @@ class CgroupLimits:
             "memswap_limit": self.mem_bytes,
             "pids_limit": self.pids_max,
         }
+
+    def describe(self) -> str:
+        """Renders the limits as a one-line human summary.
+
+        Returns:
+            summary: CPU, memory, and PID ceilings in one line.
+        """
+        cpu_cores = self.cpu_quota_micros / 100_000
+        mem_mib = self.mem_bytes // (1024 * 1024)
+        return f"cpu={cpu_cores:.1f} cores, mem={mem_mib}MiB, pids={self.pids_max}"
 
     def scaled(self, factor: float) -> "CgroupLimits":
         """Returns a copy with CPU and memory scaled by a factor.
