@@ -548,3 +548,8 @@ def test_reg_140_cgroup_pids_max_neg1(tmp_path) -> None:
     """REG-140: cgroup pids_max=-1 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(pids_max=-1)
+
+def test_reg_125_mount_run(tmp_path) -> None:
+    """REG-125: mount /run is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/run')
