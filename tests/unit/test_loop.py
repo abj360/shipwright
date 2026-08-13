@@ -461,3 +461,9 @@ def test_multi_step_run_threads_observations() -> None:
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.final_answer == "chained"
     assert len(result.steps) == 3
+
+def test_loop_mx_4_2() -> None:
+    """Verifies loop behavior: run_tests call stores args."""
+    responses = ["think\nAction: run_tests\n", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'run_tests'
