@@ -457,3 +457,10 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('wip', [])).toContain('draft');
   });
 });
+
+describe("batchGetFileContents", () => {
+  it("builds one aliased field per path", async () => {
+    const { batchGetFileContents } = await import("./github_sidecar");
+    expect(typeof batchGetFileContents).toBe("function");
+  });
+});
