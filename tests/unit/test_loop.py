@@ -467,3 +467,8 @@ def test_loop_mx_4_2() -> None:
     responses = ["think\nAction: run_tests\n", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].tool_name == 'run_tests'
+
+def test_loop_case_cr_lines() -> None:
+    """Verifies loop behavior: carriage returns tolerated."""
+    result = AgentLoop(ScriptedLLM(["t\r\nAction: list_dir\npath=.", "FINAL: ok"]), make_config()).run()
+    assert result is not None
