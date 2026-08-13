@@ -16,6 +16,7 @@ Contains:
     AgentLoop.transcript(): read-only view of steps taken
     AgentLoop._trim_transcript(): drops oldest observations over budget
     AgentLoop._build_system_prompt(): composes the steering prompt
+    AgentLoop.resume(): seeds steps from an interrupted run
 """
 
 import logging
@@ -317,3 +318,12 @@ class AgentLoop:
         """
         base = self.config.system_prompt or "You are an autonomous coding agent."
         return f"{base}\n\n{TOOL_USAGE_INSTRUCTIONS}"
+
+    def resume(self, prior: list[Step]) -> None:
+        """Seeds the transcript with steps from an earlier, interrupted run.
+
+        Args:
+            prior: Steps to replay into context before thinking again.
+        """
+        self._transcript.extend(prior)
+        logger.info("run %s resumed with %d prior steps", self._run_id, len(prior))
