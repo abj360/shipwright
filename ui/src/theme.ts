@@ -41,7 +41,7 @@ export const xtermTheme = {
   black: "#484f58",
   red: darkTheme.del,
   green: darkTheme.add,
-  yellow: "#d29922",
+  yellow: "#e3b341",
   blue: darkTheme.accent,
   magenta: "#bc8cff",
   cyan: "#39c5cf",
