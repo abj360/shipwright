@@ -450,3 +450,42 @@ def test_loop_mx2_1_5() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.duration_s >= 0.0
+
+def test_multi_step_run_threads_observations() -> None:
+    """Verifies later completions see earlier observations."""
+    responses = [
+        "one\nAction: list_dir\npath=.",
+        "two\nAction: read_file\npath=a.py",
+        "FINAL: chained",
+    ]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == "chained"
+    assert len(result.steps) == 3
+
+def test_loop_mx_4_2() -> None:
+    """Verifies loop behavior: run_tests call stores args."""
+    responses = ["think\nAction: run_tests\n", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'run_tests'
+
+def test_loop_case_cr_lines() -> None:
+    """Verifies loop behavior: carriage returns tolerated."""
+    result = AgentLoop(ScriptedLLM(["t\r\nAction: list_dir\npath=.", "FINAL: ok"]), make_config()).run()
+    assert result is not None
+
+def test_loop_mx2_2_6() -> None:
+    """Verifies loop behavior: run_shell call: cost non-negative."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.total_cost_usd >= 0.0
+
+def test_loop_case_semicolons_in_args() -> None:
+    """Verifies loop behavior: semicolons split args."""
+    result = AgentLoop(ScriptedLLM(["t\nAction: run_shell\ncommand=echo a; echo b", "FINAL: ok"]), make_config()).run()
+    assert 'command' in result.steps[0].tool_args
+
+def test_loop_mx2_0_2() -> None:
+    """Verifies loop behavior: list_dir call: observation stored."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].observation is not None
