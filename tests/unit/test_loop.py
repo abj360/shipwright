@@ -483,3 +483,9 @@ def test_loop_case_semicolons_in_args() -> None:
     """Verifies loop behavior: semicolons split args."""
     result = AgentLoop(ScriptedLLM(["t\nAction: run_shell\ncommand=echo a; echo b", "FINAL: ok"]), make_config()).run()
     assert 'command' in result.steps[0].tool_args
+
+def test_loop_mx2_0_2() -> None:
+    """Verifies loop behavior: list_dir call: observation stored."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].observation is not None
