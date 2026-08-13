@@ -10,6 +10,7 @@ Contains:
     to_docker_volumes(): renders mounts for docker-py
     WORKSPACE_ROOT: host directory all workdirs must live under
     MountError: workdir would escape the workspace
+    describe_mounts(): renders the mount set for logs
 """
 
 from dataclasses import dataclass
@@ -91,3 +92,14 @@ WORKSPACE_ROOT = Path("/tmp/shipwright-work")  # all task workdirs live here
 
 class MountError(Exception):
     """Raised when a workdir mount would escape the sandbox workspace."""
+
+def describe_mounts(mounts: list[MountSpec]) -> str:
+    """Renders the full mount set for logs and audit records.
+
+    Args:
+        mounts: Mount specs to describe.
+
+    Returns:
+        summary: One rendered mount per line.
+    """
+    return "\n".join(mount.render() for mount in mounts)
