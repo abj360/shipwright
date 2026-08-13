@@ -567,3 +567,7 @@ def test_reg_142_tampered_middle_record_breaks_chain(tmp_path) -> None:
     lines[2] = lines[2].replace('2', '9', 1)
     (tmp_path / 't.jsonl').write_text(chr(10).join(lines) + chr(10))
     assert not verify_chain(tmp_path / 't.jsonl')
+
+def test_reg_025_egress_network_name_stable(tmp_path) -> None:
+    """REG-025: egress network name stable."""
+    assert EgressPolicy(allowed_hosts=()).network_name() == "shipwright-egress"
