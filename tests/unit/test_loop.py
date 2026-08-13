@@ -472,3 +472,9 @@ def test_loop_case_cr_lines() -> None:
     """Verifies loop behavior: carriage returns tolerated."""
     result = AgentLoop(ScriptedLLM(["t\r\nAction: list_dir\npath=.", "FINAL: ok"]), make_config()).run()
     assert result is not None
+
+def test_loop_mx2_2_6() -> None:
+    """Verifies loop behavior: run_shell call: cost non-negative."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.total_cost_usd >= 0.0
