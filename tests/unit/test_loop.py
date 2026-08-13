@@ -450,3 +450,14 @@ def test_loop_mx2_1_5() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.duration_s >= 0.0
+
+def test_multi_step_run_threads_observations() -> None:
+    """Verifies later completions see earlier observations."""
+    responses = [
+        "one\nAction: list_dir\npath=.",
+        "two\nAction: read_file\npath=a.py",
+        "FINAL: chained",
+    ]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == "chained"
+    assert len(result.steps) == 3
