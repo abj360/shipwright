@@ -64,6 +64,9 @@ class RepoMap:
         """
         key = str(path.relative_to(self.root))
         mtime = path.stat().st_mtime
+        manifest = self.root / "pyproject.toml"
+        if manifest.exists():
+            mtime = max(mtime, manifest.stat().st_mtime)
         entry = self._cache.get(key)
         if entry is not None and entry.mtime == mtime:
             self._hits += 1
