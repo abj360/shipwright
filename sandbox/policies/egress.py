@@ -8,6 +8,7 @@ Contains:
     EgressPolicy.allows(): decides whether a host is permitted
     EgressPolicy.render_nft_rules(): renders the nftables ruleset
     EgressPolicy.validate(): checks for authoring mistakes
+    EgressPolicy.describe(): one-line policy summary
 """
 
 import yaml
@@ -90,3 +91,11 @@ class EgressPolicy:
                 problems.append(f"invalid host with whitespace: {host!r}")
             seen.add(host)
         return problems
+
+    def describe(self) -> str:
+        """Renders the policy as a one-line summary for audit records.
+
+        Returns:
+            summary: Host count and network name in one line.
+        """
+        return f"{len(self.allowed_hosts)} hosts allowed via {EGRESS_NETWORK}"
