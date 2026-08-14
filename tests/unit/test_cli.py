@@ -387,3 +387,8 @@ def test_cli_mx_5_0() -> None:
     """Verifies parsing of --repo /x."""
     args = build_parser().parse_args(['--task', 'x', '--repo', '/x'])
     assert args.repo == '/x'
+
+def test_flag_max_steps_parses() -> None:
+    """Verifies parsing: max steps parses."""
+    args = build_parser().parse_args(["--task", "a", "--max-steps", "5"])
+    assert args.max_steps == 5
