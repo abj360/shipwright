@@ -495,3 +495,9 @@ def test_loop_mx2_0_7() -> None:
     responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert len(result.transcript) == 2
+
+def test_loop_mx_2_2() -> None:
+    """Verifies loop behavior: run_shell call stores args."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'run_shell'
