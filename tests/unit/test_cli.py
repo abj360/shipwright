@@ -382,3 +382,8 @@ def test_cli_mx_7_2() -> None:
     """Verifies parsing of --issue-url https://github.com/o/r/issues/9 with --json."""
     args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/9', '--json'])
     assert args.issue_url.endswith('/9')
+
+def test_cli_mx_5_0() -> None:
+    """Verifies parsing of --repo /x."""
+    args = build_parser().parse_args(['--task', 'x', '--repo', '/x'])
+    assert args.repo == '/x'
