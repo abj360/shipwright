@@ -372,3 +372,32 @@ def test_flag_resume_parses() -> None:
     """Verifies parsing: resume parses."""
     args = build_parser().parse_args(["--task", "a", "--resume", "r.json"])
     assert args.resume == "r.json"
+
+def test_parser_accepts_resume_path() -> None:
+    """Verifies --resume parses a transcript path."""
+    args = build_parser().parse_args(["--task", "x", "--resume", "run.json"])
+    assert args.resume == "run.json"
+
+def test_cli_mx_7_2() -> None:
+    """Verifies parsing of --issue-url https://github.com/o/r/issues/9 with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/9', '--json'])
+    assert args.issue_url.endswith('/9')
+
+def test_cli_mx_5_0() -> None:
+    """Verifies parsing of --repo /x."""
+    args = build_parser().parse_args(['--task', 'x', '--repo', '/x'])
+    assert args.repo == '/x'
+
+def test_flag_max_steps_parses() -> None:
+    """Verifies parsing: max steps parses."""
+    args = build_parser().parse_args(["--task", "a", "--max-steps", "5"])
+    assert args.max_steps == 5
+
+def test_cli_mx2_1_2() -> None:
+    """Verifies parsing of higher iteration ceiling."""
+    if "['--task', 'x', '--max-steps', '100']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--max-steps', '100'])
+        assert args.max_steps == 100

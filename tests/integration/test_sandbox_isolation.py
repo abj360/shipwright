@@ -457,3 +457,7 @@ def test_sbox_mx2_e1_0() -> None:
     """Verifies policy: egress allows api.github.com (case 1)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('api.github.com') is True
+
+def test_sbox_case_egress_describe() -> None:
+    """Verifies sandbox policy behavior: egress describe mentions hosts."""
+    assert 'hosts' in EgressPolicy(allowed_hosts=('a.com',)).describe()
