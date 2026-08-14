@@ -55,6 +55,11 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
   useEffect(() => {
     const term = new Terminal({ convertEol: true, scrollback: 5_000 });
     termRef.current = term;
+    term.options.linkHandler = {
+      activate(_event: MouseEvent, text: string): void {
+        window.open(text, "_blank", "noopener");
+      },
+    };
     const fit = new FitAddon();
     term.loadAddon(fit);
     if (hostRef.current !== null) {
