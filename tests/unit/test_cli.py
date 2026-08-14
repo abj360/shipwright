@@ -372,3 +372,8 @@ def test_flag_resume_parses() -> None:
     """Verifies parsing: resume parses."""
     args = build_parser().parse_args(["--task", "a", "--resume", "r.json"])
     assert args.resume == "r.json"
+
+def test_parser_accepts_resume_path() -> None:
+    """Verifies --resume parses a transcript path."""
+    args = build_parser().parse_args(["--task", "x", "--resume", "run.json"])
+    assert args.resume == "run.json"
