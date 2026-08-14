@@ -392,3 +392,12 @@ def test_flag_max_steps_parses() -> None:
     """Verifies parsing: max steps parses."""
     args = build_parser().parse_args(["--task", "a", "--max-steps", "5"])
     assert args.max_steps == 5
+
+def test_cli_mx2_1_2() -> None:
+    """Verifies parsing of higher iteration ceiling."""
+    if "['--task', 'x', '--max-steps', '100']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--max-steps', '100'])
+        assert args.max_steps == 100
