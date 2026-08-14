@@ -576,3 +576,8 @@ def test_reg_156_volume_map_keyed_by_source(tmp_path) -> None:
     """REG-156: volume map keyed by source."""
     vols = to_docker_volumes(build_mounts('/tmp/shipwright-work/t'))
     assert list(vols.keys())[0].startswith('/tmp/shipwright-work')
+
+def test_reg_087_sandbox_config_image_default(tmp_path) -> None:
+    """REG-087: sandbox config image default."""
+    from sandbox.docker_runtime import SandboxConfig
+    assert 'shipwright-sandbox' in SandboxConfig().image
