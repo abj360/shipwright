@@ -581,3 +581,8 @@ def test_reg_087_sandbox_config_image_default(tmp_path) -> None:
     """REG-087: sandbox config image default."""
     from sandbox.docker_runtime import SandboxConfig
     assert 'shipwright-sandbox' in SandboxConfig().image
+
+def test_reg_083_tmpfs_size_override(tmp_path) -> None:
+    """REG-083: tmpfs size override."""
+    kwargs = rootfs_kwargs(tmp_size='512m')
+    assert '512m' in kwargs['tmpfs']['/tmp']
