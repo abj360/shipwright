@@ -266,3 +266,9 @@ def test_disp_mx2_1(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "sub"})
     assert result.ok is False
+
+def test_disp_mx2_10(tmp_path) -> None:
+    """Verifies dispatch: diff with path runs."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("git_diff", {"path": "x.py"})
+    assert result.ok is True
