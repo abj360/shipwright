@@ -378,6 +378,10 @@ export async function findOpenPr(config: SidecarConfig, branch: string): Promise
    */
   const octokit = octokitFor(config.githubToken);
   const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const cached = prUrlCache.get(`${owner}:${branch}`);
+  if (cached !== undefined && Date.now() - cached.fetchedAt < REFS_TTL_MS) {
+    return cached.url;
+  }
   const response = await octokit.pulls.list({
     owner,
     repo: repo.replace(/\.git$/, ""),
@@ -385,7 +389,11 @@ export async function findOpenPr(config: SidecarConfig, branch: string): Promise
     state: "open",
   });
   // length checked above: data[0] exists whenever the list is non-empty
-  return response.data.length > 0 ? response.data[0]!.html_url : null;
+  const url = response.data.length > 0 ? response.data[0]!.html_url : null;
+  if (url !== null) {
+    prUrlCache.set(`${owner}:${branch}`, { url, fetchedAt: Date.now() });
+  }
+  return url;
 }
 
 export interface RunStats {
