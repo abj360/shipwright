@@ -571,3 +571,18 @@ def test_reg_142_tampered_middle_record_breaks_chain(tmp_path) -> None:
 def test_reg_025_egress_network_name_stable(tmp_path) -> None:
     """REG-025: egress network name stable."""
     assert EgressPolicy(allowed_hosts=()).network_name() == "shipwright-egress"
+
+def test_reg_156_volume_map_keyed_by_source(tmp_path) -> None:
+    """REG-156: volume map keyed by source."""
+    vols = to_docker_volumes(build_mounts('/tmp/shipwright-work/t'))
+    assert list(vols.keys())[0].startswith('/tmp/shipwright-work')
+
+def test_reg_087_sandbox_config_image_default(tmp_path) -> None:
+    """REG-087: sandbox config image default."""
+    from sandbox.docker_runtime import SandboxConfig
+    assert 'shipwright-sandbox' in SandboxConfig().image
+
+def test_reg_083_tmpfs_size_override(tmp_path) -> None:
+    """REG-083: tmpfs size override."""
+    kwargs = rootfs_kwargs(tmp_size='512m')
+    assert '512m' in kwargs['tmpfs']['/tmp']

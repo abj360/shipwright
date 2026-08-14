@@ -461,3 +461,12 @@ def test_sbox_mx2_e1_0() -> None:
 def test_sbox_case_egress_describe() -> None:
     """Verifies sandbox policy behavior: egress describe mentions hosts."""
     assert 'hosts' in EgressPolicy(allowed_hosts=('a.com',)).describe()
+
+def test_cgroup_case_mem_bytes_64x1024x1024() -> None:
+    """Verifies cgroup validation for mem_bytes=64 * 1024 * 1024."""
+    kwargs = {"mem_bytes": 64 * 1024 * 1024}
+    if True:
+        CgroupLimits(**kwargs)
+    else:
+        with pytest.raises(ValueError):
+            CgroupLimits(**kwargs)
