@@ -139,3 +139,9 @@ describe("rate limiter", () => {
     expect(parseRetryAfter({ "retry-after": "0" })).toBe(0);
   });
 });
+
+describe("rate limiter", () => {
+  it("handles backoff includes base delay", () => {
+    expect(backoffMs(1)).toBeGreaterThanOrEqual(2_000);
+  });
+});
