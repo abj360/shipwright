@@ -377,3 +377,8 @@ def test_parser_accepts_resume_path() -> None:
     """Verifies --resume parses a transcript path."""
     args = build_parser().parse_args(["--task", "x", "--resume", "run.json"])
     assert args.resume == "run.json"
+
+def test_cli_mx_7_2() -> None:
+    """Verifies parsing of --issue-url https://github.com/o/r/issues/9 with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--issue-url', 'https://github.com/o/r/issues/9', '--json'])
+    assert args.issue_url.endswith('/9')
