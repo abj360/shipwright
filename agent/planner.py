@@ -9,6 +9,7 @@ Contains:
     PlanStep: one step of an execution plan
     Plan: ordered execution plan for one task
     RepoPlanner.build_plan(): produces an ordered execution plan
+    RepoPlanner._repo_state_hash(): fingerprints the repo shape
     RepoPlanner.replan(): builds a recovery plan after a failure
     RepoPlanner.validate_plan(): drops steps referencing unknown files
     Project: one buildable unit inside a checkout
@@ -17,6 +18,7 @@ Contains:
     changed_files(): lists files with uncommitted changes
 """
 
+import hashlib
 import json
 import logging
 import subprocess
@@ -196,6 +198,20 @@ class RepoPlanner:
             if stripped[:2] in {f"{n}." for n in range(1, 10)} and len(stripped) > 3:
                 steps.append(PlanStep(index=len(steps), description=stripped[3:].strip()))
         return steps
+
+    def _repo_state_hash(self, summary: RepoSummary) -> str:
+        """Hashes file paths and sizes so plans can be cached per repo state.
+
+        Args:
+            summary: Repo scan to fingerprint.
+
+        Returns:
+            digest: Stable hex digest of the repo's shape.
+        """
+        digest = hashlib.sha256()
+        for info in summary.files:
+            digest.update(f"{info.rel_path}:{info.size_bytes}\n".encode())
+        return digest.hexdigest()
 
     def replan(self, task: str, failed_step: PlanStep, error: str) -> Plan:
         """Builds a recovery plan after a step failed during execution.
