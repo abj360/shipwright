@@ -6,6 +6,7 @@ Contains:
     AuditEvent: one tamper-evident audit record
     AuditLog: appends events to a hash-chained JSONL log
     AuditLog.record(): appends one event to the chain
+    drop_expired(): deletes logs past the retention window
     AuditLog.for_task(): opens a per-task audit log
     EVENT_*: audit event categories
     rotate_if_needed(): rotates oversized logs
@@ -71,6 +72,28 @@ class AuditLog:
             digest: New head of the hash chain.
         """
         return hashlib.sha256((self._prev_hash + payload).encode()).hexdigest()
+
+RETENTION_DAYS = 30
+
+
+def drop_expired(base_dir: Path, now: float | None = None) -> int:
+    """Deletes rotated logs older than the retention window.
+
+    Args:
+        base_dir: Directory holding current and rotated logs.
+        now: Reference time; defaults to the current time.
+
+    Returns:
+        dropped: Number of files deleted.
+    """
+    now = now or time.time()
+    cutoff = now - RETENTION_DAYS * 86400
+    dropped = 0
+    for path in base_dir.glob("*.jsonl"):
+        if path.stat().st_mtime < cutoff:
+            path.unlink()
+            dropped += 1
+    return dropped
 
     @classmethod
     def for_task(cls, base_dir: Path, task_id: str) -> "AuditLog":
