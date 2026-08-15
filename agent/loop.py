@@ -24,6 +24,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
@@ -130,8 +131,11 @@ class AgentLoop:
         self._dispatcher = ToolDispatcher(Path(config.repo_path))
         logger.debug("agent loop initialised for %s", config.repo_path)
 
-    def run(self) -> RunResult:
+    def run(self, on_step: Callable[[Step], None] | None = None) -> RunResult:
         """Executes the loop until the model produces a final answer.
+
+        Args:
+            on_step: Optional callback invoked after each observed step.
 
         Returns:
             result: Finished run with its final answer and full transcript.
@@ -157,6 +161,8 @@ class AgentLoop:
             output = self._act(step)
             self._observe(step, output)
             logger.info("run %s step %d tool=%s", self._run_id, step.index, step.tool_name)
+            if on_step is not None:
+                on_step(step)
 
     def _think(self) -> Step:
         """Asks the model for the next thought and action.

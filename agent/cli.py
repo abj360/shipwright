@@ -40,26 +40,28 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
-    """Runs the loop, collecting all output before printing it at the end.
+    """Runs the loop, streaming each output line as it arrives.
 
     Args:
         loop: Configured agent loop to execute.
+        as_json: Emit steps as JSON lines instead of plain text.
 
     Returns:
         exit_code: 0 when the run produced a final answer.
     """
-    chunks: list[str] = []
-    result = loop.run()
-    for step in result.steps:
+
+    def stream(step: Step) -> None:
         if as_json:
             _emit_json_step(step)
-            continue
-        chunks.append(f"[step {step.index}] {step.tool_name or 'final'}\n")
-        if step.observation:
-            chunks.append(step.observation + "\n")
-    chunks.append(f"final: {result.final_answer}\n")
-    chunks.append(f"took {result.duration_s:.1f}s, cost ${result.total_cost_usd:.4f}\n")
-    sys.stdout.write("".join(chunks))
+            return
+        sys.stdout.write(f"[step {step.index}] {step.tool_name or 'final'}\n")
+        for line in step.observation.splitlines():
+            sys.stdout.write(line + "\n")
+        sys.stdout.flush()
+
+    result = loop.run(on_step=stream)
+    sys.stdout.write(f"final: {result.final_answer}\n")
+    sys.stdout.write(f"took {result.duration_s:.1f}s, cost ${result.total_cost_usd:.4f}\n")
     return EXIT_OK if result.final_answer else EXIT_FAILED
 
 
