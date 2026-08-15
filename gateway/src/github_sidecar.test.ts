@@ -476,3 +476,9 @@ describe("sidecar rendering", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/99')).toBe('Closes #99');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 3 steps", () => {
+    expect(renderRunStats({ steps: 3, durationS: 2.0, costUsd: 0.01 })).toContain('3');
+  });
+});
