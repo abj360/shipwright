@@ -86,6 +86,7 @@ class JudgelineClient:
             reasons=list(data.get("reasons", [])),
         )
         self._cache[diff_hash] = result
+        logger.info("judgeline scored diff %.2f (%s)", result.score, result.verdict)
         return result
 
     def is_ready(self, result: ScoreResult | None) -> bool:
