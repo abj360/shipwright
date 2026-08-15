@@ -401,3 +401,8 @@ def test_cli_mx2_1_2() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--max-steps', '100'])
         assert args.max_steps == 100
+
+def test_flag_headless_on() -> None:
+    """Verifies parsing: headless on."""
+    args = build_parser().parse_args(["--task", "a", "--headless"])
+    assert args.headless == True
