@@ -73,7 +73,7 @@ class AuditLog:
         """
         return hashlib.sha256((self._prev_hash + payload).encode()).hexdigest()
 
-RETENTION_DAYS = 30
+RETENTION_DAYS = 14
 
 
 def drop_expired(base_dir: Path, now: float | None = None) -> int:
