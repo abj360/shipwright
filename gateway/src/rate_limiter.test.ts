@@ -145,3 +145,9 @@ describe("rate limiter", () => {
     expect(backoffMs(1)).toBeGreaterThanOrEqual(2_000);
   });
 });
+
+describe("rate limiter cases", () => {
+  it("handles retry-after of '90' seconds", () => {
+    expect(parseRetryAfter({ 'retry-after': '90' })).toBe(90_000);
+  });
+});
