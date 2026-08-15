@@ -7,6 +7,7 @@ Contains:
     CostTracker: accumulates per-run model spend
     CostTracker.record(): adds usage and returns the running total
     CostTracker.total_usd(): computes total spend in USD
+    CostTracker.format_summary(): one-line cost summary
     CostTracker.totals_by_model(): aggregates spend per model
     CostTracker.report(): renders a per-completion breakdown
     CostTracker.export_report(): writes the breakdown to JSON
@@ -89,6 +90,14 @@ class CostTracker:
             price_in, price_out = PRICE_PER_MTOK.get(entry.model, FALLBACK_PRICE_PER_MTOK)
             total += (entry.input_tokens * price_in + entry.output_tokens * price_out) / 1_000_000
         return total
+
+    def format_summary(self) -> str:
+        """Builds a one-line cost summary for CLI output.
+
+        Returns:
+            summary: Total spend and completion count in one line.
+        """
+        return f"${self.total_usd():.4f} across {len(self._entries)} completions"
 
     def totals_by_model(self) -> dict[str, float]:
         """Aggregates spend per model.
