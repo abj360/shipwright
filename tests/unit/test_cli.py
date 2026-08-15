@@ -401,3 +401,17 @@ def test_cli_mx2_1_2() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--max-steps', '100'])
         assert args.max_steps == 100
+
+def test_flag_headless_on() -> None:
+    """Verifies parsing: headless on."""
+    args = build_parser().parse_args(["--task", "a", "--headless"])
+    assert args.headless == True
+
+def test_cli_mx2_4_1() -> None:
+    """Verifies parsing of resume plus plan mode."""
+    if "['--task', 'x', '--resume', 'a.json', '--plan-mode']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--resume', 'a.json', '--plan-mode'])
+        assert args.resume and args.plan_mode
