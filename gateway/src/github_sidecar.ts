@@ -106,6 +106,10 @@ export async function createDraftPr(
    * @param body - PR body.
    * @returns url - HTML URL of the new PR, or null when creation failed.
    */
+  const existing = await findOpenPr(config, branch);
+  if (existing !== null) {
+    return existing;
+  }
   return mutationQueue.enqueue(async () => {
     const octokit = octokitFor(config.githubToken);
     const [owner, repo] = config.repoUrl.split("/").slice(-2);
