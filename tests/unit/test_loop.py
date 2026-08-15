@@ -501,3 +501,8 @@ def test_loop_mx_2_2() -> None:
     responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].tool_name == 'run_shell'
+
+def test_loop_edge_single_final() -> None:
+    """Verifies loop behavior: immediate final answer."""
+    result = AgentLoop(ScriptedLLM(["FINAL: x"]), make_config()).run()
+    assert result.final_answer == "x"
