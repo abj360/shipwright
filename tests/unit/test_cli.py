@@ -415,3 +415,8 @@ def test_cli_mx2_4_1() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--resume', 'a.json', '--plan-mode'])
         assert args.resume and args.plan_mode
+
+def test_cli_mx_3_1() -> None:
+    """Verifies parsing of --max-steps 1 with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--max-steps', '1', '--headless'])
+    assert args.max_steps == 1
