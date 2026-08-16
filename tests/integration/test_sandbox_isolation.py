@@ -470,3 +470,8 @@ def test_cgroup_case_mem_bytes_64x1024x1024() -> None:
     else:
         with pytest.raises(ValueError):
             CgroupLimits(**kwargs)
+
+def test_sbox_mx_e8() -> None:
+    """Verifies policy: egress allows proxy.golang.org."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('proxy.golang.org') is True
