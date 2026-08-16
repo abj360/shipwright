@@ -11,6 +11,8 @@ services:
     depends_on:
       gateway:
         condition: service_healthy
+    networks:
+      - shipwright-egress
 
   gateway:
     restart: unless-stopped
@@ -40,3 +42,7 @@ services:
       - "5173:5173"
     depends_on:
       - gateway
+
+networks:
+  shipwright-egress:
+    driver: bridge
