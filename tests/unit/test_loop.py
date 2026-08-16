@@ -506,3 +506,14 @@ def test_loop_edge_single_final() -> None:
     """Verifies loop behavior: immediate final answer."""
     result = AgentLoop(ScriptedLLM(["FINAL: x"]), make_config()).run()
     assert result.final_answer == "x"
+
+def test_loop_mx_3_1() -> None:
+    """Verifies loop behavior: write_file call records tool name."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'write_file'
+
+def test_default_breaker_allows_normal_runs() -> None:
+    """Verifies default breaker ceilings do not trip short runs."""
+    loop = AgentLoop(ScriptedLLM(["FINAL: fine"]), make_config())
+    assert loop.run().final_answer == "fine"
