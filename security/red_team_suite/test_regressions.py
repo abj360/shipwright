@@ -596,3 +596,8 @@ def test_reg_012_zero_cpu_quota_is_rejected() -> None:
     """REG-012: a zero CPU quota fails validation instead of disabling limits."""
     with pytest.raises(ValueError):
         CgroupLimits(cpu_quota_micros=0)
+
+def test_reg_074_nft_rules_end_with_closing_braces(tmp_path) -> None:
+    """REG-074: nft rules end with closing braces."""
+    rules = EgressPolicy(allowed_hosts=('github.com',)).render_nft_rules()
+    assert rules.rstrip().endswith('}')
