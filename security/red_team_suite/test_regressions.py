@@ -591,3 +591,23 @@ def test_reg_118_mount_tmp_shipwright_work_a_b(tmp_path) -> None:
     """REG-118: mount /tmp/shipwright-work/a b is accepted."""
     mounts = build_mounts('/tmp/shipwright-work/a b')
     assert mounts[0].target == '/work'
+
+def test_reg_012_zero_cpu_quota_is_rejected() -> None:
+    """REG-012: a zero CPU quota fails validation instead of disabling limits."""
+    with pytest.raises(ValueError):
+        CgroupLimits(cpu_quota_micros=0)
+
+def test_reg_074_nft_rules_end_with_closing_braces(tmp_path) -> None:
+    """REG-074: nft rules end with closing braces."""
+    rules = EgressPolicy(allowed_hosts=('github.com',)).render_nft_rules()
+    assert rules.rstrip().endswith('}')
+
+def test_reg_084_egress_describe_counts_hosts(tmp_path) -> None:
+    """REG-084: egress describe counts hosts."""
+    text = EgressPolicy(allowed_hosts=('a.com', 'b.com')).describe()
+    assert '2 hosts' in text
+
+def test_reg_058_egress_bad_host(tmp_path) -> None:
+    """REG-058: egress host bad.host is denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('bad.host') is False
