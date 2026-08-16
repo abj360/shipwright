@@ -494,3 +494,9 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('bump deps', ['pytest -q'])).toContain('bump deps');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 256", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/256')).toBe('Closes #256');
+  });
+});

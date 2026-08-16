@@ -10,11 +10,11 @@ requires-python = ">=3.12"
 dependencies = [
   "httpx>=0.28.1",
   "pyyaml>=6.0.2",
-  "docker>=7.1",
+  "docker>=7.2",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.4", "ruff>=0.6", "mypy>=1.12"]
+dev = ["pytest>=8.4", "ruff>=0.7", "mypy>=1.12"]
 
 [project.scripts]
 shipwright = "agent.cli:main"

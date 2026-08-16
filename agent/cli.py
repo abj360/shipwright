@@ -54,6 +54,7 @@ def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
         if as_json:
             _emit_json_step(step)
             return
+        print(f"[progress] step {step.index}", file=sys.stderr)
         sys.stdout.write(f"[step {step.index}] {step.tool_name or 'final'}\n")
         for line in step.observation.splitlines():
             sys.stdout.write(line + "\n")
