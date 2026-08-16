@@ -239,3 +239,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: 't1', summary: 'fix' }).success).toBe(true);
   });
 });
+
+describe("pr request schema cases", () => {
+  it("handles empty task id rejected", () => {
+    expect(prRequestSchema.safeParse({ taskId: '', summary: 'fix' }).success).toBe(false);
+  });
+});
