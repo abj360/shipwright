@@ -606,3 +606,8 @@ def test_reg_084_egress_describe_counts_hosts(tmp_path) -> None:
     """REG-084: egress describe counts hosts."""
     text = EgressPolicy(allowed_hosts=('a.com', 'b.com')).describe()
     assert '2 hosts' in text
+
+def test_reg_058_egress_bad_host(tmp_path) -> None:
+    """REG-058: egress host bad.host is denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com',))
+    assert policy.allows('bad.host') is False
