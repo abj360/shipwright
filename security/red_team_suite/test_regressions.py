@@ -601,3 +601,8 @@ def test_reg_074_nft_rules_end_with_closing_braces(tmp_path) -> None:
     """REG-074: nft rules end with closing braces."""
     rules = EgressPolicy(allowed_hosts=('github.com',)).render_nft_rules()
     assert rules.rstrip().endswith('}')
+
+def test_reg_084_egress_describe_counts_hosts(tmp_path) -> None:
+    """REG-084: egress describe counts hosts."""
+    text = EgressPolicy(allowed_hosts=('a.com', 'b.com')).describe()
+    assert '2 hosts' in text
