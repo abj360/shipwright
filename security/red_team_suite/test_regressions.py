@@ -591,3 +591,8 @@ def test_reg_118_mount_tmp_shipwright_work_a_b(tmp_path) -> None:
     """REG-118: mount /tmp/shipwright-work/a b is accepted."""
     mounts = build_mounts('/tmp/shipwright-work/a b')
     assert mounts[0].target == '/work'
+
+def test_reg_012_zero_cpu_quota_is_rejected() -> None:
+    """REG-012: a zero CPU quota fails validation instead of disabling limits."""
+    with pytest.raises(ValueError):
+        CgroupLimits(cpu_quota_micros=0)
