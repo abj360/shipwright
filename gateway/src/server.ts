@@ -58,6 +58,19 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+app.use((req, res, next) => {
+  if (req.path === "/health" || req.path.startsWith("/webhooks")) {
+    next();
+    return;
+  }
+  const token = req.header("authorization") ?? "";
+  if (token !== `Bearer ${config.GATEWAY_TOKEN}`) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  next();
+});
+
 app.post("/runs", async (req, res) => {
   const parsed = runRequestSchema.safeParse(req.body);
   if (!parsed.success) {
