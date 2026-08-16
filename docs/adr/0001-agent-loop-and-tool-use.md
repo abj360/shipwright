@@ -70,3 +70,10 @@ The opt-in plan_execute mode is now settled: the planner reads the repo map,
 produces a capped step list, and the loop executes it verbatim with
 per-step status tracking. ReAct remains the default on purpose; planning pays off on
 tasks that touch more than a handful of files.
+
+## Follow-up: quality gating (2026-08-10)
+
+PR readiness is gated by judgeline scoring, and the gate fails closed: a
+timeout or persistent 5xx leaves the PR in draft. This follows the same
+rule as the circuit breaker — an automated system that can only say yes is
+a liability, not a feature.
