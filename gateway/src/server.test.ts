@@ -245,3 +245,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ taskId: '', summary: 'fix' }).success).toBe(false);
   });
 });
+
+describe("run request schema", () => {
+  it("handles http url tolerated", () => {
+    expect(runRequestSchema.safeParse({ task: 'x', issueUrl: 'http://bad' }).success).toBe(true);
+  });
+});
