@@ -586,3 +586,8 @@ def test_reg_083_tmpfs_size_override(tmp_path) -> None:
     """REG-083: tmpfs size override."""
     kwargs = rootfs_kwargs(tmp_size='512m')
     assert '512m' in kwargs['tmpfs']['/tmp']
+
+def test_reg_118_mount_tmp_shipwright_work_a_b(tmp_path) -> None:
+    """REG-118: mount /tmp/shipwright-work/a b is accepted."""
+    mounts = build_mounts('/tmp/shipwright-work/a b')
+    assert mounts[0].target == '/work'
