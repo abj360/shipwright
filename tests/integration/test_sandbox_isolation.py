@@ -486,3 +486,7 @@ def test_egress_case_evil_io() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("evil.io") is False
+
+def test_sbox_mx_c0() -> None:
+    """Verifies policy: cgroup cpu_quota_micros=100_000 valid."""
+    CgroupLimits(cpu_quota_micros=100_000)
