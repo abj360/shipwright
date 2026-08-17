@@ -515,3 +515,7 @@ def test_sbox_mx2_e5_1() -> None:
     """Verifies policy: egress allows crates.io (case 2)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('crates.io') is True
+
+def test_sbox_mx_c1() -> None:
+    """Verifies policy: cgroup cpu_quota_micros=1 valid."""
+    CgroupLimits(cpu_quota_micros=1)
