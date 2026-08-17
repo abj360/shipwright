@@ -23,6 +23,7 @@
  *   findOpenPr(): finds an already-open PR for a branch
  *   RunStats: aggregated run statistics
  *   renderRunStats(): renders stats for the PR body
+ *   requestReviews(): requests reviews from the team pool
  */
 
 import { exec } from "node:child_process";
@@ -422,4 +423,32 @@ export function renderRunStats(stats: RunStats): string {
     "",
     "</details>",
   ].join("\n");
+}
+
+export async function requestReviews(
+  config: SidecarConfig,
+  prUrl: string,
+  reviewers: string[] = DEFAULT_REVIEWERS,
+): Promise<void> {
+  /**
+   * Requests reviews on a PR from the team's reviewer pool.
+   *
+   * @param config - Repo coordinates and credentials.
+   * @param prUrl - HTML URL of the PR.
+   * @param reviewers - GitHub logins to request; defaults to the team pool.
+   */
+  if (reviewers.length === 0) {
+    return;
+  }
+  const octokit = octokitFor(config.githubToken);
+  const match = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+  if (match === null) {
+    throw new Error(`unparseable PR url: ${prUrl}`);
+  }
+  await octokit.pulls.requestReviewers({
+    owner: match[1]!,
+    repo: match[2]!,
+    pull_number: Number(match[3]),
+    reviewers,
+  });
 }
