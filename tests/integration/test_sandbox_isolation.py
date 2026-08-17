@@ -480,3 +480,9 @@ def test_sbox_mx2_e0_1() -> None:
     """Verifies policy: egress allows github.com (case 2)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('github.com') is True
+
+def test_egress_case_evil_io() -> None:
+    """Verifies egress treatment of evil.io."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("evil.io") is False
