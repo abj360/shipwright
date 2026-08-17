@@ -475,3 +475,28 @@ def test_sbox_mx_e8() -> None:
     """Verifies policy: egress allows proxy.golang.org."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('proxy.golang.org') is True
+
+def test_sbox_mx2_e0_1() -> None:
+    """Verifies policy: egress allows github.com (case 2)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('github.com') is True
+
+def test_egress_case_evil_io() -> None:
+    """Verifies egress treatment of evil.io."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("evil.io") is False
+
+def test_sbox_mx_c0() -> None:
+    """Verifies policy: cgroup cpu_quota_micros=100_000 valid."""
+    CgroupLimits(cpu_quota_micros=100_000)
+
+def test_sbox_case_config_limits_default() -> None:
+    """Verifies sandbox policy behavior: default limits attached."""
+    config = SandboxConfig()
+    assert config.limits.pids_max > 0
+
+def test_sbox_case_cgroup_scaled_mem() -> None:
+    """Verifies sandbox policy behavior: scaled limits scale memory."""
+    scaled = CgroupLimits(mem_bytes=100).scaled(2.0)
+    assert scaled.mem_bytes == 200
