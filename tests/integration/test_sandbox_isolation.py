@@ -495,3 +495,8 @@ def test_sbox_case_config_limits_default() -> None:
     """Verifies sandbox policy behavior: default limits attached."""
     config = SandboxConfig()
     assert config.limits.pids_max > 0
+
+def test_sbox_case_cgroup_scaled_mem() -> None:
+    """Verifies sandbox policy behavior: scaled limits scale memory."""
+    scaled = CgroupLimits(mem_bytes=100).scaled(2.0)
+    assert scaled.mem_bytes == 200
