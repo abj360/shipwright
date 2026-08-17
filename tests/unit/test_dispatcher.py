@@ -291,3 +291,9 @@ def test_disp_mx2_extra6(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "."})
     assert result.ok is True
+
+def test_disp_case_resolve_root() -> None:
+    """Verifies dispatcher behavior: dot resolves to the root."""
+    dispatcher = ToolDispatcher(tmp_path)
+    resolved = dispatcher._resolve('.')
+    assert resolved == tmp_path.resolve()
