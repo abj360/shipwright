@@ -500,3 +500,13 @@ def test_sbox_case_cgroup_scaled_mem() -> None:
     """Verifies sandbox policy behavior: scaled limits scale memory."""
     scaled = CgroupLimits(mem_bytes=100).scaled(2.0)
     assert scaled.mem_bytes == 200
+
+def test_exec_stream_yields_chunks() -> None:
+    """Verifies exec_stream streams output incrementally."""
+    handle = DockerRuntime().launch(make_config())
+    try:
+        chunks = list(handle.exec_stream("echo one; echo two"))
+        assert any("one" in chunk for chunk in chunks)
+        assert any("two" in chunk for chunk in chunks)
+    finally:
+        handle.stop()
