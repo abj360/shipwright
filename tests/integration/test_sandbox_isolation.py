@@ -490,3 +490,8 @@ def test_egress_case_evil_io() -> None:
 def test_sbox_mx_c0() -> None:
     """Verifies policy: cgroup cpu_quota_micros=100_000 valid."""
     CgroupLimits(cpu_quota_micros=100_000)
+
+def test_sbox_case_config_limits_default() -> None:
+    """Verifies sandbox policy behavior: default limits attached."""
+    config = SandboxConfig()
+    assert config.limits.pids_max > 0
