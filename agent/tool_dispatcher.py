@@ -93,6 +93,10 @@ class ToolDispatcher:
             output = tool(args)
         except ToolError as exc:
             return ToolResult(ok=False, output="", error=str(exc))
+        except subprocess.TimeoutExpired:
+            return ToolResult(
+                ok=False, output="", error=f"timed out after {DEFAULT_COMMAND_TIMEOUT_S}s"
+            )
         except (OSError, subprocess.SubprocessError) as exc:
             return ToolResult(ok=False, output="", error=f"{type(exc).__name__}: {exc}")
         return ToolResult(ok=True, output=output[:MAX_OUTPUT_CHARS])
