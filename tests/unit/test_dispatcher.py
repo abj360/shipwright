@@ -272,3 +272,22 @@ def test_disp_mx2_10(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("git_diff", {"path": "x.py"})
     assert result.ok is True
+
+def test_run_shell_captures_output(tmp_path) -> None:
+    """Verifies run_shell returns combined output."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_shell", {"command": "echo hello"})
+    assert result.ok
+    assert "hello" in result.output
+
+def test_disp_mx2_13(tmp_path) -> None:
+    """Verifies dispatch: missing patch rejected."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("apply_patch", {})
+    assert result.ok is False
+
+def test_disp_mx2_extra6(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 7)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
