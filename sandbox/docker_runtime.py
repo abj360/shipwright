@@ -8,6 +8,7 @@ Contains:
     SandboxHandle: wraps a running sandbox container
     SandboxHandle.exec(): runs one command inside
     SandboxHandle.stop(): stops and removes the container
+    SandboxHandle.stats(): samples CPU and memory usage
     SandboxHandle.wait(): blocks until exit or deadline
     SandboxHandle.exec_stream(): yields output chunks live
     DockerRuntime: launches short-lived sandbox containers
@@ -108,6 +109,17 @@ class SandboxHandle:
             self.container.kill()  # type: ignore[attr-defined]
         finally:
             self.container.remove(force=True)  # type: ignore[attr-defined]
+
+    def stats(self) -> dict[str, float]:
+        """Samples CPU and memory usage of the sandbox.
+
+        Returns:
+            stats: Mapping with cpu_percent and mem_bytes used.
+        """
+        sample = self.container.stats(stream=False)  # type: ignore[attr-defined]
+        cpu_delta = sample["cpu_stats"]["cpu_usage"]["total_usage"]
+        mem_used = sample["memory_stats"].get("usage", 0)
+        return {"cpu_usage": float(cpu_delta), "mem_bytes": float(mem_used)}
 
     def wait(self, timeout_s: int) -> int:
         """Blocks until the sandbox's main process exits or the deadline hits.
