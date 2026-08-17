@@ -279,3 +279,9 @@ def test_run_shell_captures_output(tmp_path) -> None:
     result = dispatcher.dispatch("run_shell", {"command": "echo hello"})
     assert result.ok
     assert "hello" in result.output
+
+def test_disp_mx2_13(tmp_path) -> None:
+    """Verifies dispatch: missing patch rejected."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("apply_patch", {})
+    assert result.ok is False
