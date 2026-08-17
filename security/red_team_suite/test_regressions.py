@@ -611,3 +611,8 @@ def test_reg_058_egress_bad_host(tmp_path) -> None:
     """REG-058: egress host bad.host is denied."""
     policy = EgressPolicy(allowed_hosts=('github.com',))
     assert policy.allows('bad.host') is False
+
+def test_reg_098_egress_objects_githubusercontent_com(tmp_path) -> None:
+    """REG-098: egress treats objects.githubusercontent.com as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('objects.githubusercontent.com') is True
