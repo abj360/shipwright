@@ -9,6 +9,7 @@
  *   DiffViewer: renders a unified diff with per-line styling
  *   FileSection: collapsible per-file diff section
  *   DiffLineView: one diff line with line numbers
+ *   diffStats(): counts added and removed lines
  */
 
 import { useMemo, useState } from "react";
@@ -76,6 +77,9 @@ export function DiffViewer({ patch }: { patch: string }) {
 
   return (
     <div className="diff-viewer">
+      <span className="diff-stats">
+        +{diffStats(files).added} / -{diffStats(files).removed}
+      </span>
       <button
         onClick={() => {
           void navigator.clipboard.writeText(patch);
@@ -132,4 +136,25 @@ function DiffLineView({ line }: { line: DiffLine }) {
       {line.text}
     </code>
   );
+}
+
+export function diffStats(files: DiffFile[]): { added: number; removed: number } {
+  /**
+   * Counts added and removed lines across all files.
+   *
+   * @param files - Parsed diff files.
+   * @returns stats - Added and removed line counts.
+   */
+  let added = 0;
+  let removed = 0;
+  for (const file of files) {
+    for (const line of file.lines) {
+      if (line.kind === "add") {
+        added += 1;
+      } else if (line.kind === "del") {
+        removed += 1;
+      }
+    }
+  }
+  return { added, removed };
 }
