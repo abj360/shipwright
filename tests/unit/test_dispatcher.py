@@ -285,3 +285,9 @@ def test_disp_mx2_13(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("apply_patch", {})
     assert result.ok is False
+
+def test_disp_mx2_extra6(tmp_path) -> None:
+    """Verifies dispatch: root listing stable (case 7)."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
