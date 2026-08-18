@@ -256,3 +256,10 @@ describe("TaskQueue internals", () => {
     await queue.drain();
   });
 });
+
+describe("TaskQueue metrics", () => {
+  it("handles metrics shape with concurrency 1 (case 2)", () => {
+    const queue = new TaskQueue({ concurrency: 1 });
+    expect(queue.metrics()).toEqual({ completed: 0, failed: 0, retried: 0 });
+  });
+});
