@@ -524,3 +524,8 @@ def test_sbox_mx2_e9_1() -> None:
     """Verifies policy: egress denies bad.example (case 2)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('bad.example') is False
+
+def test_sbox_mx2_e2_1() -> None:
+    """Verifies policy: egress allows pypi.org (case 2)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('pypi.org') is True
