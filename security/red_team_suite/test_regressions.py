@@ -616,3 +616,8 @@ def test_reg_098_egress_objects_githubusercontent_com(tmp_path) -> None:
     """REG-098: egress treats objects.githubusercontent.com as allowed."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('objects.githubusercontent.com') is True
+
+def test_reg_109_egress_pastebin_com(tmp_path) -> None:
+    """REG-109: egress treats pastebin.com as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('pastebin.com') is False

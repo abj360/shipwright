@@ -517,3 +517,28 @@ def test_default_breaker_allows_normal_runs() -> None:
     """Verifies default breaker ceilings do not trip short runs."""
     loop = AgentLoop(ScriptedLLM(["FINAL: fine"]), make_config())
     assert loop.run().final_answer == "fine"
+
+def test_loop_mx_3_2() -> None:
+    """Verifies loop behavior: write_file call stores args."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'write_file'
+
+def test_loop_mx2_2_3() -> None:
+    """Verifies loop behavior: run_shell call: last step is final."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[-1].tool_name == ''
+
+def test_breaker_trips_exactly_at_ceiling() -> None:
+    """Verifies the breaker trips at, not before, the iteration ceiling."""
+    breaker = CircuitBreaker(max_iterations=3, max_cost_usd=1.0)
+    breaker.check(2, 0.5)
+    with pytest.raises(RunawayRunError):
+        breaker.check(3, 0.5)
+
+def test_breaker_trips_on_cost_ceiling() -> None:
+    """Verifies the cost ceiling trips independently of iterations."""
+    breaker = CircuitBreaker(max_iterations=100, max_cost_usd=2.0)
+    with pytest.raises(RunawayRunError):
+        breaker.check(1, 2.5)
