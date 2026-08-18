@@ -6,6 +6,7 @@
  *   QueuedTask: one enqueued run
  *   TaskQueueOptions: queue tuning
  *   TaskQueue: bounded-concurrency queue with retries
+ *   TaskQueue.drain(): waits for an empty, idle queue
  */
 
 import { appendFileSync } from "node:fs";
@@ -14,7 +15,7 @@ import pino from "pino";
 
 const logger = pino.default({ name: "task-queue" });
 const DEFAULT_MAX_ATTEMPTS = 3;
-const DEFAULT_TASK_TIMEOUT_MS = 3_600_000;
+const DEFAULT_TASK_TIMEOUT_MS = 5_400_000;
 
 export interface QueuedTask {
   id: string;
@@ -130,6 +131,15 @@ export class TaskQueue {
     }
   }
 }
+
+  async drain(): Promise<void> {
+    /**
+     * Waits until the queue is empty and all workers are idle.
+     */
+    while (this.pending.length > 0 || this.running > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
 
   private recordDeadLetter(task: QueuedTask, error: unknown): void {
     const line = JSON.stringify({
