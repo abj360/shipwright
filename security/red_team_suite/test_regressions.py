@@ -621,3 +621,8 @@ def test_reg_109_egress_pastebin_com(tmp_path) -> None:
     """REG-109: egress treats pastebin.com as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('pastebin.com') is False
+
+def test_reg_070_cgroup_cpu_quota_micros_999_999(tmp_path) -> None:
+    """REG-070: cgroup cpu_quota_micros=999_999 passes validation."""
+    limits = CgroupLimits(cpu_quota_micros=999_999)
+    assert limits.pids_max >= 16
