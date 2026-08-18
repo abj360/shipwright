@@ -536,3 +536,9 @@ def test_breaker_trips_exactly_at_ceiling() -> None:
     breaker.check(2, 0.5)
     with pytest.raises(RunawayRunError):
         breaker.check(3, 0.5)
+
+def test_breaker_trips_on_cost_ceiling() -> None:
+    """Verifies the cost ceiling trips independently of iterations."""
+    breaker = CircuitBreaker(max_iterations=100, max_cost_usd=2.0)
+    with pytest.raises(RunawayRunError):
+        breaker.check(1, 2.5)
