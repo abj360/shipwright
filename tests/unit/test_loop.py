@@ -542,3 +542,8 @@ def test_breaker_trips_on_cost_ceiling() -> None:
     breaker = CircuitBreaker(max_iterations=100, max_cost_usd=2.0)
     with pytest.raises(RunawayRunError):
         breaker.check(1, 2.5)
+
+def test_loop_case_action_no_args() -> None:
+    """Verifies loop behavior: action with no args."""
+    result = AgentLoop(ScriptedLLM(["t\nAction: list_dir\n", "FINAL: ok"]), make_config()).run()
+    assert result.steps[0].tool_args == {}
