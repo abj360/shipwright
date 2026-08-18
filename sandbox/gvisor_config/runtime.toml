@@ -4,6 +4,7 @@
 platform = "systrap"  # faster syscall path than ptrace
 file-access = "exclusive"
 directfs = true
+iouring = false
 network = "sandbox"  # no host networking, ever
 debug = false
 overlay = "rootfs"
