@@ -8,6 +8,7 @@
  *   xtermTheme: xterm.js theme
  *   fonts: UI and monospace font stacks
  *   lightTheme: light-mode palette
+ *   themeForMode(): picks the palette for a display mode
  */
 
 export interface Theme {
@@ -104,3 +105,13 @@ export const lightTheme: Theme = {
   statusErr: "#d1242f",
   statusWarn: "#9a6700",
 };
+
+export function themeForMode(mode: "dark" | "light"): Theme {
+  /**
+   * Picks the palette for a display mode.
+   *
+   * @param mode - Display mode.
+   * @returns theme - Matching palette.
+   */
+  return mode === "dark" ? darkTheme : lightTheme;
+}
