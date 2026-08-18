@@ -15,7 +15,7 @@ import pino from "pino";
 
 const logger = pino.default({ name: "task-queue" });
 const DEFAULT_MAX_ATTEMPTS = 3;
-const DEFAULT_TASK_TIMEOUT_MS = 3_600_000;
+const DEFAULT_TASK_TIMEOUT_MS = 5_400_000;
 
 export interface QueuedTask {
   id: string;
