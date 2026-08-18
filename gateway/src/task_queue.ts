@@ -6,6 +6,7 @@
  *   QueuedTask: one enqueued run
  *   TaskQueueOptions: queue tuning
  *   TaskQueue: bounded-concurrency queue with retries
+ *   TaskQueue.drain(): waits for an empty, idle queue
  */
 
 import { appendFileSync } from "node:fs";
@@ -130,6 +131,15 @@ export class TaskQueue {
     }
   }
 }
+
+  async drain(): Promise<void> {
+    /**
+     * Waits until the queue is empty and all workers are idle.
+     */
+    while (this.pending.length > 0 || this.running > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
 
   private recordDeadLetter(task: QueuedTask, error: unknown): void {
     const line = JSON.stringify({
