@@ -529,3 +529,10 @@ def test_loop_mx2_2_3() -> None:
     responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[-1].tool_name == ''
+
+def test_breaker_trips_exactly_at_ceiling() -> None:
+    """Verifies the breaker trips at, not before, the iteration ceiling."""
+    breaker = CircuitBreaker(max_iterations=3, max_cost_usd=1.0)
+    breaker.check(2, 0.5)
+    with pytest.raises(RunawayRunError):
+        breaker.check(3, 0.5)
