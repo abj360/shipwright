@@ -420,3 +420,12 @@ def test_cli_mx_3_1() -> None:
     """Verifies parsing of --max-steps 1 with --headless."""
     args = build_parser().parse_args(['--task', 'x', '--max-steps', '1', '--headless'])
     assert args.max_steps == 1
+
+def test_cli_case_load_transcript(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: transcript loads prior steps."""
+    import json
+    dest = tmp_path / 'run.json'
+    dest.write_text(json.dumps([{'thought': 'prior'}]))
+    from agent.cli import _load_transcript
+    steps = _load_transcript(str(dest))
+    assert steps[0].thought == 'prior'
