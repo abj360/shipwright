@@ -35,7 +35,7 @@ SKIPPED_DIRECTORIES = {".git", "node_modules", "__pycache__", ".venv", "dist", "
 TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".lock", ".yml", ".md"}  # .gitignore handled separately
 MAX_FILE_BYTES = 200_000
 PLAN_SYSTEM_PROMPT = "You produce short, ordered, file-scoped implementation plans."
-MAX_PLAN_STEPS = 8
+MAX_PLAN_STEPS = 6
 PLAN_FORMAT_INSTRUCTIONS = (
     "Reply with one numbered step per line, at most 8 steps, each starting with "
     "the file or area it touches."
