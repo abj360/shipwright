@@ -9,6 +9,7 @@ Contains:
     PlanStep: one step of an execution plan
     Plan: ordered execution plan for one task
     RepoPlanner.build_plan(): produces an ordered execution plan
+    RepoPlanner._cap_steps(): merges trivial steps over the cap
     RepoPlanner._repo_state_hash(): fingerprints the repo shape
     RepoPlanner.replan(): builds a recovery plan after a failure
     RepoPlanner.validate_plan(): drops steps referencing unknown files
@@ -34,6 +35,7 @@ SKIPPED_DIRECTORIES = {".git", "node_modules", "__pycache__", ".venv", "dist", "
 TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".lock", ".yml", ".md"}  # .gitignore handled separately
 MAX_FILE_BYTES = 200_000
 PLAN_SYSTEM_PROMPT = "You produce short, ordered, file-scoped implementation plans."
+MAX_PLAN_STEPS = 8
 PLAN_FORMAT_INSTRUCTIONS = (
     "Reply with one numbered step per line, at most 8 steps, each starting with "
     "the file or area it touches."
@@ -170,7 +172,7 @@ class RepoPlanner:
         steps = self._parse_plan_text(completion.text)
         if not steps:
             steps = [PlanStep(index=0, description=task)]
-        return Plan(task=task, steps=steps)
+        return Plan(task=task, steps=self._cap_steps(steps))
 
     def _plan_prompt(self, task: str) -> str:
         """Builds the planning prompt with repo context injected.
@@ -198,6 +200,24 @@ class RepoPlanner:
             if stripped[:2] in {f"{n}." for n in range(1, 10)} and len(stripped) > 3:
                 steps.append(PlanStep(index=len(steps), description=stripped[3:].strip()))
         return steps
+
+    def _cap_steps(self, steps: list[PlanStep]) -> list[PlanStep]:
+        """Merges trailing trivial steps once a plan exceeds the step cap.
+
+        Args:
+            steps: Parsed steps, possibly over the cap.
+
+        Returns:
+            steps: At most MAX_PLAN_STEPS entries.
+        """
+        if len(steps) <= MAX_PLAN_STEPS:
+            return steps
+        head, tail = steps[: MAX_PLAN_STEPS - 1], steps[MAX_PLAN_STEPS - 1 :]
+        merged = PlanStep(
+            index=head[-1].index + 1,
+            description="; ".join(s.description for s in tail),
+        )
+        return [*head, merged]
 
     def _repo_state_hash(self, summary: RepoSummary) -> str:
         """Hashes file paths and sizes so plans can be cached per repo state.
