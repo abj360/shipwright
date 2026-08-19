@@ -18,11 +18,11 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e '.[dev]'
+      - run: pip install -e '.[dev]' pytest-cov
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy agent sandbox security
-      - run: pytest tests/ -q
+      - run: pytest tests/ -q --cov=agent --cov=sandbox --cov-report=term-missing --cov-report=xml
 
   gateway:
     runs-on: ubuntu-latest
