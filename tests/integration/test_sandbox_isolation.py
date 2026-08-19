@@ -534,3 +534,9 @@ def test_sbox_mx_m2() -> None:
     """Verifies policy: mount accepted for /tmp/shipwright-work/task-123."""
     mounts = build_mounts('/tmp/shipwright-work/task-123')
     assert mounts[0].target == '/work'
+
+def test_sbox_case_describe_mounts() -> None:
+    """Verifies sandbox policy behavior: describe_mounts mentions /work."""
+    from sandbox.policies.mounts import describe_mounts
+    text = describe_mounts(build_mounts('/tmp/shipwright-work/t'))
+    assert '/work' in text
