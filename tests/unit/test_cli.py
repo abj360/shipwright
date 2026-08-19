@@ -434,3 +434,8 @@ def test_cli_mx_4_2() -> None:
     """Verifies parsing of --max-cost 0.1 with --json."""
     args = build_parser().parse_args(['--task', 'x', '--max-cost', '0.1', '--json'])
     assert args.max_cost == 0.1
+
+def test_parser_accepts_plan_mode() -> None:
+    """Verifies --plan-mode flips the execution mode flag."""
+    args = build_parser().parse_args(["--task", "x", "--plan-mode"])
+    assert args.plan_mode
