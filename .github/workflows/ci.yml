@@ -22,7 +22,7 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: mypy agent sandbox security
-      - run: pytest tests/ -q --cov=agent --cov=sandbox --cov-report=term-missing
+      - run: pytest tests/ -q --cov=agent --cov=sandbox --cov-report=term-missing --cov-report=xml
 
   gateway:
     runs-on: ubuntu-latest
