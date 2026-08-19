@@ -93,4 +93,4 @@ def limits_from_env() -> CgroupLimits:
     )
 
 HEAVY_LIMITS = CgroupLimits(cpu_quota_micros=400_000, mem_bytes=2 * 1024 * 1024 * 1024)
-RED_TEAM_LIMITS = CgroupLimits(cpu_quota_micros=50_000, pids_max=64)
+RED_TEAM_LIMITS = CgroupLimits(cpu_quota_micros=50_000, pids_max=96)
