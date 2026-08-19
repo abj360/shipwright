@@ -444,3 +444,12 @@ def test_cli_mx_0_2() -> None:
     """Verifies parsing of --headless with --json."""
     args = build_parser().parse_args(['--task', 'x', '--headless', '--json'])
     assert args.headless
+
+def test_cli_mx2_5_1() -> None:
+    """Verifies parsing of relative repo path."""
+    if "['--task', 'x', '--repo', '../other']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--repo', '../other'])
+        assert args.repo == '../other'
