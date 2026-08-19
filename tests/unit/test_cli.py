@@ -429,3 +429,8 @@ def test_cli_case_load_transcript(capsys: pytest.CaptureFixture[str], tmp_path) 
     from agent.cli import _load_transcript
     steps = _load_transcript(str(dest))
     assert steps[0].thought == 'prior'
+
+def test_cli_mx_4_2() -> None:
+    """Verifies parsing of --max-cost 0.1 with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--max-cost', '0.1', '--json'])
+    assert args.max_cost == 0.1

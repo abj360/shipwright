@@ -6,12 +6,14 @@ Contains:
     OutlineEntry: cached outline with its modification time
     RepoMap: builds and caches per-file outlines
     RepoMap.outline_for(): cached outline, rebuilt on change
+    RepoMap.persist(): writes the cache to disk
     RepoMap.stats(): reports cache hit/miss counters
     RepoMap.detect_changes(): lists files with uncommitted changes
     RepoMap.refresh(): invalidates entries for changed files
 """
 
 import ast
+import json
 import logging
 import subprocess
 from dataclasses import dataclass
@@ -22,6 +24,7 @@ logger = logging.getLogger(__name__)
 OUTLINE_MAX_SYMBOLS = 12
 OUTLINE_MAX_CHARS = 200
 CACHE_VERSION = 1
+CACHE_DIR_NAME = ".shipwright"
 
 @dataclass
 class OutlineEntry:
@@ -98,6 +101,16 @@ class RepoMap:
         if len(outline) > OUTLINE_MAX_CHARS:
             outline = outline[:OUTLINE_MAX_CHARS].rsplit(",", 1)[0] + ", ..."
         return outline or "(no top-level symbols)"
+
+    def persist(self) -> None:
+        """Writes the outline cache to .shipwright/cache.json for reuse."""
+        cache_dir = self.root / CACHE_DIR_NAME
+        cache_dir.mkdir(exist_ok=True)
+        payload = {
+            "version": CACHE_VERSION,
+            "entries": {k: {"mtime": e.mtime, "outline": e.outline} for k, e in self._cache.items()},
+        }
+        (cache_dir / "cache.json").write_text(json.dumps(payload))
 
     def stats(self) -> dict[str, int]:
         """Reports cache hit/miss counters.
