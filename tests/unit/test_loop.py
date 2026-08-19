@@ -547,3 +547,8 @@ def test_loop_case_action_no_args() -> None:
     """Verifies loop behavior: action with no args."""
     result = AgentLoop(ScriptedLLM(["t\nAction: list_dir\n", "FINAL: ok"]), make_config()).run()
     assert result.steps[0].tool_args == {}
+
+def test_loop_case_no_action_marker() -> None:
+    """Verifies loop behavior: thought without action marker."""
+    result = AgentLoop(ScriptedLLM(["just thinking", "FINAL: done"]), make_config()).run()
+    assert result.final_answer == 'done'
