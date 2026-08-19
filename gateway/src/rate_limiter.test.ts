@@ -157,3 +157,9 @@ describe("rate limiter parsing", () => {
     expect(isRateLimitError({ status: 429 })).toBe(true);
   });
 });
+
+describe("rate limiter cases", () => {
+  it("handles backoff attempt 0 floor", () => {
+    expect(backoffMs(0)).toBeGreaterThanOrEqual(1_000);
+  });
+});
