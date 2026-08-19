@@ -434,3 +434,22 @@ def test_cli_mx_4_2() -> None:
     """Verifies parsing of --max-cost 0.1 with --json."""
     args = build_parser().parse_args(['--task', 'x', '--max-cost', '0.1', '--json'])
     assert args.max_cost == 0.1
+
+def test_parser_accepts_plan_mode() -> None:
+    """Verifies --plan-mode flips the execution mode flag."""
+    args = build_parser().parse_args(["--task", "x", "--plan-mode"])
+    assert args.plan_mode
+
+def test_cli_mx_0_2() -> None:
+    """Verifies parsing of --headless with --json."""
+    args = build_parser().parse_args(['--task', 'x', '--headless', '--json'])
+    assert args.headless
+
+def test_cli_mx2_5_1() -> None:
+    """Verifies parsing of relative repo path."""
+    if "['--task', 'x', '--repo', '../other']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--repo', '../other'])
+        assert args.repo == '../other'
