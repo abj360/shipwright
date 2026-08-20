@@ -558,3 +558,8 @@ def test_loop_mx2_1_8() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].thought == 'think'
+
+def test_loop_edge_two_tools() -> None:
+    """Verifies loop behavior: two tool calls then final."""
+    result = AgentLoop(ScriptedLLM(["t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "FINAL: y"]), make_config()).run()
+    assert len(result.steps) == 3
