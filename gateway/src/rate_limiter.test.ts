@@ -169,3 +169,9 @@ describe("rate limiter helpers", () => {
     expect(parseRetryAfter({ 'retry-after': '2' })).toBe(2_000);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles zero retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '0' })).toBe(0);
+  });
+});
