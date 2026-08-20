@@ -631,3 +631,8 @@ def test_reg_123_mount_media(tmp_path) -> None:
     """REG-123: mount /media is rejected."""
     with pytest.raises(MountError):
         build_mounts('/media')
+
+def test_reg_145_nft_rules_have_one_accept_per_host(tmp_path) -> None:
+    """REG-145: nft rules have one accept per host."""
+    rules = EgressPolicy(allowed_hosts=('a.com', 'b.com')).render_nft_rules()
+    assert rules.count('accept;') == 2
