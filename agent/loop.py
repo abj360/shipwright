@@ -208,9 +208,10 @@ class AgentLoop:
             step: Parsed step; an empty tool name marks a final answer.
         """
         index = len(self._transcript)
-        if FINAL_ANSWER_PREFIX in text:
-            return Step(index=index, thought=text)
-        thought, _, rest = text.partition("Action:")
+        cleaned = text.replace("<think>", "").replace("</think>", "").strip()
+        if FINAL_ANSWER_PREFIX in cleaned:
+            return Step(index=index, thought=cleaned)
+        thought, _, rest = cleaned.partition("Action:")
         tool_name, _, arg_text = rest.partition("\n")
         args = dict(pair.split("=", 1) for pair in arg_text.strip().split(";") if "=" in pair)
         return Step(
@@ -250,7 +251,10 @@ class AgentLoop:
             answer: Answer text without the marker prefix.
         """
         _, _, answer = step.thought.partition(FINAL_ANSWER_PREFIX)
-        return answer.strip()
+        answer = answer.strip()
+        if not answer:
+            return step.thought.strip()
+        return answer
 
     def _record_cost(self, completion: Completion) -> None:
         """Accumulates one completion's spend into the run total.
