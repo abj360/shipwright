@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-alpine AS build
 
 WORKDIR /app
 COPY ui/package.json ./
@@ -6,7 +6,9 @@ RUN npm install
 COPY ui ./
 RUN npm run build
 
-RUN addgroup -S app && adduser -S app -G app
-USER app
+FROM nginx:1.27-alpine
 
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 5173
+CMD ["nginx", "-g", "daemon off;"]
