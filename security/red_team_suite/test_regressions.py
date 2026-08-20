@@ -636,3 +636,8 @@ def test_reg_145_nft_rules_have_one_accept_per_host(tmp_path) -> None:
     """REG-145: nft rules have one accept per host."""
     rules = EgressPolicy(allowed_hosts=('a.com', 'b.com')).render_nft_rules()
     assert rules.count('accept;') == 2
+
+def test_reg_115_egress_c2_example(tmp_path) -> None:
+    """REG-115: egress treats c2.example as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('c2.example') is False

@@ -80,7 +80,7 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
     <div className="terminal-viewer">
       <span className={`status-badge status-${status}`}>{status}</span>
       <button onClick={() => setPaused(!paused)}>{paused ? "resume" : "pause"}</button>
-      <div ref={hostRef} />
+      <div ref={hostRef} role="log" aria-label="sandbox output" />
     </div>
   );
 }
