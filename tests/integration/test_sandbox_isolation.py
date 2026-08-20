@@ -544,3 +544,8 @@ def test_sbox_case_describe_mounts() -> None:
 def test_sbox_mx_c2() -> None:
     """Verifies policy: cgroup mem_bytes=64 * 1024 * 1024 valid."""
     CgroupLimits(mem_bytes=64 * 1024 * 1024)
+
+def test_sbox_mx2_e8_1() -> None:
+    """Verifies policy: egress allows codeload.github.com (case 2)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('codeload.github.com') is True
