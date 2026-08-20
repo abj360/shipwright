@@ -11,8 +11,10 @@ Contains:
     WORKSPACE_ROOT: host directory all workdirs must live under
     MountError: workdir would escape the workspace
     describe_mounts(): renders the mount set for logs
+    cleanup_workspace(): deletes one task workdir
 """
 
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -103,3 +105,14 @@ def describe_mounts(mounts: list[MountSpec]) -> str:
         summary: One rendered mount per line.
     """
     return "\n".join(mount.render() for mount in mounts)
+
+def cleanup_workspace(workdir: str) -> None:
+    """Deletes one task workdir after the sandbox exits.
+
+    Args:
+        workdir: Host path of the workdir to delete.
+    """
+    resolved = Path(workdir).resolve()
+    if WORKSPACE_ROOT not in resolved.parents and resolved != WORKSPACE_ROOT:
+        raise ValueError(f"refusing to clean outside {WORKSPACE_ROOT}: {workdir}")
+    shutil.rmtree(resolved, ignore_errors=True)
