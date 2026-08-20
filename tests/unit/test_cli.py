@@ -467,3 +467,12 @@ def test_flag_max_cost_parses() -> None:
     """Verifies parsing: max cost parses."""
     args = build_parser().parse_args(["--task", "a", "--max-cost", "0.5"])
     assert args.max_cost == 0.5
+
+def test_cli_mx2_5_2() -> None:
+    """Verifies parsing of relative repo path."""
+    if "['--task', 'x', '--repo', '../other']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--repo', '../other'])
+        assert args.repo == '../other'
