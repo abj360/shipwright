@@ -549,3 +549,12 @@ def test_sbox_mx2_e8_1() -> None:
     """Verifies policy: egress allows codeload.github.com (case 2)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('codeload.github.com') is True
+
+def test_mount_case_proc_rejected() -> None:
+    """Verifies mount handling for proc_rejected."""
+    if "error" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/proc")
+    else:
+        mounts = build_mounts("/proc")
+        assert mounts[0].target == "/work"
