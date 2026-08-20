@@ -297,3 +297,9 @@ def test_disp_case_resolve_root() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     resolved = dispatcher._resolve('.')
     assert resolved == tmp_path.resolve()
+
+def test_disp_case_read_missing_file() -> None:
+    """Verifies dispatcher behavior: reading a missing file errors."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch('read_file', {'path': 'nope.txt'})
+    assert not result.ok
