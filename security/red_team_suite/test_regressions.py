@@ -641,3 +641,8 @@ def test_reg_115_egress_c2_example(tmp_path) -> None:
     """REG-115: egress treats c2.example as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('c2.example') is False
+
+def test_reg_163_exec_result_output_preserved(tmp_path) -> None:
+    """REG-163: exec result output preserved."""
+    from sandbox.docker_runtime import ExecResult
+    assert ExecResult(exit_code=0, output='abc').output == 'abc'
