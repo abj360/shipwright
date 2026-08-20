@@ -626,3 +626,8 @@ def test_reg_070_cgroup_cpu_quota_micros_999_999(tmp_path) -> None:
     """REG-070: cgroup cpu_quota_micros=999_999 passes validation."""
     limits = CgroupLimits(cpu_quota_micros=999_999)
     assert limits.pids_max >= 16
+
+def test_reg_123_mount_media(tmp_path) -> None:
+    """REG-123: mount /media is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/media')
