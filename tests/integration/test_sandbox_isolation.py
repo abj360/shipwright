@@ -540,3 +540,7 @@ def test_sbox_case_describe_mounts() -> None:
     from sandbox.policies.mounts import describe_mounts
     text = describe_mounts(build_mounts('/tmp/shipwright-work/t'))
     assert '/work' in text
+
+def test_sbox_mx_c2() -> None:
+    """Verifies policy: cgroup mem_bytes=64 * 1024 * 1024 valid."""
+    CgroupLimits(mem_bytes=64 * 1024 * 1024)
