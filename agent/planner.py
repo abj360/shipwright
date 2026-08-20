@@ -9,6 +9,7 @@ Contains:
     PlanStep: one step of an execution plan
     Plan: ordered execution plan for one task
     RepoPlanner.build_plan(): produces an ordered execution plan
+    RepoPlanner.group_steps_by_project(): keeps same-project work contiguous
     RepoPlanner._cap_steps(): merges trivial steps over the cap
     RepoPlanner._repo_state_hash(): fingerprints the repo shape
     RepoPlanner.replan(): builds a recovery plan after a failure
@@ -200,6 +201,26 @@ class RepoPlanner:
             if stripped[:2] in {f"{n}." for n in range(1, 10)} and len(stripped) > 3:
                 steps.append(PlanStep(index=len(steps), description=stripped[3:].strip()))
         return steps
+
+    def group_steps_by_project(self, plan: Plan, projects: list[Project]) -> Plan:
+        """Orders plan steps so same-project work stays contiguous.
+
+        Args:
+            plan: Plan to reorder.
+            projects: Projects detected in the checkout.
+
+        Returns:
+            plan: Plan with steps grouped by owning project.
+        """
+        if len(projects) < 2:
+            return plan
+        ranked = sorted(
+            plan.steps,
+            key=lambda s: next(
+                (i for i, p in enumerate(projects) if p.kind in s.description), len(projects)
+            ),
+        )
+        return Plan(task=plan.task, steps=ranked)
 
     def _cap_steps(self, steps: list[PlanStep]) -> list[PlanStep]:
         """Merges trailing trivial steps once a plan exceeds the step cap.
