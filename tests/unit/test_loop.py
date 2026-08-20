@@ -552,3 +552,9 @@ def test_loop_case_no_action_marker() -> None:
     """Verifies loop behavior: thought without action marker."""
     result = AgentLoop(ScriptedLLM(["just thinking", "FINAL: done"]), make_config()).run()
     assert result.final_answer == 'done'
+
+def test_loop_mx2_1_8() -> None:
+    """Verifies loop behavior: read_file call: thought recorded."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].thought == 'think'
