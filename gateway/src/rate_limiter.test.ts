@@ -175,3 +175,27 @@ describe("rate limiter parsing", () => {
     expect(parseRetryAfter({ 'retry-after': '0' })).toBe(0);
   });
 });
+
+describe("rate limiter cases", () => {
+  it("handles backoff attempt 3 floor", () => {
+    expect(backoffMs(3)).toBeGreaterThanOrEqual(8_000);
+  });
+});
+
+describe("rate limiter parsing", () => {
+  it("handles zero retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '0' })).toBe(0);
+  });
+});
+
+describe("rate limiter parsing", () => {
+  it("handles status 404 is not a rate limit", () => {
+    expect(isRateLimitError({ status: 404 })).toBe(false);
+  });
+});
+
+describe("rate limiter parsing", () => {
+  it("handles sixty seconds retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '60' })).toBe(60_000);
+  });
+});

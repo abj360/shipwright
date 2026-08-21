@@ -512,3 +512,16 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('refactor module', ['pytest -q'])).toContain('refactor module');
   });
 });
+
+describe("getRefSha", () => {
+  it("is exported as a function", async () => {
+    const { getRefSha } = await import("./github_sidecar");
+    expect(typeof getRefSha).toBe("function");
+  });
+});
+
+describe("pr body rendering", () => {
+  it("handles stats render cost", () => {
+    expect(renderRunStats({ steps: 1, durationS: 1, costUsd: 0.5 })).toContain('0.5000');
+  });
+});
