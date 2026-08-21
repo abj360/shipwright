@@ -24,6 +24,8 @@
  *   RunStats: aggregated run statistics
  *   renderRunStats(): renders stats for the PR body
  *   requestReviews(): requests reviews from the team pool
+ *   countApiCall(): counts one API call
+ *   apiCallReport(): reports per-operation counts
  */
 
 import { exec } from "node:child_process";
@@ -451,4 +453,24 @@ export async function requestReviews(
     pull_number: Number(match[3]),
     reviewers,
   });
+}
+
+const apiCalls = new Map<string, number>();
+
+export function countApiCall(operation: string): void {
+  /**
+   * Increments the per-operation API call counter.
+   *
+   * @param operation - Operation name to count.
+   */
+  apiCalls.set(operation, (apiCalls.get(operation) ?? 0) + 1);
+}
+
+export function apiCallReport(): Record<string, number> {
+  /**
+   * Reports per-operation API call counts for the current process.
+   *
+   * @returns report - Mapping of operation to call count.
+   */
+  return Object.fromEntries(apiCalls);
 }
