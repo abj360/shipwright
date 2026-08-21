@@ -512,3 +512,10 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('refactor module', ['pytest -q'])).toContain('refactor module');
   });
 });
+
+describe("getRefSha", () => {
+  it("is exported as a function", async () => {
+    const { getRefSha } = await import("./github_sidecar");
+    expect(typeof getRefSha).toBe("function");
+  });
+});
