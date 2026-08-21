@@ -257,3 +257,9 @@ describe("run request schema", () => {
     expect(runRequestSchema.safeParse({ task: null }).success).toBe(false);
   });
 });
+
+describe("pr request schema", () => {
+  it("handles pr schema rejects empty task id", () => {
+    expect(prRequestSchema.safeParse({ taskId: '', summary: 's' }).success).toBe(false);
+  });
+});
