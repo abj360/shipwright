@@ -193,3 +193,9 @@ describe("rate limiter parsing", () => {
     expect(isRateLimitError({ status: 404 })).toBe(false);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles sixty seconds retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '60' })).toBe(60_000);
+  });
+});
