@@ -7,6 +7,7 @@ Contains:
     JudgelineClient: calls the judgeline scoring service
     JudgelineClient.score_diff(): scores one PR diff, fail-closed
     JudgelineClient.is_ready(): decides readiness against the threshold
+    JudgelineClient.score_diffs(): scores several diffs
     JudgelineClient._post_with_retry(): retries 5xx, never timeouts
     format_score_comment(): renders a verdict as Markdown
 """
@@ -102,6 +103,17 @@ class JudgelineClient:
             return False
         threshold = float(os.environ.get("JUDGELINE_THRESHOLD", READY_THRESHOLD))
         return result.score >= threshold
+
+    def score_diffs(self, diffs: list[str]) -> list[ScoreResult | None]:
+        """Scores several diffs, one per commit range of a larger PR.
+
+        Args:
+            diffs: Unified diffs to score independently.
+
+        Returns:
+            results: Scores aligned with the input order; None entries fail closed.
+        """
+        return [self.score_diff(diff) for diff in diffs]
 
     def _post_with_retry(self, diff_text: str) -> httpx.Response | None:
         """Posts the diff, retrying only 5xx responses with backoff.

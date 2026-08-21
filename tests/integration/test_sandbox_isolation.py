@@ -558,3 +558,16 @@ def test_mount_case_proc_rejected() -> None:
     else:
         mounts = build_mounts("/proc")
         assert mounts[0].target == "/work"
+
+def test_mount_case_home_rejected() -> None:
+    """Verifies mount handling for home_rejected."""
+    if "error" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/home/user")
+    else:
+        mounts = build_mounts("/home/user")
+        assert mounts[0].target == "/work"
+
+def test_sbox_mx2_c1() -> None:
+    """Verifies policy: cgroup mem_bytes accepts 64 * 1024 * 1024."""
+    CgroupLimits(mem_bytes=64 * 1024 * 1024)

@@ -646,3 +646,8 @@ def test_reg_163_exec_result_output_preserved(tmp_path) -> None:
     """REG-163: exec result output preserved."""
     from sandbox.docker_runtime import ExecResult
     assert ExecResult(exit_code=0, output='abc').output == 'abc'
+
+def test_reg_081_scaled_limits_keep_pids_ceiling(tmp_path) -> None:
+    """REG-081: scaled limits keep pids ceiling."""
+    scaled = CgroupLimits(pids_max=77).scaled(3.0)
+    assert scaled.pids_max == 77
