@@ -10,17 +10,21 @@ Contains:
     _format_step(): renders one step as a single line
     _emit_json_step(): prints one step as a JSON line
     _load_transcript(): loads prior steps from a transcript
+    _build_planner(): builds a planner with a repo outline
 """
 
 import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
 from agent.llm_client import HttpLLMClient
 from agent.loop import AgentConfig, AgentLoop, Step
+from agent.planner import RepoPlanner, RepoReader, build_outline
+from agent.repo_map import RepoMap
 
 def build_parser() -> argparse.ArgumentParser:
     """Builds the command-line argument parser.
@@ -37,6 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-steps", type=int, default=50, help="iteration ceiling per run")
     parser.add_argument("--max-cost", type=float, default=5.0, help="cost ceiling per run in USD")
     parser.add_argument("--resume", metavar="TRANSCRIPT", help="resume from a saved transcript")
+    parser.add_argument("--plan-mode", action="store_true", help="plan first, then execute")
     return parser
 
 def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
@@ -94,6 +99,8 @@ def main(argv: list[str] | None = None) -> int:
     task = args.task or f"resolve issue at {args.issue_url}"
     config = AgentConfig(repo_path=args.repo, task=task, cost_tracker=CostTracker())
     config.breaker = CircuitBreaker(max_iterations=args.max_steps, max_cost_usd=args.max_cost)
+    if args.plan_mode:
+        config.mode = "plan_execute"
     try:
         client = HttpLLMClient(api_key=os.environ["ANTHROPIC_API_KEY"])
     except KeyError:
@@ -102,6 +109,8 @@ def main(argv: list[str] | None = None) -> int:
     loop = AgentLoop(client, config)
     if args.resume:
         loop.resume(_load_transcript(args.resume))
+    if args.plan_mode:
+        config.planner = _build_planner(client, args.repo)
     try:
         if args.json:
             return _run_headless(loop, as_json=True)
@@ -157,3 +166,17 @@ def _load_transcript(path: str) -> list[Step]:
     with open(path) as handle:
         raw = json.load(handle)
     return [Step(index=i, thought=s["thought"]) for i, s in enumerate(raw)]
+
+def _build_planner(client: HttpLLMClient, repo_path: str) -> RepoPlanner:
+    """Builds a planner with an outline of the checkout.
+
+    Args:
+        client: Completion backend shared with the loop.
+        repo_path: Checkout to outline.
+
+    Returns:
+        planner: Planner bound to the repo outline.
+    """
+    summary = RepoReader(Path(repo_path)).read()
+    outline = build_outline(summary, RepoMap(Path(repo_path)))
+    return RepoPlanner(client, outline)

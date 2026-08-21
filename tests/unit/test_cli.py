@@ -476,3 +476,12 @@ def test_cli_mx2_5_2() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--repo', '../other'])
         assert args.repo == '../other'
+
+def test_cli_mx2_2_0() -> None:
+    """Verifies parsing of higher cost ceiling."""
+    if "['--task', 'x', '--max-cost', '10']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--max-cost', '10'])
+        assert args.max_cost == 10.0
