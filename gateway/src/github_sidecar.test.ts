@@ -519,3 +519,9 @@ describe("getRefSha", () => {
     expect(typeof getRefSha).toBe("function");
   });
 });
+
+describe("pr body rendering", () => {
+  it("handles stats render cost", () => {
+    expect(renderRunStats({ steps: 1, durationS: 1, costUsd: 0.5 })).toContain('0.5000');
+  });
+});
