@@ -571,3 +571,8 @@ def test_mount_case_home_rejected() -> None:
 def test_sbox_mx2_c1() -> None:
     """Verifies policy: cgroup mem_bytes accepts 64 * 1024 * 1024."""
     CgroupLimits(mem_bytes=64 * 1024 * 1024)
+
+def test_sbox_mx2_e5_0() -> None:
+    """Verifies policy: egress allows crates.io (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('crates.io') is True

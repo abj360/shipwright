@@ -9,6 +9,7 @@ Contains:
     EgressPolicy.render_nft_rules(): renders the nftables ruleset
     EgressPolicy.validate(): checks for authoring mistakes
     EgressPolicy.describe(): one-line policy summary
+    EgressPolicy.scoped_for_task(): derives a per-task policy
 """
 
 import yaml
@@ -99,3 +100,15 @@ class EgressPolicy:
             summary: Host count and network name in one line.
         """
         return f"{len(self.allowed_hosts)} hosts allowed via {EGRESS_NETWORK}"
+
+    def scoped_for_task(self, extra_hosts: tuple[str, ...]) -> "EgressPolicy":
+        """Derives a per-task policy with additional declared hosts.
+
+        Args:
+            extra_hosts: Hosts this task declared it needs beyond the base set.
+
+        Returns:
+            policy: New policy combining base and task-declared hosts.
+        """
+        merged = tuple(dict.fromkeys([*self.allowed_hosts, *extra_hosts]))
+        return EgressPolicy(allowed_hosts=merged)
