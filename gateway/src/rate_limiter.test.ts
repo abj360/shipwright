@@ -181,3 +181,9 @@ describe("rate limiter cases", () => {
     expect(backoffMs(3)).toBeGreaterThanOrEqual(8_000);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles zero retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '0' })).toBe(0);
+  });
+});
