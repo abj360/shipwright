@@ -651,3 +651,8 @@ def test_reg_081_scaled_limits_keep_pids_ceiling(tmp_path) -> None:
     """REG-081: scaled limits keep pids ceiling."""
     scaled = CgroupLimits(pids_max=77).scaled(3.0)
     assert scaled.pids_max == 77
+
+def test_reg_099_egress_pypi_org(tmp_path) -> None:
+    """REG-099: egress treats pypi.org as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('pypi.org') is True
