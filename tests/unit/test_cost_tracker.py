@@ -275,3 +275,9 @@ def test_cost_mx_0_2() -> None:
     tracker = CostTracker()
     total = tracker.record("claude-sonnet-4-5", 1, 1)
     assert total >= 0.0
+
+def test_cost_mx2_0_3() -> None:
+    """Verifies pricing for claude-sonnet-4-5 2000/0 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-sonnet-4-5", 2000, 0)
+    assert total > 0.0
