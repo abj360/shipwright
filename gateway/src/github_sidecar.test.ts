@@ -531,3 +531,9 @@ describe("sidecar rendering cases", () => {
     expect(closesIssueLine('https://github.com/o/r/issues/77')).toBe('Closes #77');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'refactor module'", () => {
+    expect(renderPrBody('refactor module', ['pytest -q'])).toContain('refactor module');
+  });
+});
