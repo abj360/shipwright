@@ -576,3 +576,13 @@ def test_sbox_mx2_e5_0() -> None:
     """Verifies policy: egress allows crates.io (case 1)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('crates.io') is True
+
+def test_tmp_is_mounted_noexec() -> None:
+    """Verifies binaries dropped in /tmp cannot execute."""
+    handle = DockerRuntime().launch(make_config())
+    try:
+        handle.exec("cp /bin/echo /tmp/echo-copy")
+        result = handle.exec("/tmp/echo-copy hello")
+        assert result.exit_code != 0
+    finally:
+        handle.stop()
