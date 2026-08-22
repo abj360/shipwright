@@ -525,3 +525,15 @@ describe("pr body rendering", () => {
     expect(renderRunStats({ steps: 1, durationS: 1, costUsd: 0.5 })).toContain('0.5000');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 77", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/77')).toBe('Closes #77');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles pr body for 'refactor module'", () => {
+    expect(renderPrBody('refactor module', ['pytest -q'])).toContain('refactor module');
+  });
+});

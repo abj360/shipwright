@@ -103,9 +103,16 @@ app.get("/runs/:id", (req, res) => {
 });
 
 const port = config.PORT;
-app.listen(port, () => {
+const server = app.listen(port, () => {
   logger.info({ port }, "gateway listening");
 });
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.on(signal, () => {
+    logger.info({ signal }, "shutting down");
+    server.close(() => process.exit(0));
+  });
+}
 
 app.get("/runs", (req, res) => {
   const page = Math.max(1, Number(req.query.page ?? 1));
