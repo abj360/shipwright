@@ -125,6 +125,12 @@ export async function createDraftPr(
       body,
       draft: true,
     });
+    await octokit.issues.addLabels({
+      owner,
+      repo: repo.replace(/\.git$/, ""),
+      issue_number: response.data.number,
+      labels: ["shipwright"],
+    });
     return response.data.html_url;
   });
 }
