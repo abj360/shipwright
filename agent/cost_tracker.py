@@ -7,6 +7,7 @@ Contains:
     CostTracker: accumulates per-run model spend
     CostTracker.record(): adds usage and returns the running total
     CostTracker.total_usd(): computes total spend in USD
+    CostTracker.reset(): clears recorded usage
     CostTracker.format_summary(): one-line cost summary
     CostTracker.totals_by_model(): aggregates spend per model
     CostTracker.report(): renders a per-completion breakdown
@@ -28,7 +29,7 @@ PRICE_PER_MTOK: dict[str, tuple[float, float]] = {
 }
 FALLBACK_PRICE_PER_MTOK = (3.0, 15.0)
 DEFAULT_BUDGET_USD = 5.0
-WARN_THRESHOLD = 0.8
+WARN_THRESHOLD = 0.9
 
 @dataclass(frozen=True)
 class Usage:
@@ -90,6 +91,10 @@ class CostTracker:
             price_in, price_out = PRICE_PER_MTOK.get(entry.model, FALLBACK_PRICE_PER_MTOK)
             total += (entry.input_tokens * price_in + entry.output_tokens * price_out) / 1_000_000
         return total
+
+    def reset(self) -> None:
+        """Clears recorded usage so a resumed run starts from zero."""
+        self._entries.clear()
 
     def format_summary(self) -> str:
         """Builds a one-line cost summary for CLI output.
