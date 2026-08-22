@@ -281,3 +281,9 @@ def test_cost_mx2_0_3() -> None:
     tracker = CostTracker()
     total = tracker.record("claude-sonnet-4-5", 2000, 0)
     assert total > 0.0
+
+def test_cost_case_empty_zero() -> None:
+    """Verifies cost tracking: empty tracker totals zero."""
+    tracker = CostTracker()
+    assert tracker.total_usd() == 0.0
+    assert tracker.totals_by_model() == {}
