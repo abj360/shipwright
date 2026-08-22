@@ -29,7 +29,7 @@ PRICE_PER_MTOK: dict[str, tuple[float, float]] = {
 }
 FALLBACK_PRICE_PER_MTOK = (3.0, 15.0)
 DEFAULT_BUDGET_USD = 5.0
-WARN_THRESHOLD = 0.8
+WARN_THRESHOLD = 0.9
 
 @dataclass(frozen=True)
 class Usage:
