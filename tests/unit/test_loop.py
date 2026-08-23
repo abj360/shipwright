@@ -563,3 +563,9 @@ def test_loop_edge_two_tools() -> None:
     """Verifies loop behavior: two tool calls then final."""
     result = AgentLoop(ScriptedLLM(["t\nAction: list_dir\npath=.", "t\nAction: list_dir\npath=.", "FINAL: y"]), make_config()).run()
     assert len(result.steps) == 3
+
+def test_system_prompt_includes_tool_instructions() -> None:
+    """Verifies the composed system prompt carries tool usage rules."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    prompt = loop._build_system_prompt()
+    assert "FINAL:" in prompt
