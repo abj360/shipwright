@@ -600,3 +600,7 @@ def test_sbox_mx_m5() -> None:
     """Verifies policy: mount rejected for /opt/x."""
     with pytest.raises(MountError):
         build_mounts('/opt/x')
+
+def test_sbox_mx2_m0() -> None:
+    """Verifies policy: mount /tmp/shipwright-work/mx1 accepted."""
+    build_mounts('/tmp/shipwright-work/mx1')
