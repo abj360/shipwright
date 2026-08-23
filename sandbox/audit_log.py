@@ -37,13 +37,15 @@ class AuditEvent:
 class AuditLog:
     """Appends sandbox audit events to a hash-chained JSONL log."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, mirror_stdout: bool = False) -> None:
         """Opens (or creates) the audit log file.
 
         Args:
             path: JSONL file events are appended to.
+            mirror_stdout: Also print each event to stdout for container logs.
         """
         self._path = path
+        self._mirror = mirror_stdout
         self._prev_hash = "0" * 64
 
     def record(self, kind: str, detail: str) -> None:
@@ -54,6 +56,8 @@ class AuditLog:
             detail: Free-form context for the event.
         """
         event = AuditEvent(kind=kind, detail=detail, ts=time.time())
+        if self._mirror:
+            print(f"[audit] {event.kind}: {event.detail}")
         payload = json.dumps({"kind": event.kind, "detail": event.detail, "ts": event.ts})
         chain = self._chain_hash(payload)
         with self._path.open("a") as handle:

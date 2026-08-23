@@ -586,3 +586,12 @@ def test_tmp_is_mounted_noexec() -> None:
         assert result.exit_code != 0
     finally:
         handle.stop()
+
+def test_mount_case_deep_task_dir() -> None:
+    """Verifies mount handling for deep_task_dir."""
+    if "task" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/tmp/shipwright-work/x/y/z/w")
+    else:
+        mounts = build_mounts("/tmp/shipwright-work/x/y/z/w")
+        assert mounts[0].target == "/work"
