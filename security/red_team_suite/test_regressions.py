@@ -656,3 +656,8 @@ def test_reg_099_egress_pypi_org(tmp_path) -> None:
     """REG-099: egress treats pypi.org as allowed."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('pypi.org') is True
+
+def test_reg_149_suffix_match_needs_dot_boundary(tmp_path) -> None:
+    """REG-149: suffix match needs dot boundary."""
+    policy = EgressPolicy(allowed_hosts=('example.com',))
+    assert not policy.allows('notexample.com')
