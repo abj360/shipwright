@@ -1,6 +1,6 @@
 # ADR-001: Agent loop and tool-use design
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-07-09
 
 ## Context
@@ -77,3 +77,9 @@ PR readiness is gated by judgeline scoring, and the gate fails closed: a
 timeout or persistent 5xx leaves the PR in draft. This follows the same
 rule as the circuit breaker — an automated system that can only say yes is
 a liability, not a feature.
+
+## Follow-up: sandbox boundary (2026-08-16)
+
+Tool execution moves fully into the gVisor-isolated sandbox: read-only root,
+one writable workdir, hard cgroup ceilings, default-deny egress. The agent
+host is out of the trust boundary; the sandbox is the product.
