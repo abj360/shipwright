@@ -287,3 +287,9 @@ def test_cost_case_empty_zero() -> None:
     tracker = CostTracker()
     assert tracker.total_usd() == 0.0
     assert tracker.totals_by_model() == {}
+
+def test_cost_mx_3_0() -> None:
+    """Verifies recording usage for scripted 1000/100 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("scripted", 1000, 100)
+    assert total >= 0.0
