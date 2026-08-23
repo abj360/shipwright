@@ -52,7 +52,7 @@ export class TaskQueue {
     this.deadLetterPath = options.deadLetterPath ?? "/tmp/shipwright-dead-letter.jsonl";
   }
 
-  async enqueue(id: string, run: () => Promise<void>, priority = 0): Promise<void> {
+  enqueue(id: string, run: () => Promise<void>, priority = 0): void {
     /**
      * Adds one task and kicks the worker loop.
      *

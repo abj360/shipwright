@@ -537,3 +537,15 @@ describe("sidecar rendering cases", () => {
     expect(renderPrBody('refactor module', ['pytest -q'])).toContain('refactor module');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles run stats for 8 steps", () => {
+    expect(renderRunStats({ steps: 8, durationS: 30.0, costUsd: 0.25 })).toContain('8');
+  });
+});
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'refactor' includes '## Tests'", () => {
+    expect(renderPrBody('refactor', ['pytest tests/ -q'])).toContain('## Tests');
+  });
+});
