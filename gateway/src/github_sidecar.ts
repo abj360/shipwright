@@ -26,6 +26,7 @@
  *   requestReviews(): requests reviews from the team pool
  *   countApiCall(): counts one API call
  *   apiCallReport(): reports per-operation counts
+ *   closesIssueLine(): builds the Closes trailer
  */
 
 import { exec } from "node:child_process";
@@ -479,4 +480,18 @@ export function apiCallReport(): Record<string, number> {
    * @returns report - Mapping of operation to call count.
    */
   return Object.fromEntries(apiCalls);
+}
+
+export function closesIssueLine(issueUrl: string | null): string {
+  /**
+   * Builds the "Closes #n" trailer linking the PR to its trigger issue.
+   *
+   * @param issueUrl - URL of the triggering issue, when any.
+   * @returns line - Trailer line, or empty string.
+   */
+  if (issueUrl === null) {
+    return "";
+  }
+  const number = issueUrl.split("/").pop();
+  return `Closes #${number}`;
 }
