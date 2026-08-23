@@ -70,13 +70,17 @@ export function DiffViewer({ patch }: { patch: string }) {
    */
   const files = useMemo(() => parseDiff(patch), [patch]);
   const [copied, setCopied] = useState(false);
+  const [wrap, setWrap] = useState(false);
 
   if (files.length === 0) {
     return <div className="diff-viewer diff-empty">no changes yet</div>;
   }
 
   return (
-    <div className="diff-viewer">
+    <div className={`diff-viewer ${wrap ? "diff-wrap" : ""}`}>
+      <label>
+        <input type="checkbox" checked={wrap} onChange={() => setWrap(!wrap)} /> wrap
+      </label>
       <span className="diff-stats">
         +{diffStats(files).added} / -{diffStats(files).removed}
       </span>
