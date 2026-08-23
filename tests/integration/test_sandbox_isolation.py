@@ -595,3 +595,8 @@ def test_mount_case_deep_task_dir() -> None:
     else:
         mounts = build_mounts("/tmp/shipwright-work/x/y/z/w")
         assert mounts[0].target == "/work"
+
+def test_sbox_mx_m5() -> None:
+    """Verifies policy: mount rejected for /opt/x."""
+    with pytest.raises(MountError):
+        build_mounts('/opt/x')
