@@ -303,3 +303,9 @@ def test_disp_case_read_missing_file() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('read_file', {'path': 'nope.txt'})
     assert not result.ok
+
+def test_disp_mx2_0(tmp_path) -> None:
+    """Verifies dispatch: root listing works."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("list_dir", {"path": "."})
+    assert result.ok is True
