@@ -666,3 +666,10 @@ def test_reg_136_cgroup_mem_bytes_1(tmp_path) -> None:
     """REG-136: cgroup mem_bytes=1 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(mem_bytes=1)
+
+def test_reg_013_cleanup_refuses_paths_outside_workspace() -> None:
+    """REG-013: workspace cleanup cannot be tricked into deleting host paths."""
+    from sandbox.policies.mounts import cleanup_workspace
+
+    with pytest.raises(ValueError):
+        cleanup_workspace("/etc")
