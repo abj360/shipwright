@@ -680,3 +680,8 @@ def test_reg_037_audit_log_appends_jsonl(tmp_path) -> None:
     log = AuditLog(tmp_path / 'a.jsonl')
     log.record('exec', 'ls')
     assert (tmp_path / 'a.jsonl').read_text().count(chr(10)) == 1
+
+def test_reg_129_mount_private_tmp(tmp_path) -> None:
+    """REG-129: mount /private/tmp is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/private/tmp')
