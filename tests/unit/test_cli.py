@@ -491,3 +491,12 @@ def test_version_flag_exits_cleanly() -> None:
     with pytest.raises(SystemExit) as excinfo:
         build_parser().parse_args(["--version"])
     assert excinfo.value.code == 0
+
+def test_cli_mx2_6_0() -> None:
+    """Verifies parsing of multi-word task."""
+    if "['--task', 'multi word task']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'multi word task'])
+        assert args.task == 'multi word task'
