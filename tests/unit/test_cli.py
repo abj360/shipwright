@@ -485,3 +485,9 @@ def test_cli_mx2_2_0() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--max-cost', '10'])
         assert args.max_cost == 10.0
+
+def test_version_flag_exits_cleanly() -> None:
+    """Verifies --version prints and exits."""
+    with pytest.raises(SystemExit) as excinfo:
+        build_parser().parse_args(["--version"])
+    assert excinfo.value.code == 0
