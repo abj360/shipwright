@@ -673,3 +673,10 @@ def test_reg_013_cleanup_refuses_paths_outside_workspace() -> None:
 
     with pytest.raises(ValueError):
         cleanup_workspace("/etc")
+
+def test_reg_037_audit_log_appends_jsonl(tmp_path) -> None:
+    """REG-037: audit log appends jsonl."""
+    from sandbox.audit_log import AuditLog
+    log = AuditLog(tmp_path / 'a.jsonl')
+    log.record('exec', 'ls')
+    assert (tmp_path / 'a.jsonl').read_text().count(chr(10)) == 1
