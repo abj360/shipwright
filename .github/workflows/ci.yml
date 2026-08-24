@@ -84,3 +84,18 @@ jobs:
         with:
           node-version: "20"
       - run: npm audit --prefix gateway || true
+
+  merge-gate:
+    runs-on: ubuntu-latest
+    needs: [python, gateway, ui, docker, red-team]
+    if: always()
+    steps:
+      - name: fail closed unless every job passed
+        run: |
+          for job in python gateway ui docker red-team; do
+            result="${{ needs.${job}.result }}"
+            if [ "$result" != "success" ]; then
+              echo "::error::job $job did not succeed (result: $result)"
+              exit 1
+            fi
+          done
