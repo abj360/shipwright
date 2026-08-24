@@ -485,3 +485,25 @@ def test_cli_mx2_2_0() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--max-cost', '10'])
         assert args.max_cost == 10.0
+
+def test_version_flag_exits_cleanly() -> None:
+    """Verifies --version prints and exits."""
+    with pytest.raises(SystemExit) as excinfo:
+        build_parser().parse_args(["--version"])
+    assert excinfo.value.code == 0
+
+def test_cli_mx2_6_0() -> None:
+    """Verifies parsing of multi-word task."""
+    if "['--task', 'multi word task']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'multi word task'])
+        assert args.task == 'multi word task'
+
+def test_cli_case_headless_step_order(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: steps print in order."""
+    loop = make_loop(['a\nAction: list_dir\npath=.', 'b\nAction: list_dir\npath=.', 'FINAL: z'])
+    assert _run_headless(loop) == EXIT_OK
+    out = capsys.readouterr().out
+    assert out.index('[step 0]') < out.index('[step 1]')
