@@ -500,3 +500,10 @@ def test_cli_mx2_6_0() -> None:
     else:
         args = build_parser().parse_args(['--task', 'multi word task'])
         assert args.task == 'multi word task'
+
+def test_cli_case_headless_step_order(capsys: pytest.CaptureFixture[str], tmp_path) -> None:
+    """Verifies CLI behavior: steps print in order."""
+    loop = make_loop(['a\nAction: list_dir\npath=.', 'b\nAction: list_dir\npath=.', 'FINAL: z'])
+    assert _run_headless(loop) == EXIT_OK
+    out = capsys.readouterr().out
+    assert out.index('[step 0]') < out.index('[step 1]')
