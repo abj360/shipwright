@@ -661,3 +661,8 @@ def test_reg_149_suffix_match_needs_dot_boundary(tmp_path) -> None:
     """REG-149: suffix match needs dot boundary."""
     policy = EgressPolicy(allowed_hosts=('example.com',))
     assert not policy.allows('notexample.com')
+
+def test_reg_136_cgroup_mem_bytes_1(tmp_path) -> None:
+    """REG-136: cgroup mem_bytes=1 fails."""
+    with pytest.raises(ValueError):
+        CgroupLimits(mem_bytes=1)
