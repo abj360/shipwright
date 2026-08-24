@@ -293,3 +293,9 @@ def test_cost_mx_3_0() -> None:
     tracker = CostTracker()
     total = tracker.record("scripted", 1000, 100)
     assert total >= 0.0
+
+def test_cost_mx_1_2() -> None:
+    """Verifies recording usage for claude-opus-4-1 1/1 tokens."""
+    tracker = CostTracker()
+    total = tracker.record("claude-opus-4-1", 1, 1)
+    assert total >= 0.0
