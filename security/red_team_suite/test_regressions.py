@@ -666,3 +666,22 @@ def test_reg_136_cgroup_mem_bytes_1(tmp_path) -> None:
     """REG-136: cgroup mem_bytes=1 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(mem_bytes=1)
+
+def test_reg_013_cleanup_refuses_paths_outside_workspace() -> None:
+    """REG-013: workspace cleanup cannot be tricked into deleting host paths."""
+    from sandbox.policies.mounts import cleanup_workspace
+
+    with pytest.raises(ValueError):
+        cleanup_workspace("/etc")
+
+def test_reg_037_audit_log_appends_jsonl(tmp_path) -> None:
+    """REG-037: audit log appends jsonl."""
+    from sandbox.audit_log import AuditLog
+    log = AuditLog(tmp_path / 'a.jsonl')
+    log.record('exec', 'ls')
+    assert (tmp_path / 'a.jsonl').read_text().count(chr(10)) == 1
+
+def test_reg_129_mount_private_tmp(tmp_path) -> None:
+    """REG-129: mount /private/tmp is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/private/tmp')
