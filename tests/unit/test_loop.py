@@ -587,3 +587,21 @@ def test_loop_mx2_3_0() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert len(result.steps) == 2
+
+def test_resume_seeds_prior_steps() -> None:
+    """Verifies resume() replays earlier steps into the transcript."""
+    loop = AgentLoop(ScriptedLLM(["FINAL: done"]), make_config())
+    loop.resume([Step(index=0, thought="earlier")])
+    assert len(loop.transcript) == 1
+
+def test_plan_mode_without_planner_falls_back() -> None:
+    """Verifies plan_execute without a planner degrades to react mode."""
+    config = make_config()
+    config.mode = "plan_execute"
+    result = AgentLoop(ScriptedLLM(["FINAL: reacted"]), config).run()
+    assert result.final_answer == "reacted"
+
+def test_think_tags_are_stripped_before_parsing() -> None:
+    """Verifies <think> wrappers do not confuse the parser."""
+    loop = AgentLoop(ScriptedLLM(["<think>reasoning</think>\nFINAL: clean"]), make_config())
+    assert loop.run().final_answer == "clean"
