@@ -605,3 +605,9 @@ def test_think_tags_are_stripped_before_parsing() -> None:
     """Verifies <think> wrappers do not confuse the parser."""
     loop = AgentLoop(ScriptedLLM(["<think>reasoning</think>\nFINAL: clean"]), make_config())
     assert loop.run().final_answer == "clean"
+
+def test_loop_mx_5_1() -> None:
+    """Verifies loop behavior: git_diff call records tool name."""
+    responses = ["think\nAction: git_diff\n", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].tool_name == 'git_diff'
