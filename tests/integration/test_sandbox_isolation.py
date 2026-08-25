@@ -655,3 +655,8 @@ def test_sbox_mx_c5() -> None:
     """Verifies policy: cgroup pids_max=15 invalid."""
     with pytest.raises(ValueError):
         CgroupLimits(pids_max=15)
+
+def test_sbox_mx_e5() -> None:
+    """Verifies policy: egress allows objects.githubusercontent.com."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('objects.githubusercontent.com') is True
