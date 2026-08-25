@@ -620,3 +620,12 @@ def test_egress_case_pastebin_com() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("pastebin.com") is False
+
+def test_mount_case_usr_rejected() -> None:
+    """Verifies mount handling for usr_rejected."""
+    if "error" == "error":
+        with pytest.raises(MountError):
+            build_mounts("/usr")
+    else:
+        mounts = build_mounts("/usr")
+        assert mounts[0].target == "/work"

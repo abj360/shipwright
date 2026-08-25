@@ -45,7 +45,8 @@ export function createWebhookRouter(secret: string, queue: TaskQueue): express.R
 
   router.post("/webhooks/github", async (req, res) => {
     const signature = req.header("x-hub-signature-256") ?? "";
-    const payload = (req as express.Request & { rawBody?: string }).rawBody ?? JSON.stringify(req.body);
+    const raw = (req as express.Request & { rawBody?: string }).rawBody;
+    const payload = raw ?? JSON.stringify(req.body);
     if (!verifySignature(secret, payload, signature)) {
       res.status(401).json({ error: "bad signature" });
       return;
