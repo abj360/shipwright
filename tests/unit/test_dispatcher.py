@@ -327,3 +327,9 @@ def test_dispatch_git_diff_no_path_allowed() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("git_diff", {})
     assert result.ok is True
+
+def test_dispatch_read_file_empty_path() -> None:
+    """Verifies dispatch behavior: empty path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("read_file", {"path": ""})
+    assert result.ok is False
