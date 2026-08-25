@@ -60,6 +60,8 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
         window.open(text, "_blank", "noopener");
       },
     };
+    term.options.fontSize = 13;
+    term.options.cursorBlink = true;
     const fit = new FitAddon();
     term.loadAddon(fit);
     if (hostRef.current !== null) {
