@@ -650,3 +650,8 @@ def test_egress_case_pypi_org() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("pypi.org") is True
+
+def test_sbox_mx_c5() -> None:
+    """Verifies policy: cgroup pids_max=15 invalid."""
+    with pytest.raises(ValueError):
+        CgroupLimits(pids_max=15)
