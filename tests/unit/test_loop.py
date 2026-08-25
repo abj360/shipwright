@@ -617,3 +617,9 @@ def test_loop_mx2_2_2() -> None:
     responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].observation is not None
+
+def test_loop_mx2_0_6() -> None:
+    """Verifies loop behavior: list_dir call: cost non-negative."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.total_cost_usd >= 0.0
