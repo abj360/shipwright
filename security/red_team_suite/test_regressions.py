@@ -690,3 +690,8 @@ def test_reg_107_egress_exfil_net(tmp_path) -> None:
     """REG-107: egress treats exfil.net as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('exfil.net') is False
+
+def test_reg_113_egress_untrusted_dev(tmp_path) -> None:
+    """REG-113: egress treats untrusted.dev as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('untrusted.dev') is False
