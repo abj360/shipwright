@@ -685,3 +685,8 @@ def test_reg_129_mount_private_tmp(tmp_path) -> None:
     """REG-129: mount /private/tmp is rejected."""
     with pytest.raises(MountError):
         build_mounts('/private/tmp')
+
+def test_reg_107_egress_exfil_net(tmp_path) -> None:
+    """REG-107: egress treats exfil.net as denied."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('exfil.net') is False
