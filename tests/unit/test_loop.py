@@ -611,3 +611,15 @@ def test_loop_mx_5_1() -> None:
     responses = ["think\nAction: git_diff\n", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].tool_name == 'git_diff'
+
+def test_loop_mx2_2_2() -> None:
+    """Verifies loop behavior: run_shell call: observation stored."""
+    responses = ["think\nAction: run_shell\ncommand=ls", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].observation is not None
+
+def test_loop_mx2_0_6() -> None:
+    """Verifies loop behavior: list_dir call: cost non-negative."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.total_cost_usd >= 0.0
