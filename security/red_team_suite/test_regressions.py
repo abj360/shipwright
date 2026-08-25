@@ -695,3 +695,7 @@ def test_reg_113_egress_untrusted_dev(tmp_path) -> None:
     """REG-113: egress treats untrusted.dev as denied."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('untrusted.dev') is False
+
+def test_reg_148_validate_passes_single_host(tmp_path) -> None:
+    """REG-148: validate passes single host."""
+    assert EgressPolicy(allowed_hosts=('a.com',)).validate() == []
