@@ -99,12 +99,14 @@ class AgentConfig:
         repo_path: Checkout the agent is allowed to inspect and modify.
         task: Natural-language description of what to accomplish.
         system_prompt: Steering prompt prepended to every completion.
+        mode: Execution mode: "react" for free-form, "plan_execute" for planned runs.
+        planner: Planner used when mode is "plan_execute".
     """
 
     repo_path: str
     task: str
     system_prompt: str = ""
-    mode: str = "react"
+    mode: str = "react"  # "react" or "plan_execute"
     planner: RepoPlanner | None = None
     breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
     cost_tracker: CostTracker | None = None
