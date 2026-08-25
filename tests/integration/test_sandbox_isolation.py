@@ -629,3 +629,8 @@ def test_mount_case_usr_rejected() -> None:
     else:
         mounts = build_mounts("/usr")
         assert mounts[0].target == "/work"
+
+def test_sbox_mx_e7() -> None:
+    """Verifies policy: egress allows crates.io."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
+    assert policy.allows('crates.io') is True
