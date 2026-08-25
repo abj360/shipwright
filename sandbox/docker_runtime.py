@@ -8,6 +8,7 @@ Contains:
     SandboxHandle: wraps a running sandbox container
     SandboxHandle.exec(): runs one command inside
     SandboxHandle.stop(): stops and removes the container
+    SandboxHandle context manager: stops the sandbox on exit
     SandboxHandle.stats(): samples CPU and memory usage
     SandboxHandle.wait(): blocks until exit or deadline
     SandboxHandle.exec_stream(): yields output chunks live
@@ -109,6 +110,22 @@ class SandboxHandle:
             self.container.kill()  # type: ignore[attr-defined]
         finally:
             self.container.remove(force=True)  # type: ignore[attr-defined]
+
+    def __enter__(self) -> "SandboxHandle":
+        """Returns the handle for with-block use.
+
+        Returns:
+            handle: This handle.
+        """
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        """Stops the sandbox when the with-block ends.
+
+        Args:
+            exc_info: Exception details when the block raised.
+        """
+        self.stop()
 
     def stats(self) -> dict[str, float]:
         """Samples CPU and memory usage of the sandbox.
