@@ -660,3 +660,8 @@ def test_sbox_mx_e5() -> None:
     """Verifies policy: egress allows objects.githubusercontent.com."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('objects.githubusercontent.com') is True
+
+def test_sbox_mx_m3() -> None:
+    """Verifies policy: mount rejected for /var/lib/x."""
+    with pytest.raises(MountError):
+        build_mounts('/var/lib/x')
