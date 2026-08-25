@@ -549,3 +549,10 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('refactor', ['pytest tests/ -q'])).toContain('## Tests');
   });
 });
+
+describe("createPrFromRun", () => {
+  it("is exported as a function", async () => {
+    const { createPrFromRun } = await import("./github_sidecar");
+    expect(typeof createPrFromRun).toBe("function");
+  });
+});
