@@ -644,3 +644,9 @@ def test_sbox_mx_e10() -> None:
     """Verifies policy: egress denies exfil.io."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'objects.githubusercontent.com', 'codeload.github.com', 'crates.io', 'proxy.golang.org', 'api.github.com'))
     assert policy.allows('exfil.io') is False
+
+def test_egress_case_pypi_org() -> None:
+    """Verifies egress treatment of pypi.org."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("pypi.org") is True
