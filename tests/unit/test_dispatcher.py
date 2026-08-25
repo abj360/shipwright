@@ -351,3 +351,9 @@ def test_disp_mx_5_0(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("git_diff", {})
     assert result.ok is True
+
+def test_disp_mx_2_0(tmp_path) -> None:
+    """Verifies dispatch: run_shell fails without args."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_shell", {})
+    assert result.ok is False
