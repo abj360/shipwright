@@ -333,3 +333,9 @@ def test_dispatch_read_file_empty_path() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {"path": ""})
     assert result.ok is False
+
+def test_disp_mx2_9(tmp_path) -> None:
+    """Verifies dispatch: diff runs."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("git_diff", {})
+    assert result.ok is True
