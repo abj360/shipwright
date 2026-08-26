@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 OUTLINE_MAX_SYMBOLS = 12
 OUTLINE_MAX_CHARS = 200
+MAX_CACHE_ENTRIES = 4000
 CACHE_VERSION = 1
 CACHE_DIR_NAME = ".shipwright"
 
@@ -76,6 +77,9 @@ class RepoMap:
             return entry.outline
         self._misses += 1
         outline = self._build_outline(path)
+        if len(self._cache) >= MAX_CACHE_ENTRIES:
+            oldest = min(self._cache, key=lambda k: self._cache[k].mtime)
+            del self._cache[oldest]
         self._cache[key] = OutlineEntry(mtime=mtime, outline=outline)
         return outline
 

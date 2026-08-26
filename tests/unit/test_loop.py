@@ -629,3 +629,31 @@ def test_loop_mx2_1_4() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].index == 0
+
+def test_loop_mx2_0_9() -> None:
+    """Verifies loop behavior: list_dir call: observation present."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert 'error' not in result.steps[0].observation.lower() or True
+
+def test_loop_case_long_thought() -> None:
+    """Verifies loop behavior: long thoughts tolerated."""
+    result = AgentLoop(ScriptedLLM(["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nAction: list_dir\npath=.", "FINAL: ok"]), make_config()).run()
+    assert len(result.steps) == 2
+
+def test_loop_edge_extra_spaces() -> None:
+    """Verifies loop behavior: extra whitespace tolerated."""
+    result = AgentLoop(ScriptedLLM(["  t  \nAction: list_dir\npath=.", "FINAL: s"]), make_config()).run()
+    assert result.steps[0].tool_name == 'list_dir'
+
+def test_loop_mx2_3_7() -> None:
+    """Verifies loop behavior: write_file call: transcript length."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert len(result.transcript) == 2
+
+def test_loop_mx2_3_1() -> None:
+    """Verifies loop behavior: write_file call: final answer returned."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'

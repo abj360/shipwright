@@ -74,6 +74,9 @@ class RunResult:
     Attributes:
         final_answer: Answer the agent produced, or None when it stopped early.
         steps: Ordered steps taken during the run.
+        started_at: Epoch seconds when the run started.
+        ended_at: Epoch seconds when the run stopped.
+        total_cost_usd: Model spend accumulated over the run.
     """
 
     final_answer: str | None
@@ -81,6 +84,17 @@ class RunResult:
     total_cost_usd: float = 0.0
     started_at: float = 0.0
     ended_at: float = 0.0
+
+    def summary(self) -> str:
+        """Builds a one-line human-readable summary of the run.
+
+        Returns:
+            summary: Step count, duration, and cost in one line.
+        """
+        return (
+            f"{len(self.steps)} steps in {self.duration_s:.1f}s, "
+            f"cost ${self.total_cost_usd:.4f}"
+        )
 
     @property
     def duration_s(self) -> float:
