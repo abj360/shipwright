@@ -699,3 +699,8 @@ def test_reg_113_egress_untrusted_dev(tmp_path) -> None:
 def test_reg_148_validate_passes_single_host(tmp_path) -> None:
     """REG-148: validate passes single host."""
     assert EgressPolicy(allowed_hosts=('a.com',)).validate() == []
+
+def test_reg_065_mount_dev(tmp_path) -> None:
+    """REG-065: mount /dev is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/dev')
