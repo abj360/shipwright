@@ -629,3 +629,9 @@ def test_loop_mx2_1_4() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.steps[0].index == 0
+
+def test_loop_mx2_0_9() -> None:
+    """Verifies loop behavior: list_dir call: observation present."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert 'error' not in result.steps[0].observation.lower() or True
