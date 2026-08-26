@@ -651,3 +651,9 @@ def test_loop_mx2_3_7() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert len(result.transcript) == 2
+
+def test_loop_mx2_3_1() -> None:
+    """Verifies loop behavior: write_file call: final answer returned."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'
