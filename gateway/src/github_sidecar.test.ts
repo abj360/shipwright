@@ -556,3 +556,15 @@ describe("createPrFromRun", () => {
     expect(typeof createPrFromRun).toBe("function");
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'wip' includes 'draft'", () => {
+    expect(renderPrBody('wip', [])).toContain('draft');
+  });
+});
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 100", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/100')).toBe('Closes #100');
+  });
+});

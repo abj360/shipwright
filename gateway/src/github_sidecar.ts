@@ -211,6 +211,7 @@ export function renderPrBody(taskSummary: string, testsRun: string[]): string {
 const refsCache = new Map<string, { sha: string; fetchedAt: number }>();
 const prUrlCache = new Map<string, { url: string; fetchedAt: number }>();
 const REFS_TTL_MS = 60_000;
+const MAX_BATCH_PATHS = 40;
 
 export async function getRefSha(config: SidecarConfig, ref: string): Promise<string> {
   /**
