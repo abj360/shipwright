@@ -562,3 +562,9 @@ describe("sidecar rendering", () => {
     expect(renderPrBody('wip', [])).toContain('draft');
   });
 });
+
+describe("sidecar rendering cases", () => {
+  it("handles closes trailer for issue 100", () => {
+    expect(closesIssueLine('https://github.com/o/r/issues/100')).toBe('Closes #100');
+  });
+});
