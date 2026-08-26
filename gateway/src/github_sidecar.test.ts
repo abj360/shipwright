@@ -556,3 +556,9 @@ describe("createPrFromRun", () => {
     expect(typeof createPrFromRun).toBe("function");
   });
 });
+
+describe("sidecar rendering", () => {
+  it("handles pr body for 'wip' includes 'draft'", () => {
+    expect(renderPrBody('wip', [])).toContain('draft');
+  });
+});
