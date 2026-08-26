@@ -645,3 +645,9 @@ def test_loop_edge_extra_spaces() -> None:
     """Verifies loop behavior: extra whitespace tolerated."""
     result = AgentLoop(ScriptedLLM(["  t  \nAction: list_dir\npath=.", "FINAL: s"]), make_config()).run()
     assert result.steps[0].tool_name == 'list_dir'
+
+def test_loop_mx2_3_7() -> None:
+    """Verifies loop behavior: write_file call: transcript length."""
+    responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert len(result.transcript) == 2
