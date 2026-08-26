@@ -623,3 +623,9 @@ def test_loop_mx2_0_6() -> None:
     responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.total_cost_usd >= 0.0
+
+def test_loop_mx2_1_4() -> None:
+    """Verifies loop behavior: read_file call: first step index zero."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.steps[0].index == 0
