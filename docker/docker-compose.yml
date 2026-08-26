@@ -1,3 +1,5 @@
+name: shipwright
+
 services:
   agent:
     restart: unless-stopped

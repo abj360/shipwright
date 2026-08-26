@@ -231,7 +231,7 @@ class ToolDispatcher:
             text=True,
             timeout=TOOL_TIMEOUTS.get("run_tests", DEFAULT_COMMAND_TIMEOUT_S),
         )
-        tail = "\n".join((proc.stdout + proc.stderr).splitlines()[-40:])
+        tail = "\n".join((proc.stdout + proc.stderr).splitlines()[-60:])
         return tail or "no test output"
 
     def _write_file(self, args: dict[str, str]) -> str:
