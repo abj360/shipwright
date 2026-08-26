@@ -704,3 +704,8 @@ def test_reg_065_mount_dev(tmp_path) -> None:
     """REG-065: mount /dev is rejected."""
     with pytest.raises(MountError):
         build_mounts('/dev')
+
+def test_reg_164_egress_network_constant(tmp_path) -> None:
+    """REG-164: egress network constant."""
+    from sandbox.policies.egress import EGRESS_NETWORK
+    assert EGRESS_NETWORK.startswith('shipwright')
