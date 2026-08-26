@@ -235,3 +235,9 @@ describe("rate limiter", () => {
     expect(isRateLimitError({ status: 500 })).toBe(false);
   });
 });
+
+describe("rate limiter cases", () => {
+  it("handles retry-after of '90' seconds", () => {
+    expect(parseRetryAfter({ 'retry-after': '90' })).toBe(90_000);
+  });
+});
