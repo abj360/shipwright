@@ -1,6 +1,7 @@
 # gVisor (runsc) runtime settings for shipwright sandbox containers.
 # Loaded by the agent host; the docker daemon must have runsc registered.
 [runsc]
+# keep in sync with docker/daemon.json on the host
 platform = "systrap"  # faster syscall path than ptrace
 file-access = "exclusive"
 directfs = true
