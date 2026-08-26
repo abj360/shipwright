@@ -640,3 +640,8 @@ def test_loop_case_long_thought() -> None:
     """Verifies loop behavior: long thoughts tolerated."""
     result = AgentLoop(ScriptedLLM(["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nAction: list_dir\npath=.", "FINAL: ok"]), make_config()).run()
     assert len(result.steps) == 2
+
+def test_loop_edge_extra_spaces() -> None:
+    """Verifies loop behavior: extra whitespace tolerated."""
+    result = AgentLoop(ScriptedLLM(["  t  \nAction: list_dir\npath=.", "FINAL: s"]), make_config()).run()
+    assert result.steps[0].tool_name == 'list_dir'
