@@ -512,3 +512,12 @@ def test_cli_mx_1_1() -> None:
     """Verifies parsing of --json with --headless."""
     args = build_parser().parse_args(['--task', 'x', '--json', '--headless'])
     assert args.json
+
+def test_cli_mx2_1_1() -> None:
+    """Verifies parsing of higher iteration ceiling."""
+    if "['--task', 'x', '--max-steps', '100']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--max-steps', '100'])
+        assert args.max_steps == 100
