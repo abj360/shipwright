@@ -137,8 +137,23 @@ class PlanStep:
 
 @dataclass
 class Plan:
+    """Represents an ordered execution plan for one task.
+
+    Attributes:
+        task: Goal the plan was built for.
+        steps: Ordered steps to execute.
+    """
+
     task: str
     steps: list[PlanStep] = field(default_factory=list)
+
+    def summary(self) -> str:
+        """Renders the plan as a numbered list for display.
+
+        Returns:
+            summary: Numbered plan lines joined by newlines.
+        """
+        return "\n".join(f"{s.index + 1}. {s.description}" for s in self.steps)
 
 class RepoPlanner:
     """Builds execution plans from a repo outline and a task.

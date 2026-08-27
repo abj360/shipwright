@@ -15,7 +15,7 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MAX_ITERATIONS = 50
+DEFAULT_MAX_ITERATIONS = 75
 DEFAULT_MAX_COST_USD = 3.0
 
 class TripReason(str, Enum):
