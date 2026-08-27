@@ -507,3 +507,8 @@ def test_cli_case_headless_step_order(capsys: pytest.CaptureFixture[str], tmp_pa
     assert _run_headless(loop) == EXIT_OK
     out = capsys.readouterr().out
     assert out.index('[step 0]') < out.index('[step 1]')
+
+def test_cli_mx_1_1() -> None:
+    """Verifies parsing of --json with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--json', '--headless'])
+    assert args.json
