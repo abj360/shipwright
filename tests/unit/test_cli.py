@@ -507,3 +507,36 @@ def test_cli_case_headless_step_order(capsys: pytest.CaptureFixture[str], tmp_pa
     assert _run_headless(loop) == EXIT_OK
     out = capsys.readouterr().out
     assert out.index('[step 0]') < out.index('[step 1]')
+
+def test_cli_mx_1_1() -> None:
+    """Verifies parsing of --json with --headless."""
+    args = build_parser().parse_args(['--task', 'x', '--json', '--headless'])
+    assert args.json
+
+def test_cli_mx2_1_1() -> None:
+    """Verifies parsing of higher iteration ceiling."""
+    if "['--task', 'x', '--max-steps', '100']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--max-steps', '100'])
+        assert args.max_steps == 100
+
+def test_cli_mx2_4_0() -> None:
+    """Verifies parsing of resume plus plan mode."""
+    if "['--task', 'x', '--resume', 'a.json', '--plan-mode']" == "['--version']":
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(["--version"])
+    else:
+        args = build_parser().parse_args(['--task', 'x', '--resume', 'a.json', '--plan-mode'])
+        assert args.resume and args.plan_mode
+
+def test_flag_headless_off_by_default() -> None:
+    """Verifies parsing: headless off by default."""
+    args = build_parser().parse_args(["--task", "a"])
+    assert args.headless == False
+
+def test_cli_mx_2_0() -> None:
+    """Verifies parsing of --plan-mode."""
+    args = build_parser().parse_args(['--task', 'x', '--plan-mode'])
+    assert args.plan_mode
