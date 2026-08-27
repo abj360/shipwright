@@ -735,3 +735,8 @@ def test_reg_150_scoped_merge_preserves_order(tmp_path) -> None:
     """REG-150: scoped merge preserves order."""
     scoped = EgressPolicy(allowed_hosts=('a.com',)).scoped_for_task(('b.com', 'a.com'))
     assert scoped.allowed_hosts == ('a.com', 'b.com')
+
+def test_reg_029_suffix_match_allows_subdomains(tmp_path) -> None:
+    """REG-029: suffix match allows subdomains."""
+    policy = EgressPolicy(allowed_hosts=("github.com",))
+    assert policy.allows("api.github.com")
