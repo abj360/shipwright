@@ -530,3 +530,8 @@ def test_cli_mx2_4_0() -> None:
     else:
         args = build_parser().parse_args(['--task', 'x', '--resume', 'a.json', '--plan-mode'])
         assert args.resume and args.plan_mode
+
+def test_flag_headless_off_by_default() -> None:
+    """Verifies parsing: headless off by default."""
+    args = build_parser().parse_args(["--task", "a"])
+    assert args.headless == False
