@@ -9,13 +9,9 @@
 
 </div>
 
-Shipwright is an autonomous coding agent that takes a task in plain English or a
-GitHub issue, reads the repository, and works it through a ReAct loop —
-thought, one tool call, observation — editing files, running the test suite, and
-iterating on what it learns until it opens a draft PR. Every command it runs
-executes inside a short-lived gVisor-isolated container with a read-only root,
-hard cgroup limits, and a default-deny egress allowlist, and iteration and cost
-circuit breakers stop a runaway run before it burns the budget.
+&nbsp;&nbsp;&nbsp;&nbsp;Shipwright is an autonomous coding agent that reads a repository, edits code,
+runs the tests, and opens a draft PR, with every command it issues executing inside a
+gVisor-isolated sandbox under hard resource limits and a default-deny egress allowlist.
 
 <div align="center">
 
