@@ -86,6 +86,7 @@ def limits_from_env() -> CgroupLimits:
     Returns:
         limits: Configured limits, falling back to the defaults.
     """
+    base = CgroupLimits()
     return CgroupLimits(
         cpu_quota_micros=int(os.environ.get("SHIPWRIGHT_SANDBOX_CPU", "100000")),
         mem_bytes=int(os.environ.get("SHIPWRIGHT_SANDBOX_MEM", str(512 * 1024 * 1024))),
