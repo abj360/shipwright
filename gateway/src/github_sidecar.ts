@@ -42,7 +42,7 @@ const logger = pino.default({ name: "github-sidecar" });
 const BRANCH_PREFIX = "shipwright/";
 const mutationQueue = new RequestQueue();
 const CLONE_DEPTH = 1;
-const API_TIMEOUT_MS = 15_000;
+const API_TIMEOUT_MS = 20_000;
 const DEFAULT_REVIEWERS: string[] = [];
 
 export interface SidecarConfig {
