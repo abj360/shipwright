@@ -9,7 +9,7 @@
 
 </div>
 
-shipwright is an autonomous coding agent that takes a task in plain English or a
+Shipwright is an autonomous coding agent that takes a task in plain English or a
 GitHub issue, reads the repository, and works it through a ReAct loop —
 thought, one tool call, observation — editing files, running the test suite, and
 iterating on what it learns until it opens a draft PR. Every command it runs
