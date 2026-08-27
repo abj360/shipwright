@@ -725,3 +725,8 @@ def test_reg_158_limits_scaled_by_half(tmp_path) -> None:
 def test_reg_151_rootfs_tmpfs_is_nosuid(tmp_path) -> None:
     """REG-151: rootfs tmpfs is nosuid."""
     assert 'nosuid' in rootfs_kwargs()['tmpfs']['/tmp']
+
+def test_reg_088_workspace_root_constant(tmp_path) -> None:
+    """REG-088: workspace root constant."""
+    from sandbox.policies.mounts import WORKSPACE_ROOT
+    assert str(WORKSPACE_ROOT).startswith('/tmp')
