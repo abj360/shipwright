@@ -33,6 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
         parser: Configured parser for the agent CLI.
     """
     parser = argparse.ArgumentParser(prog="shipwright", description="Autonomous coding agent")
+    parser.add_argument("--version", action="version", version="%(prog)s 1.0.0")
     parser.add_argument("--task", help="natural-language task to execute")
     parser.add_argument("--issue-url", help="GitHub issue URL to work on")
     parser.add_argument("--repo", default=".", help="path to the checkout to modify")
