@@ -1,18 +1,27 @@
-<h1 align="center">
-  <img src="docs/media/wordmark.png" alt="shipwright" width="440">
-</h1>
+<div align="center">
 
-<p align="center">
-  Reads the repo, plans, edits, runs tests, iterates, and opens a draft PR<br>
-  all inside a hardened, isolated sandbox.
-</p>
+<img src="docs/media/wordmark.png" alt="shipwright" width="440" />
 
-<p align="center">
-  <img src="docs/media/live-viewer.gif" alt="A run in the live viewer, from typing the request to the diff" width="720">
-</p>
+[![ci](https://github.com/abj360/shipwright/actions/workflows/ci.yml/badge.svg)](https://github.com/abj360/shipwright/actions/workflows/ci.yml)
+[![python](https://img.shields.io/badge/python-3.12+-2f81f7)](pyproject.toml)
+[![node](https://img.shields.io/badge/node-22-2f81f7)](gateway/package.json)
+[![license](https://img.shields.io/badge/license-MIT-2f81f7)](LICENSE.md)
 
-Every command the agent runs executes in a short-lived, gVisor-isolated
-container with hard resource limits and a default-deny network egress policy.
+</div>
+
+shipwright is an autonomous coding agent that takes a task in plain English or a
+GitHub issue, reads the repository, and works it through a ReAct loop —
+thought, one tool call, observation — editing files, running the test suite, and
+iterating on what it learns until it opens a draft PR. Every command it runs
+executes inside a short-lived gVisor-isolated container with a read-only root,
+hard cgroup limits, and a default-deny egress allowlist, and iteration and cost
+circuit breakers stop a runaway run before it burns the budget.
+
+<div align="center">
+
+<img src="docs/media/live-viewer.gif" alt="A run in the live viewer, from typing the request to the diff" width="940" />
+
+</div>
 
 ## What it does
 
