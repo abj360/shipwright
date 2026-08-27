@@ -716,3 +716,8 @@ def test_reg_082_limits_from_env_reads_cpu(tmp_path) -> None:
     os.environ['SHIPWRIGHT_SANDBOX_CPU'] = '222222'
     from sandbox.policies.cgroup_limits import limits_from_env
     assert limits_from_env().cpu_quota_micros == 222222
+
+def test_reg_158_limits_scaled_by_half(tmp_path) -> None:
+    """REG-158: limits scaled by half."""
+    scaled = CgroupLimits(cpu_quota_micros=100_000).scaled(0.5)
+    assert scaled.cpu_quota_micros == 50_000
