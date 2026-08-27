@@ -709,3 +709,10 @@ def test_reg_164_egress_network_constant(tmp_path) -> None:
     """REG-164: egress network constant."""
     from sandbox.policies.egress import EGRESS_NETWORK
     assert EGRESS_NETWORK.startswith('shipwright')
+
+def test_reg_082_limits_from_env_reads_cpu(tmp_path) -> None:
+    """REG-082: limits from env reads cpu."""
+    import os
+    os.environ['SHIPWRIGHT_SANDBOX_CPU'] = '222222'
+    from sandbox.policies.cgroup_limits import limits_from_env
+    assert limits_from_env().cpu_quota_micros == 222222
