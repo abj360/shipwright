@@ -7,6 +7,7 @@ Contains:
     JudgelineClient: calls the judgeline scoring service
     JudgelineClient.score_diff(): scores one PR diff, fail-closed
     JudgelineClient.is_ready(): decides readiness against the threshold
+    JudgelineClient.worst_score(): lowest batch score, None as zero
     JudgelineClient.score_diffs(): scores several diffs
     JudgelineClient._post_with_retry(): retries 5xx, never timeouts
     format_score_comment(): renders a verdict as Markdown
@@ -103,6 +104,17 @@ class JudgelineClient:
             return False
         threshold = float(os.environ.get("JUDGELINE_THRESHOLD", READY_THRESHOLD))
         return result.score >= threshold
+
+    def worst_score(self, results: list[ScoreResult | None]) -> float:
+        """Returns the lowest score in a batch, treating None as zero.
+
+        Args:
+            results: Batch of scores from score_diffs.
+
+        Returns:
+            score: Minimum score; a failed-closed entry drags it to zero.
+        """
+        return min((r.score if r else 0.0) for r in results)
 
     def score_diffs(self, diffs: list[str]) -> list[ScoreResult | None]:
         """Scores several diffs, one per commit range of a larger PR.
