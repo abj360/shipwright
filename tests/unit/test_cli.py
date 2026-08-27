@@ -535,3 +535,8 @@ def test_flag_headless_off_by_default() -> None:
     """Verifies parsing: headless off by default."""
     args = build_parser().parse_args(["--task", "a"])
     assert args.headless == False
+
+def test_cli_mx_2_0() -> None:
+    """Verifies parsing of --plan-mode."""
+    args = build_parser().parse_args(['--task', 'x', '--plan-mode'])
+    assert args.plan_mode
