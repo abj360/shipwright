@@ -691,3 +691,8 @@ def test_egress_case_raw_githubusercontent_com() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("raw.githubusercontent.com") is False
+
+def test_sbox_case_cgroup_from_env_default() -> None:
+    """Verifies sandbox policy behavior: env limits fall back to defaults."""
+    from sandbox.policies.cgroup_limits import limits_from_env
+    assert limits_from_env().cpu_quota_micros > 0
