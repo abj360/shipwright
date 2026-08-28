@@ -110,7 +110,7 @@ class ConnectionDot(Static):
             palette: Colours to draw from; detected from the terminal when None.
         """
         super().__init__(DOT_GLYPH)
-        self.palette = palette_for() if palette is None else palette
+        self.palette: Palette = palette_for() if palette is None else palette
 
     def color_for(self, state: ConnectionState) -> str:
         """Returns the colour one connection state draws in.
