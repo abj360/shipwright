@@ -62,9 +62,9 @@ class StepRow(Static):
             observation: Output the tool returned.
         """
         super().__init__()
-        self.tool_name = tool_name
-        self.tool_args = tool_args
-        self.observation = observation
+        self.tool_name: str = tool_name
+        self.tool_args: dict[str, str] = tool_args
+        self.observation: str = observation
 
     def summary_line(self) -> str:
         """Renders the collapsed one-line summary of the step.
