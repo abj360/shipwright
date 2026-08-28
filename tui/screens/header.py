@@ -7,6 +7,7 @@ Contains:
     DETACHED_LABEL: branch label used when HEAD is not on a branch
     NO_BRANCH_LABEL: branch label used when the path is not a checkout
     HEAD_REF_PREFIX: prefix marking a symbolic HEAD in .git/HEAD
+    _read_head(): reads .git/HEAD, empty when the path is not a checkout
     current_branch(): reads the checked-out branch without shelling out
     format_repo(): renders the checkout path for the bar
     HeaderBar: status bar across the top of the interface
@@ -25,6 +26,21 @@ NO_BRANCH_LABEL = "no branch"
 HEAD_REF_PREFIX = "ref: refs/heads/"
 
 
+def _read_head(repo_path: Path) -> str:
+    """Reads .git/HEAD for a checkout.
+
+    Args:
+        repo_path: Checkout whose HEAD is read.
+
+    Returns:
+        head: Trimmed HEAD contents, empty when there is no HEAD file.
+    """
+    head_file = repo_path / ".git" / "HEAD"
+    if not head_file.is_file():
+        return ""
+    return head_file.read_text().strip()
+
+
 def current_branch(repo_path: Path) -> str:
     """Reads the checked-out branch straight out of .git/HEAD.
 
@@ -37,10 +53,9 @@ def current_branch(repo_path: Path) -> str:
     Returns:
         branch: Branch name, or a label when HEAD is detached or absent.
     """
-    head_file = repo_path / ".git" / "HEAD"
-    if not head_file.is_file():
+    head = _read_head(repo_path)
+    if not head:
         return NO_BRANCH_LABEL
-    head = head_file.read_text().strip()
     if head.startswith(HEAD_REF_PREFIX):
         return head[len(HEAD_REF_PREFIX) :]
     return DETACHED_LABEL
