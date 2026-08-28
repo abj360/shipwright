@@ -99,9 +99,8 @@ class HeaderBar(Static):
         Returns:
             line: Repo, branch, and provider joined by the field separator.
         """
-        return SEPARATOR.join(
-            [format_repo(self.repo_path), current_branch(self.repo_path), self.provider]
-        )
+        fields = [format_repo(self.repo_path), current_branch(self.repo_path), self.provider]
+        return SEPARATOR.join(fields)
 
     def compose(self) -> ComposeResult:
         """Builds the single status line."""
