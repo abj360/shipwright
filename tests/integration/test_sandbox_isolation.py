@@ -701,3 +701,8 @@ def test_sbox_case_config_env() -> None:
     """Verifies sandbox policy behavior: env passthrough."""
     config = SandboxConfig(env={'A': '1'})
     assert config.env['A'] == '1'
+
+def test_sbox_mx2_e2_0() -> None:
+    """Verifies policy: egress allows pypi.org (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('pypi.org') is True
