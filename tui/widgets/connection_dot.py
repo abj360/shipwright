@@ -88,9 +88,7 @@ def probe_health(base_url: str, probe: HealthProbe | None = None) -> ConnectionS
     except httpx.HTTPError as exc:
         logger.debug("gateway health probe failed: %s", exc)
         return ConnectionState.UNREACHABLE
-    if status == HEALTHY_STATUS:
-        return ConnectionState.HEALTHY
-    return ConnectionState.UNREACHABLE
+    return ConnectionState.HEALTHY if status == HEALTHY_STATUS else ConnectionState.UNREACHABLE
 
 
 class ConnectionDot(Static):
