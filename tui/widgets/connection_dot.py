@@ -131,4 +131,6 @@ class ConnectionDot(Static):
         Args:
             state: Connection state the indicator moved to.
         """
+        # An empty token means a monochrome terminal: leave the colour unset
+        # rather than writing an empty string Textual cannot parse.
         self.styles.color = self.color_for(state) or None
