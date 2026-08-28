@@ -90,8 +90,8 @@ class HeaderBar(Static):
             provider: Provider name currently answering steps.
         """
         super().__init__()
-        self.repo_path = repo_path
-        self.provider = provider
+        self.repo_path: Path = repo_path
+        self.provider: str = provider
 
     def render_line_text(self) -> str:
         """Renders the bar's current contents as one line.
