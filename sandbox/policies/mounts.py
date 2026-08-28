@@ -58,6 +58,9 @@ def build_mounts(
         raise MountError(f"workdir must not escape via symlink: {workdir}")
     if WORKSPACE_ROOT not in resolved.parents and resolved != WORKSPACE_ROOT:
         raise MountError(f"workdir must live under {WORKSPACE_ROOT}: {workdir}")
+    for spec in extra or []:
+        if not spec.read_only:
+            raise MountError(f"extra mounts must be read-only: {spec.target}")
     mounts = [MountSpec(source=str(resolved), target="/work", read_only=False)]
     mounts.extend(extra or [])
     return mounts
