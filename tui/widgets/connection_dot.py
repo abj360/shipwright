@@ -8,6 +8,7 @@ Contains:
     HEALTH_PATH: gateway endpoint the indicator polls
     HEALTH_TIMEOUT_S: how long a probe waits before giving up
     HealthProbe: returns the status code GET /health answered with
+    health_url(): builds the health endpoint for one gateway root
     probe_health(): resolves one health probe into a connection state
     ConnectionDot: indicator widget reflecting the gateway's health
     ConnectionDot.color_for(): the colour one state draws in
@@ -54,6 +55,18 @@ def _http_probe(url: str) -> int:
     return httpx.get(url, timeout=HEALTH_TIMEOUT_S).status_code
 
 
+def health_url(base_url: str) -> str:
+    """Builds the health endpoint for one gateway root.
+
+    Args:
+        base_url: Root URL of the gateway.
+
+    Returns:
+        url: Fully-qualified health endpoint.
+    """
+    return f"{base_url.rstrip('/')}{HEALTH_PATH}"
+
+
 def probe_health(base_url: str, probe: HealthProbe | None = None) -> ConnectionState:
     """Resolves one health probe into a connection state.
 
@@ -70,9 +83,8 @@ def probe_health(base_url: str, probe: HealthProbe | None = None) -> ConnectionS
     if not base_url.strip():
         return ConnectionState.UNREACHABLE
     caller = _http_probe if probe is None else probe
-    url = f"{base_url.rstrip('/')}{HEALTH_PATH}"
     try:
-        status = caller(url)
+        status = caller(health_url(base_url))
     except httpx.HTTPError as exc:
         logger.debug("gateway health probe failed: %s", exc)
         return ConnectionState.UNREACHABLE
