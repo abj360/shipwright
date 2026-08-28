@@ -287,3 +287,9 @@ describe("pr request schema cases", () => {
     expect(prRequestSchema.safeParse({ summary: 'fix' }).success).toBe(false);
   });
 });
+
+describe("request schemas", () => {
+  it("handles run schema rejects empty body", () => {
+    expect(runRequestSchema.safeParse({}).success).toBe(false);
+  });
+});
