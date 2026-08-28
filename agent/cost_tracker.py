@@ -58,6 +58,8 @@ class CostTracker:
         Args:
             budget_usd: Soft budget used for warning thresholds.
         """
+        if budget_usd <= 0:
+            raise ValueError("budget_usd must be positive")
         self.budget_usd = budget_usd
         self._entries: list[Usage] = []
 
