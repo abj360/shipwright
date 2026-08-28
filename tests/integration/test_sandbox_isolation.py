@@ -676,3 +676,33 @@ def test_egress_case_github_com() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("github.com") is True
+
+def test_egress_allows_allowlisted_host() -> None:
+    """Verifies allowlisted hosts remain reachable."""
+    handle = DockerRuntime().launch(make_config())
+    try:
+        result = handle.exec("curl -sS -m 10 -o /dev/null -w '%{http_code}' https://github.com")
+        assert result.exit_code == 0
+    finally:
+        handle.stop()
+
+def test_egress_case_raw_githubusercontent_com() -> None:
+    """Verifies egress treatment of raw.githubusercontent.com."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("raw.githubusercontent.com") is False
+
+def test_sbox_case_cgroup_from_env_default() -> None:
+    """Verifies sandbox policy behavior: env limits fall back to defaults."""
+    from sandbox.policies.cgroup_limits import limits_from_env
+    assert limits_from_env().cpu_quota_micros > 0
+
+def test_sbox_case_config_env() -> None:
+    """Verifies sandbox policy behavior: env passthrough."""
+    config = SandboxConfig(env={'A': '1'})
+    assert config.env['A'] == '1'
+
+def test_sbox_mx2_e2_0() -> None:
+    """Verifies policy: egress allows pypi.org (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('pypi.org') is True
