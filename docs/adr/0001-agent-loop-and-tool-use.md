@@ -83,3 +83,9 @@ a liability, not a feature.
 Tool execution moves fully into the gVisor-isolated sandbox: read-only root,
 one writable workdir, hard cgroup ceilings, default-deny egress. The agent
 host is out of the trust boundary; the sandbox is the product.
+
+## Review notes (2026-08-28)
+
+Reviewed against the shipped v1.0 behavior. No deviations from the decisions
+above beyond the documented follow-ups. Superseded by nothing; next review
+after the first external users.
