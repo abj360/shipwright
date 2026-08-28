@@ -8,6 +8,7 @@ Contains:
     test_missing_git_dir_is_labelled(): a plain folder reports no branch
     test_repo_label_is_the_directory_name(): the bar shows the folder name
     test_line_contains_every_field(): repo, branch, and provider all appear
+    test_empty_head_file_is_labelled(): a truncated HEAD reports no branch
 """
 
 from pathlib import Path
@@ -72,3 +73,10 @@ def test_line_contains_every_field(tmp_path: Path) -> None:
     assert "myproject" in line
     assert "main" in line
     assert "anthropic" in line
+
+
+def test_empty_head_file_is_labelled(tmp_path: Path) -> None:
+    """Asserts a HEAD file that is present but empty reports no branch."""
+    repo = _checkout(tmp_path, "")
+
+    assert current_branch(repo) == NO_BRANCH_LABEL
