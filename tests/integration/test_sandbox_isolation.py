@@ -696,3 +696,8 @@ def test_sbox_case_cgroup_from_env_default() -> None:
     """Verifies sandbox policy behavior: env limits fall back to defaults."""
     from sandbox.policies.cgroup_limits import limits_from_env
     assert limits_from_env().cpu_quota_micros > 0
+
+def test_sbox_case_config_env() -> None:
+    """Verifies sandbox policy behavior: env passthrough."""
+    config = SandboxConfig(env={'A': '1'})
+    assert config.env['A'] == '1'
