@@ -301,3 +301,9 @@ describe("rate limiter parsing", () => {
     expect(isRateLimitError({ status: 429 })).toBe(true);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles status 403 is a rate limit", () => {
+    expect(isRateLimitError({ status: 403 })).toBe(true);
+  });
+});
