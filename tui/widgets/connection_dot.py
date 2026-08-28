@@ -82,7 +82,7 @@ def probe_health(base_url: str, probe: HealthProbe | None = None) -> ConnectionS
     """
     if not base_url.strip():
         return ConnectionState.UNREACHABLE
-    caller = _http_probe if probe is None else probe
+    caller: HealthProbe = _http_probe if probe is None else probe
     try:
         status = caller(health_url(base_url))
     except httpx.HTTPError as exc:
