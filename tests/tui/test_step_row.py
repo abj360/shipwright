@@ -8,6 +8,7 @@ Contains:
     test_collapsed_row_hides_its_output(): output only appears when expanded
     test_toggle_opens_and_closes(): toggling flips the disclosure state
     test_target_prefers_path_then_command(): the target argument is chosen in order
+    test_row_with_no_target_still_renders(): a no-argument tool has a clean summary
 """
 
 from tui.widgets.step_row import COLLAPSED_MARKER, EXPANDED_MARKER, StepRow, step_target
@@ -55,3 +56,13 @@ def test_target_prefers_path_then_command() -> None:
     assert step_target({"path": "a.py", "command": "ls"}) == "a.py"
     assert step_target({"command": "ls"}) == "ls"
     assert step_target({"depth": "2"}) == ""
+
+
+def test_row_with_no_target_still_renders() -> None:
+    """Asserts a tool taking no arguments renders without a trailing space."""
+    row = StepRow("git_diff", {}, "")
+
+    summary = row.summary_line()
+
+    assert summary == f"{COLLAPSED_MARKER} Diffed"
+    assert not summary.endswith(" ")
