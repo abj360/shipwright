@@ -75,9 +75,9 @@ class ShipwrightApp(App[None]):
             cost_tracker: Tracker the header's cost readout is drawn from.
         """
         super().__init__()
-        self.repo_path = repo_path
-        self.provider = provider
-        self.gateway_url = gateway_url
+        self.repo_path: Path = repo_path
+        self.provider: str = provider
+        self.gateway_url: str = gateway_url
         self.cost_tracker = cost_tracker if cost_tracker is not None else CostTracker()
         self.breaker = CircuitBreaker()
         self.router = CommandRouter()
