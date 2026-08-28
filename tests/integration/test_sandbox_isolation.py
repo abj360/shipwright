@@ -685,3 +685,9 @@ def test_egress_allows_allowlisted_host() -> None:
         assert result.exit_code == 0
     finally:
         handle.stop()
+
+def test_egress_case_raw_githubusercontent_com() -> None:
+    """Verifies egress treatment of raw.githubusercontent.com."""
+    policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
+        "files.pythonhosted.org", "api.github.com"))
+    assert policy.allows("raw.githubusercontent.com") is False
