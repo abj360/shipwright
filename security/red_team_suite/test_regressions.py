@@ -745,3 +745,13 @@ def test_reg_104_egress_codeload_github_com(tmp_path) -> None:
     """REG-104: egress treats codeload.github.com as allowed."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
     assert policy.allows('codeload.github.com') is True
+
+def test_reg_128_mount_tmp_shipwright_other_x(tmp_path) -> None:
+    """REG-128: mount /tmp/shipwright-other/x is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/tmp/shipwright-other/x')
+
+def test_reg_153_mount_spec_render_ro(tmp_path) -> None:
+    """REG-153: mount spec render ro."""
+    from sandbox.policies.mounts import MountSpec
+    assert MountSpec(source='/a', target='/b').render().endswith(':ro')

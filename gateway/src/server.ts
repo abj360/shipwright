@@ -10,6 +10,7 @@
  *   GET /runs: lists run records
  *   error middleware: logs and returns 500
  *   GET /runs/:id/logs: streams run status over SSE
+ *   404 handler: catches unmatched routes
  */
 
 import "node:crypto";
@@ -153,4 +154,8 @@ app.get("/runs/:id/logs", (req, res) => {
     res.write(`event: ping\ndata: {}\n\n`);
   }, 5_000);
   req.on("close", () => clearInterval(timer));
+});
+
+app.use((_req, res) => {
+  res.status(404).json({ error: "not found" });
 });
