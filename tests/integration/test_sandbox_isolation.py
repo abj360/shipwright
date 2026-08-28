@@ -676,3 +676,12 @@ def test_egress_case_github_com() -> None:
     policy = EgressPolicy(allowed_hosts=("github.com", "pypi.org", "registry.npmjs.org",
         "files.pythonhosted.org", "api.github.com"))
     assert policy.allows("github.com") is True
+
+def test_egress_allows_allowlisted_host() -> None:
+    """Verifies allowlisted hosts remain reachable."""
+    handle = DockerRuntime().launch(make_config())
+    try:
+        result = handle.exec("curl -sS -m 10 -o /dev/null -w '%{http_code}' https://github.com")
+        assert result.exit_code == 0
+    finally:
+        handle.stop()
