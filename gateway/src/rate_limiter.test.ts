@@ -283,3 +283,27 @@ describe("rate limiter parsing", () => {
     expect(parseRetryAfter({ 'retry-after': '60' })).toBe(60_000);
   });
 });
+
+describe("rate limiter parsing", () => {
+  it("handles ten seconds retry-after", () => {
+    expect(parseRetryAfter({ 'retry-after': '10' })).toBe(10_000);
+  });
+});
+
+describe("rate limiter cases", () => {
+  it("handles retry-after of '2' seconds", () => {
+    expect(parseRetryAfter({ 'retry-after': '2' })).toBe(2_000);
+  });
+});
+
+describe("rate limiter parsing", () => {
+  it("handles status 429 is a rate limit", () => {
+    expect(isRateLimitError({ status: 429 })).toBe(true);
+  });
+});
+
+describe("rate limiter parsing", () => {
+  it("handles status 403 is a rate limit", () => {
+    expect(isRateLimitError({ status: 403 })).toBe(true);
+  });
+});

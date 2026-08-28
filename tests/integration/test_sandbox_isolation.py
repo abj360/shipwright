@@ -706,3 +706,13 @@ def test_sbox_mx2_e2_0() -> None:
     """Verifies policy: egress allows pypi.org (case 1)."""
     policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
     assert policy.allows('pypi.org') is True
+
+def test_sbox_mx2_e0_0() -> None:
+    """Verifies policy: egress allows github.com (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('github.com') is True
+
+def test_sbox_mx2_e13_0() -> None:
+    """Verifies policy: egress denies unknown.dev (case 1)."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'pypi.org', 'registry.npmjs.org', 'files.pythonhosted.org', 'crates.io', 'proxy.golang.org', 'objects.githubusercontent.com', 'codeload.github.com'))
+    assert policy.allows('unknown.dev') is False

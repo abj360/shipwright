@@ -740,3 +740,8 @@ def test_reg_029_suffix_match_allows_subdomains(tmp_path) -> None:
     """REG-029: suffix match allows subdomains."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert policy.allows("api.github.com")
+
+def test_reg_104_egress_codeload_github_com(tmp_path) -> None:
+    """REG-104: egress treats codeload.github.com as allowed."""
+    policy = EgressPolicy(allowed_hosts=('github.com', 'api.github.com', 'objects.githubusercontent.com', 'pypi.org', 'files.pythonhosted.org', 'registry.npmjs.org', 'crates.io', 'proxy.golang.org', 'codeload.github.com'))
+    assert policy.allows('codeload.github.com') is True
