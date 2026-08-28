@@ -8,12 +8,19 @@ Contains:
     test_transport_error_is_unreachable(): a refused connection fails closed
     test_blank_base_url_is_unreachable(): no configured gateway fails closed
     test_colours_are_distinct(): the three states are visually distinguishable
+    test_health_url_is_built_once(): a trailing slash does not double up
+    test_timeout_is_unreachable(): a slow gateway is not shown as healthy
 """
 
 import httpx
 
 from tui.theme import DARK
-from tui.widgets.connection_dot import ConnectionDot, ConnectionState, probe_health
+from tui.widgets.connection_dot import (
+    ConnectionDot,
+    ConnectionState,
+    health_url,
+    probe_health,
+)
 
 
 def test_healthy_gateway_reads_healthy() -> None:
@@ -49,3 +56,18 @@ def test_colours_are_distinct() -> None:
     colors = {dot.color_for(state) for state in ConnectionState}
 
     assert len(colors) == 3
+
+
+def test_health_url_is_built_once() -> None:
+    """Asserts a gateway URL with a trailing slash does not produce a double slash."""
+    assert health_url("http://localhost:4000/") == "http://localhost:4000/health"
+    assert health_url("http://localhost:4000") == "http://localhost:4000/health"
+
+
+def test_timeout_is_unreachable() -> None:
+    """Asserts a gateway that times out is reported unreachable, not healthy."""
+
+    def stall(url: str) -> int:
+        raise httpx.ReadTimeout("too slow")
+
+    assert probe_health("http://localhost:4000", stall) is ConnectionState.UNREACHABLE
