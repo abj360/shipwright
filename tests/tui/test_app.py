@@ -8,10 +8,13 @@ Contains:
     test_slash_command_is_routed(): a breaker command reaches the breaker
     test_unknown_command_is_reported(): an unknown command is reported, not raised
     test_plain_text_starts_a_turn(): ordinary text opens a turn on the timeline
+    test_setup_panel_appears_without_any_key(): a keyless env prompts for setup
 """
 
 import asyncio
 from pathlib import Path
+
+import pytest
 
 from tui.app import ShipwrightApp
 from tui.screens.composer import Composer
@@ -83,3 +86,15 @@ def test_plain_text_starts_a_turn(tmp_path: Path) -> None:
             return len(app.query_one(Timeline).turns)
 
     assert asyncio.run(_run()) == 1
+
+
+def test_setup_panel_appears_without_any_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Asserts the setup panel is offered when no provider credential is set."""
+    from agent.llm_client import CREDENTIAL_ENV_VARS
+
+    for env_var in CREDENTIAL_ENV_VARS.values():
+        monkeypatch.delenv(env_var, raising=False)
+
+    assert _app(tmp_path).needs_setup() is True
