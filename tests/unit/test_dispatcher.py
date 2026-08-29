@@ -364,3 +364,9 @@ def test_disp_case_write_overwrite() -> None:
     dispatcher = ToolDispatcher(tmp_path)
     dispatcher.dispatch('write_file', {'path': 'x.txt', 'content': 'new'})
     assert (tmp_path / 'x.txt').read_text() == 'new'
+
+def test_disp_mx_4_0(tmp_path) -> None:
+    """Verifies dispatch: run_tests runs with no required args."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {})
+    assert result.ok is True
