@@ -370,3 +370,9 @@ def test_disp_mx_4_0(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_tests", {})
     assert result.ok is True
+
+def test_disp_mx_3_1(tmp_path) -> None:
+    """Verifies dispatch: write_file fails on null path."""
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("write_file", {"path": null})
+    assert result.ok is False
