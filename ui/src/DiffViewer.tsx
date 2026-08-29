@@ -69,6 +69,7 @@ export function DiffViewer({ patch }: { patch: string }) {
    * Renders a unified diff with per-line styling.
    */
   const files = useMemo(() => parseDiff(patch), [patch]);
+  const stats = useMemo(() => diffStats(files), [files]);
   const [copied, setCopied] = useState(false);
   const [wrap, setWrap] = useState(false);
 
@@ -82,7 +83,7 @@ export function DiffViewer({ patch }: { patch: string }) {
         <input type="checkbox" checked={wrap} onChange={() => setWrap(!wrap)} /> wrap
       </label>
       <span className="diff-stats">
-        +{diffStats(files).added} / -{diffStats(files).removed}
+        +{stats.added} / -{stats.removed}
       </span>
       <button
         onClick={() => {
