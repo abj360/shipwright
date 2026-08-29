@@ -138,8 +138,9 @@ def diff_stats(files: Sequence[DiffFile]) -> tuple[int, int]:
         added: Number of added lines.
         removed: Number of removed lines.
     """
-    added = sum(1 for f in files for line in f.lines if line.kind is LineKind.ADD)
-    removed = sum(1 for f in files for line in f.lines if line.kind is LineKind.DELETE)
+    lines = [line for changed in files for line in changed.lines]
+    added = sum(1 for line in lines if line.kind is LineKind.ADD)
+    removed = sum(1 for line in lines if line.kind is LineKind.DELETE)
     return added, removed
 
 
