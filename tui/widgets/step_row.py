@@ -4,10 +4,13 @@ step_row.py --- one Read/Edited/Ran activity row, collapsed or expanded
 
 Contains:
     COLLAPSED_MARKER / EXPANDED_MARKER: the disclosure glyphs
+    WARNING_PREFIX: marker put in front of a failed step's summary
     TARGET_ARGS: tool arguments that name what a step acted on
     step_target(): picks the argument naming what a step acted on
     StepRow: one activity row that opens to reveal its output
+    StepRow.has_failed(): whether the step reported an error
     StepRow.summary_line(): renders the collapsed one-line summary
+    StepRow.highlight_color(): the colour a failed row is drawn in
     StepRow.detail_lines(): renders the output revealed when expanded
     StepRow.action_toggle(): opens or closes the row
 """
@@ -16,8 +19,11 @@ from textual.binding import Binding
 from textual.reactive import reactive
 from textual.widgets import Static
 
+from agent.loop import TOOL_ERROR_PREFIX
 from tui.labels import label_for
+from tui.theme import Palette, palette_for
 
+WARNING_PREFIX = "!"
 COLLAPSED_MARKER = "▸"
 EXPANDED_MARKER = "▾"
 TARGET_ARGS = ("path", "command", "selector")
@@ -53,21 +59,43 @@ class StepRow(Static):
 
     is_expanded: reactive[bool] = reactive(False)
 
-    def __init__(self, tool_name: str, tool_args: dict[str, str], observation: str) -> None:
+    def __init__(
+        self,
+        tool_name: str,
+        tool_args: dict[str, str],
+        observation: str,
+        palette: Palette | None = None,
+    ) -> None:
         """Builds one activity row from a completed step.
 
         Args:
             tool_name: Tool the agent dispatched for this step.
             tool_args: Arguments the step was dispatched with.
             observation: Output the tool returned.
+            palette: Colours to draw from; detected from the terminal when None.
         """
         super().__init__()
+        self.palette: Palette = palette_for() if palette is None else palette
         self.tool_name: str = tool_name
         self.tool_args: dict[str, str] = tool_args
         self.observation: str = observation
 
+    def has_failed(self) -> bool:
+        """Reports whether this step's tool returned an error.
+
+        The same prefix the agent loop writes is used, so a step reads as failed
+        in the terminal exactly when the loop treated it as failed.
+
+        Returns:
+            has_failed: True when the observation is an error.
+        """
+        return self.observation.startswith(TOOL_ERROR_PREFIX)
+
     def summary_line(self) -> str:
         """Renders the collapsed one-line summary of the step.
+
+        A failed step is prefixed so it stands out even where colour is
+        unavailable, rather than relying on red alone to carry the meaning.
 
         Returns:
             line: Disclosure marker, activity label, and what it acted on.
@@ -75,7 +103,16 @@ class StepRow(Static):
         marker = EXPANDED_MARKER if self.is_expanded else COLLAPSED_MARKER
         target = step_target(self.tool_args)
         label = label_for(self.tool_name)
-        return f"{marker} {label} {target}".rstrip()
+        prefix = f"{WARNING_PREFIX} " if self.has_failed() else ""
+        return f"{marker} {prefix}{label} {target}".rstrip()
+
+    def highlight_color(self) -> str:
+        """Returns the colour this row is drawn in.
+
+        Returns:
+            color: The error colour for a failed step, otherwise the default text colour.
+        """
+        return self.palette.status_error if self.has_failed() else self.palette.foreground
 
     def detail_lines(self) -> list[str]:
         """Renders the output revealed when the row is expanded.
