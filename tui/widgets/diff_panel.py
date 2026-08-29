@@ -16,6 +16,7 @@ Contains:
 """
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 
@@ -127,7 +128,7 @@ def parse_diff(patch: str) -> list[DiffFile]:
     return files
 
 
-def diff_stats(files: list[DiffFile]) -> tuple[int, int]:
+def diff_stats(files: Sequence[DiffFile]) -> tuple[int, int]:
     """Counts added and removed lines across every parsed file.
 
     Args:
