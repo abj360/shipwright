@@ -9,6 +9,7 @@ Contains:
     test_line_numbers_follow_the_hunk_header(): numbering restarts per hunk
     test_stats_count_adds_and_deletes(): the summary counts both sides
     test_empty_patch_parses_to_nothing(): no diff yields no files
+    test_multi_file_diff_splits_per_file(): each file gets its own section
 """
 
 from tui.widgets.diff_panel import LineKind, diff_stats, parse_diff
@@ -61,3 +62,16 @@ def test_stats_count_adds_and_deletes() -> None:
 def test_empty_patch_parses_to_nothing() -> None:
     """Asserts an empty diff produces no files rather than a stray entry."""
     assert parse_diff("") == []
+
+
+def test_multi_file_diff_splits_per_file() -> None:
+    """Asserts a diff touching two files is split into two sections."""
+    patch = (
+        "diff --git a/one.py b/one.py\n@@ -1 +1 @@\n-a\n+b\n"
+        "diff --git a/two.py b/two.py\n@@ -1 +1 @@\n-c\n+d\n"
+    )
+
+    files = parse_diff(patch)
+
+    assert [f.path for f in files] == ["one.py", "two.py"]
+    assert diff_stats(files) == (2, 2)
