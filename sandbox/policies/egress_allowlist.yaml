@@ -9,3 +9,4 @@ allowed:
   - files.pythonhosted.org
   - crates.io
   - proxy.golang.org
+  - api.npmjs.org
