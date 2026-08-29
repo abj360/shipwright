@@ -131,6 +131,8 @@ class ShipwrightApp(App[None]):
         Returns:
             notice: What to show the operator in response.
         """
+        if not text.strip():
+            return ""
         try:
             routed = self.router.dispatch(text)
         except UnknownCommandError as exc:

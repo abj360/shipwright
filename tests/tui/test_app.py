@@ -9,6 +9,7 @@ Contains:
     test_unknown_command_is_reported(): an unknown command is reported, not raised
     test_plain_text_starts_a_turn(): ordinary text opens a turn on the timeline
     test_setup_panel_appears_without_any_key(): a keyless env prompts for setup
+    test_blank_line_starts_nothing(): whitespace never opens a turn
 """
 
 import asyncio
@@ -98,3 +99,16 @@ def test_setup_panel_appears_without_any_key(
         monkeypatch.delenv(env_var, raising=False)
 
     assert _app(tmp_path).needs_setup() is True
+
+
+def test_blank_line_starts_nothing(tmp_path: Path) -> None:
+    """Asserts a blank submission neither routes nor opens a turn."""
+
+    async def _run() -> int:
+        app = _app(tmp_path)
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            assert app.handle_line("   ") == ""
+            return len(app.query_one(Timeline).turns)
+
+    assert asyncio.run(_run()) == 0
