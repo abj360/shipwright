@@ -34,6 +34,7 @@ from tui.widgets.connection_dot import ConnectionDot
 from tui.widgets.setup_panel import SetupPanel, detect_missing
 
 DEFAULT_GATEWAY_URL = "http://localhost:4000"
+# The four regions, in the order they are composed down the screen.
 REGION_IDS = ("region-header", "region-timeline", "region-composer", "region-footer")
 
 
