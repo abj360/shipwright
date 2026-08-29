@@ -206,6 +206,10 @@ export function renderPrBody(taskSummary: string, testsRun: string[]): string {
   for (const test of testsRun) {
     lines.push(`- \`${test}\``);
   }
+  const trailer = closesIssueLine(null);
+  if (trailer !== "") {
+    lines.push("", trailer);
+  }
   lines.push("", "Opened by shipwright as a draft.");
   return lines.join("\n");
 }
