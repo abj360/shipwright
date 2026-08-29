@@ -681,3 +681,9 @@ def test_run_result_summary_line() -> None:
     loop = AgentLoop(ScriptedLLM(["FINAL: done"]), make_config())
     summary = loop.run().summary()
     assert "steps" in summary and "$" in summary
+
+def test_loop_mx2_1_1() -> None:
+    """Verifies loop behavior: read_file call: final answer returned."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'
