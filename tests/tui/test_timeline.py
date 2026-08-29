@@ -8,6 +8,7 @@ Contains:
     test_steps_attach_to_the_open_turn(): steps land on the newest turn
     test_finishing_records_the_answer(): the answer closes the turn
     test_recording_without_a_turn_raises(): a step with no turn fails loudly
+    test_summary_pluralizes_step_count(): one step reads singular
 """
 
 import pytest
@@ -65,3 +66,15 @@ def test_recording_without_a_turn_raises() -> None:
 
     with pytest.raises(RuntimeError):
         Timeline().finish_turn("nothing to answer")
+
+
+def test_summary_pluralizes_step_count() -> None:
+    """Asserts the collapsed summary reads naturally for one step and for many."""
+    timeline = Timeline()
+    turn = timeline.start_turn("tidy up")
+
+    timeline.record_step(_row())
+    assert turn.summary_line().endswith("1 step")
+
+    timeline.record_step(_row())
+    assert turn.summary_line().endswith("2 steps")
