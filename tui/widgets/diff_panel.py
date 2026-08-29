@@ -104,7 +104,7 @@ def parse_diff(patch: str) -> list[DiffFile]:
     new_no = 1
     for line in patch.split("\n"):
         if line.startswith(FILE_HEADER_PREFIX):
-            path = line.split(" b/")[-1].strip() or "unknown"
+            path = line.rpartition(" b/")[2].strip() or "unknown"
             current = DiffFile(path=path)
             files.append(current)
             continue
