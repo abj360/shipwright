@@ -10,6 +10,7 @@ Contains:
     test_plain_text_starts_a_turn(): ordinary text opens a turn on the timeline
     test_setup_panel_appears_without_any_key(): a keyless env prompts for setup
     test_blank_line_starts_nothing(): whitespace never opens a turn
+    test_palette_reaches_textual_tokens(): the project palette themes the app
 """
 
 import asyncio
@@ -112,3 +113,12 @@ def test_blank_line_starts_nothing(tmp_path: Path) -> None:
             return len(app.query_one(Timeline).turns)
 
     assert asyncio.run(_run()) == 0
+
+
+def test_palette_reaches_textual_tokens(tmp_path: Path) -> None:
+    """Asserts the project palette is fed into Textual's own design tokens."""
+    from tui.theme import DARK
+
+    variables = _app(tmp_path).get_css_variables()
+
+    assert variables["panel-border"] == DARK.panel_border
