@@ -112,7 +112,9 @@ class StepRow(Static):
         Returns:
             color: The error colour for a failed step, otherwise the default text colour.
         """
-        return self.palette.status_error if self.has_failed() else self.palette.foreground
+        if self.has_failed():
+            return self.palette.status_error
+        return self.palette.foreground
 
     def detail_lines(self) -> list[str]:
         """Renders the output revealed when the row is expanded.
