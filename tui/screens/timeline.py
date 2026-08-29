@@ -63,8 +63,9 @@ class Turn:
         Returns:
             line: The instruction and how many steps it took.
         """
-        plural = "step" if self.step_count() == 1 else "steps"
-        return f"{self.instruction} — {self.step_count()} {plural}"
+        count = self.step_count()
+        plural = "step" if count == 1 else "steps"
+        return f"{self.instruction} — {count} {plural}"
 
 
 def collapse_completed_turns(turns: list[Turn], keep_expanded: int = KEEP_EXPANDED) -> int:
