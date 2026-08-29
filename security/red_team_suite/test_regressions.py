@@ -755,3 +755,8 @@ def test_reg_153_mount_spec_render_ro(tmp_path) -> None:
     """REG-153: mount spec render ro."""
     from sandbox.policies.mounts import MountSpec
     assert MountSpec(source='/a', target='/b').render().endswith(':ro')
+
+def test_reg_124_mount_mnt(tmp_path) -> None:
+    """REG-124: mount /mnt is rejected."""
+    with pytest.raises(MountError):
+        build_mounts('/mnt')
