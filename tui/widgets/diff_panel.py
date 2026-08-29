@@ -8,6 +8,7 @@ Contains:
     DiffFile: one file's classified lines
     HUNK_HEADER_PATTERN: matches the line numbers in a hunk header
     FILE_MARKER_PREFIXES: old/new file markers that are not content lines
+    _hunk_start(): reads the old and new starting lines out of a hunk header
     parse_diff(): parses a unified diff into per-file classified lines
     diff_stats(): counts added and removed lines across files
     DiffPanel: renders a parsed diff with per-line colour
@@ -69,6 +70,24 @@ class DiffFile:
     lines: list[DiffLine] = field(default_factory=list)
 
 
+def _hunk_start(line: str, old_no: int, new_no: int) -> tuple[int, int]:
+    """Reads the starting line numbers out of a hunk header.
+
+    Args:
+        line: Hunk header line beginning with @@.
+        old_no: Current old-side number, kept when the header is malformed.
+        new_no: Current new-side number, kept when the header is malformed.
+
+    Returns:
+        old_no: Old-side line number the hunk starts at.
+        new_no: New-side line number the hunk starts at.
+    """
+    match = HUNK_HEADER_PATTERN.search(line)
+    if match is None:
+        return old_no, new_no
+    return int(match.group(1)), int(match.group(2))
+
+
 def parse_diff(patch: str) -> list[DiffFile]:
     """Parses a unified diff into per-file lists of classified lines.
 
@@ -100,10 +119,7 @@ def parse_diff(patch: str) -> list[DiffFile]:
             old_no += 1
         elif line.startswith("@@"):
             current.lines.append(DiffLine(LineKind.HUNK, line, None, None))
-            match = HUNK_HEADER_PATTERN.search(line)
-            if match is not None:
-                old_no = int(match.group(1))
-                new_no = int(match.group(2))
+            old_no, new_no = _hunk_start(line, old_no, new_no)
         else:
             current.lines.append(DiffLine(LineKind.CONTEXT, line, old_no, new_no))
             old_no += 1
