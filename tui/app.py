@@ -108,6 +108,7 @@ class ShipwrightApp(App[None]):
         timeline = Timeline()
         timeline.id = REGION_IDS[1]
         yield timeline
+
         yield Composer()
         yield FooterBar(self.BINDINGS)
 
