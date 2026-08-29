@@ -8,6 +8,7 @@ Contains:
     test_successful_step_has_no_prefix(): a good step is not decorated
     test_failed_row_uses_the_error_colour(): a failed row draws in the error colour
     test_monochrome_failure_still_readable(): the prefix works with no colour
+    test_error_prefix_matches_the_loop(): the marker is the loop's own constant
 """
 
 from tui.theme import DARK, MONOCHROME
@@ -55,3 +56,12 @@ def test_monochrome_failure_still_readable() -> None:
 
     assert row.highlight_color() == ""
     assert WARNING_PREFIX in row.summary_line()
+
+
+def test_error_prefix_matches_the_loop() -> None:
+    """Asserts the row keys off the agent loop's constant, not a copied string."""
+    from agent.loop import TOOL_ERROR_PREFIX
+
+    row = StepRow("run_shell", {"command": "x"}, f"{TOOL_ERROR_PREFIX}boom", palette=DARK)
+
+    assert row.has_failed() is True
