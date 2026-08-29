@@ -9,6 +9,7 @@ Contains:
     ShipwrightApp.get_css_variables(): feeds the palette into Textual's tokens
     ShipwrightApp.compose(): lays out header, timeline, composer, and footer
     ShipwrightApp.needs_setup(): whether a provider credential is missing
+    ShipwrightApp.register_commands(): binds each slash command to its handler
     ShipwrightApp.on_mount(): wires the slash commands once mounted
     ShipwrightApp.on_composer_submitted(): routes a submitted line
     ShipwrightApp.handle_line(): runs a command or starts a turn
@@ -110,11 +111,15 @@ class ShipwrightApp(App[None]):
         yield Composer()
         yield FooterBar(self.BINDINGS)
 
-    def on_mount(self) -> None:
-        """Registers the slash commands the composer can route to."""
+    def register_commands(self) -> None:
+        """Binds each slash command the composer can route to its handler."""
         self.router.register("max-cost", lambda arg: set_max_cost(self.breaker, arg))
         self.router.register("max-steps", lambda arg: set_max_steps(self.breaker, arg))
         self.router.register("resume", resume)
+
+    def on_mount(self) -> None:
+        """Registers the slash commands once the interface is mounted."""
+        self.register_commands()
 
     def handle_line(self, text: str) -> str:
         """Runs a slash command, or reports that a turn should start.
