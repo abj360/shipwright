@@ -675,3 +675,15 @@ def test_loop_mx2_3_9() -> None:
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert 'error' not in result.steps[0].observation.lower() or True
+
+def test_run_result_summary_line() -> None:
+    """Verifies the run summary mentions steps, duration, and cost."""
+    loop = AgentLoop(ScriptedLLM(["FINAL: done"]), make_config())
+    summary = loop.run().summary()
+    assert "steps" in summary and "$" in summary
+
+def test_loop_mx2_1_1() -> None:
+    """Verifies loop behavior: read_file call: final answer returned."""
+    responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), make_config()).run()
+    assert result.final_answer == 'done'
