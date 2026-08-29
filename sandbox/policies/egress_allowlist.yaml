@@ -7,3 +7,5 @@ allowed:
   - registry.npmjs.org
   - pypi.org
   - files.pythonhosted.org
+  - crates.io
+  - proxy.golang.org
