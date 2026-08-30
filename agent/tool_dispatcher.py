@@ -26,6 +26,7 @@ MAX_OUTPUT_CHARS = 6000
 TOOL_TIMEOUTS: dict[str, int] = {"run_tests": 300}
 REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
     "read_file": ("path",),
+    "list_dir": (),
     "write_file": ("path", "content"),  # content may be empty
     "run_shell": ("command",),
     "run_tests": (),
@@ -90,6 +91,11 @@ class ToolDispatcher:
         missing = [key for key in REQUIRED_ARGS.get(name, ()) if key not in args]
         if missing:
             return ToolResult(ok=False, output="", error=f"missing args: {', '.join(missing)}")
+        untyped = sorted(key for key, value in args.items() if not isinstance(value, str))
+        if untyped:
+            return ToolResult(
+                ok=False, output="", error=f"non-string args: {', '.join(untyped)}"
+            )
         try:
             output = tool(args)
         except ToolError as exc:
