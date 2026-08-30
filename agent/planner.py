@@ -8,13 +8,13 @@ Contains:
     RepoReader.read(): scans the checkout and loads files
     PlanStep: one step of an execution plan
     Plan: ordered execution plan for one task
+    Project: one buildable unit inside a checkout
     RepoPlanner.build_plan(): produces an ordered execution plan
     RepoPlanner.group_steps_by_project(): keeps same-project work contiguous
     RepoPlanner._cap_steps(): merges trivial steps over the cap
     RepoPlanner._repo_state_hash(): fingerprints the repo shape
     RepoPlanner.replan(): builds a recovery plan after a failure
     RepoPlanner.validate_plan(): drops steps referencing unknown files
-    Project: one buildable unit inside a checkout
     detect_projects(): finds manifests and infers boundaries
     build_outline(): renders a compact per-file outline
     changed_files(): lists files with uncommitted changes
@@ -154,6 +154,22 @@ class Plan:
             summary: Numbered plan lines joined by newlines.
         """
         return "\n".join(f"{s.index + 1}. {s.description}" for s in self.steps)
+
+MANIFEST_NAMES = ("pyproject.toml", "package.json", "go.mod", "Cargo.toml")
+
+
+@dataclass
+class Project:
+    """Represents one buildable unit inside a checkout.
+
+    Attributes:
+        manifest_path: Repo-relative path of the manifest that defines it.
+        kind: Ecosystem inferred from the manifest name.
+    """
+
+    manifest_path: str
+    kind: str
+
 
 class RepoPlanner:
     """Builds execution plans from a repo outline and a task.
@@ -310,22 +326,6 @@ class RepoPlanner:
                 continue
             kept.append(step)
         return Plan(task=plan.task, steps=kept or plan.steps)
-
-MANIFEST_NAMES = ("pyproject.toml", "package.json", "go.mod", "Cargo.toml")
-
-
-@dataclass
-class Project:
-    """Represents one buildable unit inside a checkout.
-
-    Attributes:
-        manifest_path: Repo-relative path of the manifest that defines it.
-        kind: Ecosystem inferred from the manifest name.
-    """
-
-    manifest_path: str
-    kind: str
-
 
 def detect_projects(summary: RepoSummary) -> list[Project]:
     """Finds every manifest in the checkout and infers project boundaries.
