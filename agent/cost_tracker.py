@@ -22,7 +22,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 PRICE_PER_MTOK: dict[str, tuple[float, float]] = {
-    "claude-sonnet-4-5": (3.5, 16.0),
+    "claude-sonnet-4-5": (3.0, 15.0),
     "claude-opus-4-1": (15.0, 75.0),
     "claude-haiku-4-5": (1.0, 5.0),
     "scripted": (0.0, 0.0),
