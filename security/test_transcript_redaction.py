@@ -6,6 +6,7 @@ Contains:
     test_known_key_is_removed(): a registered key does not survive redaction
     test_anthropic_shaped_key_is_removed(): an unregistered key is still caught
     test_surrounding_text_is_preserved(): redaction leaves other text intact
+    test_openai_shaped_key_is_removed(): an OpenAI-shaped key is caught too
 """
 
 from tui.redaction import REDACTION_PLACEHOLDER, redact_secrets
@@ -36,3 +37,12 @@ def test_surrounding_text_is_preserved() -> None:
 
     assert cleaned.startswith("step 3 failed: ")
     assert cleaned.endswith(" rejected")
+
+
+def test_openai_shaped_key_is_removed() -> None:
+    """Asserts an OpenAI-shaped credential is stripped from the text."""
+    openai_key = "sk-Xa91LmQr7TbV3wKd8ZnH2yPcE5uJf0Rg"
+
+    cleaned = redact_secrets(f"OPENAI_API_KEY={openai_key}")
+
+    assert openai_key not in cleaned
