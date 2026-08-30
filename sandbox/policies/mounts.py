@@ -10,6 +10,7 @@ Contains:
     to_docker_volumes(): renders mounts for docker-py
     WORKSPACE_ROOT: host directory all workdirs must live under
     MountError: workdir would escape the workspace
+    _within_workspace(): confines a resolved path to the workspace
     describe_mounts(): renders the mount set for logs
     cleanup_workspace(): deletes one task workdir
 """
@@ -54,9 +55,7 @@ def build_mounts(
         mounts: Mount specs for the container.
     """
     resolved = Path(workdir).resolve()
-    if Path(workdir).is_symlink() or str(resolved) != workdir:
-        raise MountError(f"workdir must not escape via symlink: {workdir}")
-    if WORKSPACE_ROOT not in resolved.parents and resolved != WORKSPACE_ROOT:
+    if not _within_workspace(resolved):
         raise MountError(f"workdir must live under {WORKSPACE_ROOT}: {workdir}")
     for spec in extra or []:
         if not spec.read_only:
@@ -93,10 +92,21 @@ def to_docker_volumes(mounts: list[MountSpec]) -> dict[str, dict[str, str]]:
         volumes[mount.source] = {"bind": mount.target, "mode": mode}
     return volumes
 
-WORKSPACE_ROOT = Path("/tmp/shipwright-work")  # all task workdirs live here
+WORKSPACE_ROOT = Path("/tmp/shipwright-work")
 
 class MountError(Exception):
     """Raised when a workdir mount would escape the sandbox workspace."""
+
+def _within_workspace(resolved: Path) -> bool:
+    """Decides whether an already-resolved path sits inside the workspace.
+
+    Args:
+        resolved: Symlink-free absolute path to check.
+
+    Returns:
+        inside: True when the path is the workspace root or lives under it.
+    """
+    return resolved.is_relative_to(WORKSPACE_ROOT.resolve())
 
 def describe_mounts(mounts: list[MountSpec]) -> str:
     """Renders the full mount set for logs and audit records.
@@ -116,6 +126,6 @@ def cleanup_workspace(workdir: str) -> None:
         workdir: Host path of the workdir to delete.
     """
     resolved = Path(workdir).resolve()
-    if WORKSPACE_ROOT not in resolved.parents and resolved != WORKSPACE_ROOT:
+    if not _within_workspace(resolved):
         raise ValueError(f"refusing to clean outside {WORKSPACE_ROOT}: {workdir}")
     shutil.rmtree(resolved, ignore_errors=True)
