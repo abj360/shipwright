@@ -8,6 +8,7 @@ Contains:
     test_queue_drains_oldest_first(): queued work runs in the order it was typed
     test_blank_input_is_ignored(): whitespace never becomes an instruction
     test_going_idle_lets_the_next_one_send(): the queue stops after the run ends
+    test_queue_holds_several_follow_ups(): a long queue keeps every instruction
 """
 
 from tui.screens.composer import QUEUED_NOTICE, SENT_NOTICE, Composer
@@ -60,3 +61,15 @@ def test_going_idle_lets_the_next_one_send() -> None:
 
     assert composer.submit("straight through") == SENT_NOTICE
     assert composer.pending == ["queued one"]
+
+
+def test_queue_holds_several_follow_ups() -> None:
+    """Asserts a run interrupted repeatedly keeps every queued instruction."""
+    composer = Composer()
+    composer.mark_busy()
+    for index in range(5):
+        composer.submit(f"step {index}")
+
+    drained = [composer.take_next() for _ in range(5)]
+
+    assert drained == [f"step {index}" for index in range(5)]
