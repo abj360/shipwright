@@ -489,11 +489,15 @@ def test_reg_033_docker_kwargs_include_memory_ceiling(tmp_path) -> None:
 
 def test_reg_155_cleanup_deletes_nested_workdir(tmp_path) -> None:
     """REG-155: cleanup deletes nested workdir."""
-    from sandbox.policies.mounts import cleanup_workspace
-    target = tmp_path / 'shipwright-work' / 'a' / 'b'
-    target.mkdir(parents=True)
-    cleanup_workspace(str(target))
-    assert not target.exists()
+    from sandbox.policies.mounts import WORKSPACE_ROOT, cleanup_workspace
+    root = WORKSPACE_ROOT / 'reg-155'
+    target = root / 'a' / 'b'
+    target.mkdir(parents=True, exist_ok=True)
+    try:
+        cleanup_workspace(str(target))
+        assert not target.exists()
+    finally:
+        cleanup_workspace(str(root))
 
 def test_reg_011_tmp_tmpfs_is_noexec() -> None:
     """REG-011: /tmp mounts noexec so dropped binaries cannot run."""
@@ -574,8 +578,9 @@ def test_reg_025_egress_network_name_stable(tmp_path) -> None:
 
 def test_reg_156_volume_map_keyed_by_source(tmp_path) -> None:
     """REG-156: volume map keyed by source."""
-    vols = to_docker_volumes(build_mounts('/tmp/shipwright-work/t'))
-    assert list(vols.keys())[0].startswith('/tmp/shipwright-work')
+    mounts = build_mounts('/tmp/shipwright-work/t')
+    vols = to_docker_volumes(mounts)
+    assert list(vols.keys())[0] == mounts[0].source
 
 def test_reg_087_sandbox_config_image_default(tmp_path) -> None:
     """REG-087: sandbox config image default."""
