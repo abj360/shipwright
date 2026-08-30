@@ -28,7 +28,6 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 import docker
-
 from sandbox.audit_log import AuditLog
 from sandbox.policies.cgroup_limits import CgroupLimits
 from sandbox.policies.egress import EgressPolicy

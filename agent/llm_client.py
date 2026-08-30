@@ -10,9 +10,10 @@ Contains:
     ScriptedLLM: plays back a fixed queue of completions for tests
 """
 
-import httpx
 from dataclasses import dataclass
 from typing import Protocol
+
+import httpx
 
 DEFAULT_MODEL = "claude-haiku-4-5"
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"

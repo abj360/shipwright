@@ -22,14 +22,14 @@ Contains:
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
-from agent.circuit_breaker import CircuitBreaker, RunawayRunError
+from agent.circuit_breaker import CircuitBreaker
 from agent.cost_tracker import CostTracker
 from agent.llm_client import Completion, LLMClient, Message
-from agent.planner import Plan, RepoPlanner
+from agent.planner import RepoPlanner
 from agent.tool_dispatcher import ToolDispatcher
 
 logger = logging.getLogger(__name__)

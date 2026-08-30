@@ -14,9 +14,10 @@ Contains:
     EgressPolicy.scoped_for_task(): derives a per-task policy
 """
 
-import yaml
 from dataclasses import dataclass
 from pathlib import Path
+
+import yaml
 
 EGRESS_NETWORK = "shipwright-egress"
 

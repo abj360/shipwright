@@ -20,6 +20,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+
 @dataclass(frozen=True)
 class AuditEvent:
     """One tamper-evident sandbox audit record.
