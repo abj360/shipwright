@@ -9,9 +9,10 @@ Contains:
     test_blank_input_is_ignored(): whitespace never becomes an instruction
     test_going_idle_lets_the_next_one_send(): the queue stops after the run ends
     test_queue_holds_several_follow_ups(): a long queue keeps every instruction
+    test_placeholder_reflects_run_state(): the prompt warns that input will queue
 """
 
-from tui.screens.composer import QUEUED_NOTICE, SENT_NOTICE, Composer
+from tui.screens.composer import BUSY_PROMPT, IDLE_PROMPT, QUEUED_NOTICE, SENT_NOTICE, Composer
 
 
 def test_idle_submit_sends() -> None:
@@ -73,3 +74,12 @@ def test_queue_holds_several_follow_ups() -> None:
     drained = [composer.take_next() for _ in range(5)]
 
     assert drained == [f"step {index}" for index in range(5)]
+
+
+def test_placeholder_reflects_run_state() -> None:
+    """Asserts the placeholder tells the operator when input will be queued."""
+    composer = Composer()
+
+    assert composer.prompt_text() == IDLE_PROMPT
+    composer.mark_busy()
+    assert composer.prompt_text() == BUSY_PROMPT

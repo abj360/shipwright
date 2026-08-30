@@ -6,6 +6,7 @@ Contains:
     QUEUED_NOTICE / SENT_NOTICE: what the composer reports back on submit
     IDLE_PROMPT / BUSY_PROMPT: placeholder text per run state
     Composer: input that sends when idle and queues while a run is running
+    Composer.prompt_text(): the placeholder matching the current run state
     Composer.compose(): builds the input line
     Composer.submit(): sends or queues one typed instruction
     Composer.take_next(): pops the next queued instruction
@@ -63,9 +64,17 @@ class Composer(Static):
         self.is_busy = False
         self.pending: list[str] = []
 
+    def prompt_text(self) -> str:
+        """Returns the placeholder matching the current run state.
+
+        Returns:
+            prompt: Placeholder telling the operator whether input will queue.
+        """
+        return BUSY_PROMPT if self.is_busy else IDLE_PROMPT
+
     def compose(self) -> ComposeResult:
         """Builds the single-line instruction input."""
-        yield Input(placeholder=IDLE_PROMPT, id=INPUT_ID)
+        yield Input(placeholder=self.prompt_text(), id=INPUT_ID)
 
     def mark_busy(self) -> None:
         """Records that a run has started, so later input is queued."""
