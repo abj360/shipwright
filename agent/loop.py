@@ -188,7 +188,9 @@ class AgentLoop:
         """
         self._trim_transcript()
         messages = self._build_messages()
-        completion = self._client.complete(messages, self._build_system_prompt(), STEP_BUDGET_TOKENS)
+        completion = self._client.complete(
+            messages, self._build_system_prompt(), STEP_BUDGET_TOKENS
+        )
         self._record_cost(completion)
         step = self._parse_step(completion.text)
         if not step.tool_name and FINAL_ANSWER_PREFIX not in completion.text:

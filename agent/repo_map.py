@@ -98,7 +98,8 @@ class RepoMap:
             tree = ast.parse(path.read_text(errors="replace"))
         except SyntaxError:
             return "(unparseable)"
-        names = [node.name for node in tree.body if isinstance(node, ast.FunctionDef | ast.ClassDef)]
+        top_level = ast.FunctionDef | ast.ClassDef
+        names = [node.name for node in tree.body if isinstance(node, top_level)]
         if len(names) > OUTLINE_MAX_SYMBOLS:
             names = names[:OUTLINE_MAX_SYMBOLS]
         outline = ", ".join(names)
@@ -110,10 +111,8 @@ class RepoMap:
         """Writes the outline cache to .shipwright/cache.json for reuse."""
         cache_dir = self.root / CACHE_DIR_NAME
         cache_dir.mkdir(exist_ok=True)
-        payload = {
-            "version": CACHE_VERSION,
-            "entries": {k: {"mtime": e.mtime, "outline": e.outline} for k, e in self._cache.items()},
-        }
+        entries = {k: {"mtime": e.mtime, "outline": e.outline} for k, e in self._cache.items()}
+        payload = {"version": CACHE_VERSION, "entries": entries}
         (cache_dir / "cache.json").write_text(json.dumps(payload))
 
     def stats(self) -> dict[str, int]:

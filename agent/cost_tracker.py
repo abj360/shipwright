@@ -129,7 +129,8 @@ class CostTracker:
         for index, entry in enumerate(self._entries):
             price_in, price_out = PRICE_PER_MTOK.get(entry.model, FALLBACK_PRICE_PER_MTOK)
             cost = (entry.input_tokens * price_in + entry.output_tokens * price_out) / 1_000_000
-            lines.append(f"  [{index}] {entry.model}: {entry.input_tokens}+{entry.output_tokens} tok = ${cost:.4f}")
+            tokens = f"{entry.input_tokens}+{entry.output_tokens}"
+            lines.append(f"  [{index}] {entry.model}: {tokens} tok = ${cost:.4f}")
         lines.append(f"total: ${self.total_usd():.4f}")
         return "\n".join(lines)
 

@@ -32,7 +32,9 @@ from agent.repo_map import RepoMap
 logger = logging.getLogger(__name__)
 
 SKIPPED_DIRECTORIES = {".git", "node_modules", "__pycache__", ".venv", "dist", ".mypy_cache"}
-TEXT_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".json", ".toml", ".yaml", ".lock", ".yml", ".md"}  # .gitignore handled separately
+TEXT_EXTENSIONS = {
+    ".js", ".json", ".lock", ".md", ".py", ".toml", ".ts", ".tsx", ".yaml", ".yml"
+}
 MAX_FILE_BYTES = 200_000
 PLAN_SYSTEM_PROMPT = "You produce short, ordered, file-scoped implementation plans."
 MAX_PLAN_STEPS = 6

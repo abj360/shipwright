@@ -231,7 +231,9 @@ class SandboxHandle:
 class DockerRuntime:
     """Launches short-lived sandbox containers through the docker daemon."""
 
-    def __init__(self, client: DockerClientLike | None = None, audit: AuditLog | None = None) -> None:
+    def __init__(
+        self, client: DockerClientLike | None = None, audit: AuditLog | None = None
+    ) -> None:
         """Connects to the docker daemon.
 
         Args:

@@ -67,5 +67,6 @@ class CircuitBreaker:
             )
         if cost_usd >= self.max_cost_usd:
             raise RunawayRunError(
-                TripReason.COST, f"halted at ${cost_usd:.2f} spend (ceiling ${self.max_cost_usd:.2f})"
+                TripReason.COST,
+                f"halted at ${cost_usd:.2f} spend (ceiling ${self.max_cost_usd:.2f})",
             )
