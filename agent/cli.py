@@ -11,6 +11,7 @@ Contains:
     _emit_json_step(): prints one step as a JSON line
     _load_transcript(): loads prior steps from a transcript
     _build_planner(): builds a planner with a repo outline
+    EXIT_*: process exit statuses
 """
 
 import argparse
@@ -25,6 +26,10 @@ from agent.llm_client import HttpLLMClient
 from agent.loop import AgentConfig, AgentLoop, Step
 from agent.planner import RepoPlanner, RepoReader, build_outline
 from agent.repo_map import RepoMap
+
+EXIT_OK = 0
+EXIT_FAILED = 1
+EXIT_INFRA = 2
 
 def build_parser() -> argparse.ArgumentParser:
     """Builds the command-line argument parser.
@@ -122,10 +127,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"run flagged as runaway and halted: {exc}", file=sys.stderr)
         return EXIT_FAILED
 
-
-if __name__ == "__main__":
-    sys.exit(main())
-
 def _format_step(step: Step) -> str:
     """Renders one step as a single output line.
 
@@ -137,10 +138,6 @@ def _format_step(step: Step) -> str:
     """
     tool = step.tool_name or "final"
     return f"[step {step.index}] {tool}"
-
-EXIT_OK = 0
-EXIT_FAILED = 1
-EXIT_INFRA = 2
 
 def _emit_json_step(step: Step) -> None:
     """Prints one step as a JSON line for machine consumers.
@@ -181,3 +178,7 @@ def _build_planner(client: HttpLLMClient, repo_path: str) -> RepoPlanner:
     summary = RepoReader(Path(repo_path)).read()
     outline = build_outline(summary, RepoMap(Path(repo_path)))
     return RepoPlanner(client, outline)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
