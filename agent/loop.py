@@ -229,7 +229,11 @@ class AgentLoop:
             return Step(index=index, thought=cleaned)
         thought, _, rest = cleaned.partition("Action:")
         tool_name, _, arg_text = rest.partition("\n")
-        args = dict(pair.split("=", 1) for pair in arg_text.strip().split(";") if "=" in pair)
+        args = {}
+        for pair in arg_text.strip().split(";"):
+            key, sep, value = pair.partition("=")
+            if sep:
+                args[key.strip()] = value.strip()
         return Step(
             index=index, thought=thought.strip(), tool_name=tool_name.strip(), tool_args=args
         )
