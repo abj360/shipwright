@@ -18,9 +18,15 @@ PROC_SUB_BOMB_COMMAND = "bomb() { bomb | bomb & }; bomb"
 
 @dataclass(frozen=True)
 class ForkBombAttempt:
-    """Attempts to exhaust the sandbox PID space with a fork bomb."""
+    """Attempts to exhaust the sandbox PID space with a fork bomb.
+
+    Attributes:
+        name: Identifier the finding is reported under.
+        command: Fork-bomb variant this attempt runs.
+    """
 
     name: str = "fork_bomb"
+    command: str = FORK_BOMB_COMMAND
 
     def payload(self) -> str:
         """Returns the shell command run inside the sandbox.
@@ -28,7 +34,7 @@ class ForkBombAttempt:
         Returns:
             command: Fork-bomb shell payload.
         """
-        return FORK_BOMB_COMMAND
+        return self.command
 
     def is_contained(self, result: ExecResult) -> bool:
         """Decides whether the sandbox absorbed the attempt.
@@ -47,13 +53,11 @@ def fork_bomb_variants() -> list[ForkBombAttempt]:
     Returns:
         attempts: Fork-bomb attempts covering the variant space.
     """
-    variants = []
-    for name, command in {
-        "fork_bomb": FORK_BOMB_COMMAND,
-        "fork_bomb_sleep": SLEEP_BOMB_COMMAND,
-        "fork_bomb_proc_sub": PROC_SUB_BOMB_COMMAND,
-    }.items():
-        attempt = ForkBombAttempt(name=name)
-        object.__setattr__(attempt, "payload", lambda c=command: c)
-        variants.append(attempt)
-    return variants
+    return [
+        ForkBombAttempt(name=name, command=command)
+        for name, command in {
+            "fork_bomb": FORK_BOMB_COMMAND,
+            "fork_bomb_sleep": SLEEP_BOMB_COMMAND,
+            "fork_bomb_proc_sub": PROC_SUB_BOMB_COMMAND,
+        }.items()
+    ]
