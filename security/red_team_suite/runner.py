@@ -3,18 +3,37 @@
 runner.py --- executes red-team attempts inside real sandboxes and scores them
 
 Contains:
+    Attempt: one red-team payload and its containment verdict
     Finding: outcome of one red-team attempt
     RedTeamRunner: executes attempts inside real sandboxes
-    RedTeamRunner.run_all(): runs every attempt and collects findings
+    RedTeamRunner.run_suite(): runs every attempt and collects findings
     RedTeamRunner.report(): renders findings as a table
 """
 
 import logging
 from dataclasses import dataclass
+from typing import Protocol
 
-from sandbox.docker_runtime import DockerRuntime, SandboxConfig
+from sandbox.docker_runtime import DockerRuntime, ExecResult, SandboxConfig
 
 logger = logging.getLogger(__name__)
+
+class Attempt(Protocol):
+    """Describes one red-team payload and how it judges containment.
+
+    Attributes:
+        name: Identifier the finding is reported under.
+    """
+
+    name: str
+
+    def payload(self) -> str:
+        """Returns the shell command run inside the sandbox."""
+        ...
+
+    def is_contained(self, result: ExecResult) -> bool:
+        """Decides whether the sandbox absorbed the attempt."""
+        ...
 
 @dataclass(frozen=True)
 class Finding:
@@ -43,7 +62,7 @@ class RedTeamRunner:
         self._runtime = runtime
         self._config = config
 
-    def run_suite(self, attempts: list) -> list[Finding]:
+    def run_suite(self, attempts: list[Attempt]) -> list[Finding]:
         """Runs every attempt in its own sandbox and collects findings.
 
         Args:
@@ -52,12 +71,12 @@ class RedTeamRunner:
         Returns:
             findings: One finding per attempt.
         """
-        findings = []
+        findings: list[Finding] = []
         for attempt in attempts:
             findings.append(self._run_one(attempt))
         return findings
 
-    def _run_one(self, attempt) -> Finding:
+    def _run_one(self, attempt: Attempt) -> Finding:
         """Runs one attempt and judges containment.
 
         Args:
@@ -87,7 +106,7 @@ class RedTeamRunner:
         Returns:
             report: One line per attempt plus a summary line.
         """
-        lines = []
+        lines: list[str] = []
         for finding in findings:
             verdict = "CONTAINED" if finding.contained else "BREAKOUT"
             lines.append(f"{verdict:9s} {finding.attempt}")
