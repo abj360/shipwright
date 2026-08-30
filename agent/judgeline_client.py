@@ -7,7 +7,7 @@ Contains:
     JudgelineClient: calls the judgeline scoring service
     JudgelineClient.score_diff(): scores one PR diff, fail-closed
     JudgelineClient.is_ready(): decides readiness against the threshold
-    JudgelineClient.worst_score(): lowest batch score, None as zero
+    JudgelineClient.worst_score(): lowest batch score, None and empty as zero
     JudgelineClient.score_diffs(): scores several diffs
     JudgelineClient._post_with_retry(): retries 5xx, never timeouts
     format_score_comment(): renders a verdict as Markdown
@@ -112,9 +112,9 @@ class JudgelineClient:
             results: Batch of scores from score_diffs.
 
         Returns:
-            score: Minimum score; a failed-closed entry drags it to zero.
+            score: Minimum score; an empty batch and a failed-closed entry both score zero.
         """
-        return min((r.score if r else 0.0) for r in results)
+        return min((r.score if r else 0.0) for r in results) if results else 0.0
 
     def score_diffs(self, diffs: list[str]) -> list[ScoreResult | None]:
         """Scores several diffs, one per commit range of a larger PR.
@@ -152,8 +152,10 @@ class JudgelineClient:
             except httpx.HTTPError as exc:
                 logger.error("judgeline request failed: %s", exc)
                 return None
-            if response.status_code < 500:
-                response.raise_for_status()
+            if 400 <= response.status_code < 500:
+                logger.error("judgeline rejected the diff with %d", response.status_code)
+                return None
+            if response.status_code < 400:
                 return response
             time.sleep(2**attempt)
         logger.error("judgeline kept returning 5xx; failing closed")
