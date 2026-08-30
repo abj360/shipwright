@@ -357,7 +357,7 @@ def test_write_file_then_read_back(tmp_path) -> None:
         "think\nAction: write_file\npath=out.txt; content=abc",
         "FINAL: wrote",
     ]
-    result = AgentLoop(ScriptedLLM(responses), config).run()
+    AgentLoop(ScriptedLLM(responses), config).run()
     assert (tmp_path / "out.txt").read_text() == "abc"
 
 
@@ -766,7 +766,7 @@ def test_loop_case_long_thought() -> None:
     result = AgentLoop(
         ScriptedLLM(
             [
-                "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nAction: list_dir\npath=.",
+                "x" * 400 + "\nAction: list_dir\npath=.",
                 "FINAL: ok",
             ]
         ),

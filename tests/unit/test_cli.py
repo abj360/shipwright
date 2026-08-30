@@ -190,7 +190,7 @@ def test_cli_case_json_step_fields(capsys: pytest.CaptureFixture[str], tmp_path)
 
     loop = make_loop(["t\nAction: list_dir\npath=.", "FINAL: ok"])
     assert _run_headless(loop, as_json=True) == EXIT_OK
-    line = next(l for l in capsys.readouterr().out.splitlines() if l.startswith("{"))
+    line = next(out for out in capsys.readouterr().out.splitlines() if out.startswith("{"))
     assert "index" in json.loads(line)
 
 
@@ -296,7 +296,7 @@ def test_cli_mx_0_0() -> None:
 def test_flag_plan_mode_on() -> None:
     """Verifies parsing: plan mode on."""
     args = build_parser().parse_args(["--task", "a", "--plan-mode"])
-    assert args.plan_mode == True
+    assert args.plan_mode
 
 
 def test_flag_repo_path_parses() -> None:
@@ -328,8 +328,7 @@ def test_cli_mx2_version() -> None:
         with pytest.raises(SystemExit):
             build_parser().parse_args(["--version"])
     else:
-        args = build_parser().parse_args(["--version"])
-        assert True
+        build_parser().parse_args(["--version"])
 
 
 def test_missing_final_marker_exits_failed(capsys: pytest.CaptureFixture[str]) -> None:
@@ -342,7 +341,7 @@ def test_missing_final_marker_exits_failed(capsys: pytest.CaptureFixture[str]) -
 def test_flag_json_on() -> None:
     """Verifies parsing: json on."""
     args = build_parser().parse_args(["--task", "a", "--json"])
-    assert args.json == True
+    assert args.json
 
 
 def test_cli_mx_0_1() -> None:
@@ -489,7 +488,7 @@ def test_cli_mx2_1_2() -> None:
 def test_flag_headless_on() -> None:
     """Verifies parsing: headless on."""
     args = build_parser().parse_args(["--task", "a", "--headless"])
-    assert args.headless == True
+    assert args.headless
 
 
 def test_cli_mx2_4_1() -> None:
@@ -638,7 +637,7 @@ def test_cli_mx2_4_0() -> None:
 def test_flag_headless_off_by_default() -> None:
     """Verifies parsing: headless off by default."""
     args = build_parser().parse_args(["--task", "a"])
-    assert args.headless == False
+    assert not args.headless
 
 
 def test_cli_mx_2_0() -> None:
