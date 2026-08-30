@@ -33,7 +33,7 @@ def test_headless_prints_step_lines(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_exit_code_nonzero_without_final_answer(capsys: pytest.CaptureFixture[str]) -> None:
     """Verifies a run with no final answer exits non-zero."""
-    loop = make_loop(["think\nAction: list_dir\npath=.", "think\nAction: list_dir\npath=."])
+    loop = make_loop(["", ""])
     assert _run_headless(loop) != EXIT_OK
     capsys.readouterr()
 
