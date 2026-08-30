@@ -60,7 +60,7 @@ class Composer(Static):
             repo_map: Outline cache to refresh before handing on an instruction.
         """
         super().__init__()
-        self.repo_map = repo_map
+        self.repo_map: RepoMap | None = repo_map
         self.is_busy = False
         self.pending: list[str] = []
 
