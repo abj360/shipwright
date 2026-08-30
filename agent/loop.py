@@ -298,6 +298,7 @@ class AgentLoop:
             logger.warning("plan_execute mode without a planner; falling back to react")
             self.config.mode = "react"
             return self.run()
+        started = time.time()
         plan = self.config.planner.build_plan(self.config.task)
         if not plan.steps:
             logger.warning("planner returned no steps; falling back to react")
@@ -315,7 +316,13 @@ class AgentLoop:
             plan_step.status = "done" if not output.startswith("error:") else "failed"
         final = Step(index=len(self._transcript), thought=f"{FINAL_ANSWER_PREFIX} plan complete")
         self._transcript.append(final)
-        return RunResult(final_answer=self._extract_final(final), steps=self._transcript)
+        return RunResult(
+            final_answer=self._extract_final(final),
+            steps=self._transcript,
+            started_at=started,
+            ended_at=time.time(),
+            total_cost_usd=self._cost_usd,
+        )
 
     @property
     def transcript(self) -> list[Step]:
