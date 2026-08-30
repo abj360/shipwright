@@ -102,6 +102,9 @@ def main(argv: list[str] | None = None) -> int:
         exit_code: Process exit status.
     """
     args = build_parser().parse_args(argv)
+    if not args.task and not args.issue_url:
+        print("one of --task or --issue-url is required", file=sys.stderr)
+        return EXIT_INFRA
     task = args.task or f"resolve issue at {args.issue_url}"
     config = AgentConfig(repo_path=args.repo, task=task, cost_tracker=CostTracker())
     config.breaker = CircuitBreaker(max_iterations=args.max_steps, max_cost_usd=args.max_cost)
