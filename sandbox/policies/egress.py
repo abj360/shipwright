@@ -4,8 +4,10 @@ egress.py --- default-deny network egress policy with an explicit allowlist
 
 Contains:
     EgressPolicy: network egress allowlist for sandboxes
+    EgressPolicy.__post_init__(): freezes the allowlist as a tuple
     EgressPolicy.load(): loads the allowlist from YAML
     EgressPolicy.allows(): decides whether a host is permitted
+    EgressPolicy.network_name(): names the egress-controlled docker network
     EgressPolicy.render_nft_rules(): renders the nftables ruleset
     EgressPolicy.validate(): checks for authoring mistakes
     EgressPolicy.describe(): one-line policy summary
@@ -27,6 +29,10 @@ class EgressPolicy:
     """
 
     allowed_hosts: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        """Freezes the allowlist as a tuple so callers cannot mutate it later."""
+        object.__setattr__(self, "allowed_hosts", tuple(self.allowed_hosts))
 
     @classmethod
     def load(cls, path: Path) -> "EgressPolicy":
