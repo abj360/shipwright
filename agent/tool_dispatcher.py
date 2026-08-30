@@ -63,7 +63,7 @@ class ToolDispatcher:
         Args:
             repo_root: Checkout all file tools are confined to.
         """
-        self.repo_root = repo_root
+        self.repo_root = repo_root.resolve()
         self._tools: dict[str, Callable[[dict[str, str]], str]] = {
             "read_file": self._read_file,
             "list_dir": self._list_dir,
@@ -161,7 +161,7 @@ class ToolDispatcher:
         """
         # resolve() also collapses ".." segments, which is what blocks escapes here
         resolved = (self.repo_root / rel_path).resolve()
-        if self.repo_root not in resolved.parents and resolved != self.repo_root:
+        if not resolved.is_relative_to(self.repo_root):
             raise ToolError(f"path escapes repo root: {rel_path}")
         return resolved
 
