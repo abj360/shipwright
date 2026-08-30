@@ -7,6 +7,7 @@ Contains:
     WARNING_PREFIX: marker put in front of a failed step's summary
     TARGET_ARGS: tool arguments that name what a step acted on
     step_target(): picks the argument naming what a step acted on
+    shorten_target(): trims a target through the CLI's own truncation helper
     StepRow: one activity row that opens to reveal its output
     StepRow.has_failed(): whether the step reported an error
     StepRow.summary_line(): renders the collapsed one-line summary
@@ -19,6 +20,7 @@ from textual.binding import Binding
 from textual.reactive import reactive
 from textual.widgets import Static
 
+from agent.cli import _shorten
 from agent.loop import TOOL_ERROR_PREFIX
 from tui.labels import label_for
 from tui.theme import Palette, palette_for
@@ -43,6 +45,21 @@ def step_target(tool_args: dict[str, str]) -> str:
         if value:
             return value
     return ""
+
+
+def shorten_target(target: str) -> str:
+    """Trims a target for display using the CLI's own truncation helper.
+
+    The terminal and the headless CLI therefore elide long arguments
+    identically, instead of each having its own idea of "too long".
+
+    Args:
+        target: Argument value naming what the step acted on.
+
+    Returns:
+        text: The value, truncated the same way the CLI truncates it.
+    """
+    return _shorten(target)
 
 
 class StepRow(Static):
@@ -101,7 +118,7 @@ class StepRow(Static):
             line: Disclosure marker, activity label, and what it acted on.
         """
         marker = EXPANDED_MARKER if self.is_expanded else COLLAPSED_MARKER
-        target = step_target(self.tool_args)
+        target = shorten_target(step_target(self.tool_args))
         label = label_for(self.tool_name)
         prefix = f"{WARNING_PREFIX} " if self.has_failed() else ""
         return f"{marker} {prefix}{label} {target}".rstrip()

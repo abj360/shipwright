@@ -9,6 +9,7 @@ Contains:
     test_toggle_opens_and_closes(): toggling flips the disclosure state
     test_target_prefers_path_then_command(): the target argument is chosen in order
     test_row_with_no_target_still_renders(): a no-argument tool has a clean summary
+    test_long_target_is_truncated_like_the_cli(): truncation is shared with the CLI
 """
 
 from tui.widgets.step_row import COLLAPSED_MARKER, EXPANDED_MARKER, StepRow, step_target
@@ -66,3 +67,14 @@ def test_row_with_no_target_still_renders() -> None:
 
     assert summary == f"{COLLAPSED_MARKER} Diffed"
     assert not summary.endswith(" ")
+
+
+def test_long_target_is_truncated_like_the_cli() -> None:
+    """Asserts a long argument is elided exactly as the headless CLI elides it."""
+    from agent.cli import _shorten
+
+    long_command = "pytest " + "a" * 200
+    row = StepRow("run_shell", {"command": long_command}, "ok")
+
+    assert _shorten(long_command) in row.summary_line()
+    assert long_command not in row.summary_line()
