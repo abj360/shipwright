@@ -19,7 +19,9 @@ Contains:
 
 import logging
 import re
+import shlex
 import subprocess
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -91,6 +93,30 @@ def _comparable(line: str) -> str:
     """
     unescaped = re.sub(r"\\(?=[^\w\s])", "", line)
     return " ".join(unescaped.split())
+
+
+def _unfence(text: str) -> str:
+    """Strips a Markdown code fence a model wrapped around file content.
+
+    Models routinely answer with the body inside ```lang ... ```, and writing
+    those delimiters into a source file leaves it unparseable. Only a fence
+    enclosing the whole body is removed, so content that merely contains a
+    fence is left alone.
+
+    Args:
+        text: Content as the model supplied it.
+
+    Returns:
+        body: The content with an enclosing fence removed.
+    """
+    lines = text.split("\n")
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if len(lines) >= 2 and lines[0].lstrip().startswith("```") and lines[-1].strip() == "```":
+        return "\n".join(lines[1:-1])
+    return text
 
 
 def _numbered(lines: list[str]) -> str:
@@ -192,6 +218,11 @@ class ToolDispatcher:
         the original line's indentation, so a model need not reproduce leading
         spaces exactly. An ambiguous match is refused rather than guessed at.
 
+        Arguments arrive on one line, so a replacement spanning several lines
+        can only be written with escapes; \\n and \\t in "replace" are decoded
+        rather than written through literally. Continuation lines carry their
+        own indentation, since only the first inherits the original line's.
+
         Args:
             args: Tool arguments; expects "path", "find", and "replace".
 
@@ -215,7 +246,9 @@ class ToolDispatcher:
         original = lines[index]
         indent = original[: len(original) - len(original.lstrip())]
         ending = "\n" if original.endswith("\n") else ""
-        lines[index] = f"{indent}{args['replace'].strip()}{ending}"
+        segments = args["replace"].replace("\\t", "\t").split("\\n")
+        rebuilt = [f"{indent}{segments[0].strip()}", *(part.rstrip() for part in segments[1:])]
+        lines[index] = "\n".join(rebuilt) + ending
         target.write_text("".join(lines))
         return f"replaced line {index + 1} of {args['path']}"
 
@@ -332,6 +365,10 @@ class ToolDispatcher:
     def _run_tests(self, args: dict[str, str]) -> str:
         """Runs the repo's test suite and reports the tail of the output.
 
+        Invokes the interpreter running the agent rather than a bare "python",
+        which is absent on modern macOS and on Debian without python-is-python3
+        and is not necessarily the interpreter pytest is installed under.
+
         Args:
             args: Tool arguments; accepts an optional "selector" entry.
 
@@ -339,7 +376,7 @@ class ToolDispatcher:
             output: Last lines of the test runner output.
         """
         selector = args.get("selector", "")
-        command = f"python -m pytest {selector} -q".strip()
+        command = f"{shlex.quote(sys.executable)} -m pytest {selector} -q".strip()
         proc = subprocess.run(
             command,
             shell=True,
@@ -362,6 +399,6 @@ class ToolDispatcher:
         """
         target = self._resolve(args["path"])
         target.parent.mkdir(parents=True, exist_ok=True)
-        content = args.get("content", "")
+        content = _unfence(args.get("content", ""))
         target.write_text(content)
         return f"wrote {len(content)} bytes to {args['path']}"

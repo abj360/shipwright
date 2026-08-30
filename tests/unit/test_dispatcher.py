@@ -549,3 +549,80 @@ def test_edit_file_shows_the_file_when_nothing_matches(tmp_path: Path) -> None:
     )
     assert "1: alpha = 1" in error
     assert "2: beta = 2" in error
+
+
+def test_run_tests_uses_the_running_interpreter(tmp_path: Path) -> None:
+    """Verifies run_tests invokes sys.executable, not a bare "python"."""
+    (tmp_path / "test_ok.py").write_text("def test_ok():\n    assert True\n")
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {})
+    assert result.ok
+    assert "command not found" not in result.output
+
+
+def test_run_tests_reports_a_failing_suite(tmp_path: Path) -> None:
+    """Verifies a failing suite reaches the agent as output rather than silence."""
+    (tmp_path / "test_bad.py").write_text("def test_bad():\n    assert False\n")
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {})
+    assert "1 failed" in result.output
+
+
+def test_edit_file_decodes_a_multi_line_replacement(tmp_path: Path) -> None:
+    """Verifies an escaped newline becomes a real one, not a literal backslash-n."""
+    target = tmp_path / "invoice.py"
+    target.write_text("def f(percent):\n    return percent / 100\n")
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch(
+        "edit_file",
+        {
+            "path": "invoice.py",
+            "find": "return percent / 100",
+            "replace": (
+                "if percent < 0:\\n        raise ValueError('negative')\\n    return percent / 100"
+            ),
+        },
+    )
+    assert result.ok
+    assert "\\n" not in target.read_text()
+    assert target.read_text() == (
+        "def f(percent):\n"
+        "    if percent < 0:\n"
+        "        raise ValueError('negative')\n"
+        "    return percent / 100\n"
+    )
+
+
+def test_edit_file_keeps_a_single_line_replacement_intact(tmp_path: Path) -> None:
+    """Verifies decoding escapes leaves an ordinary replacement unchanged."""
+    target = tmp_path / "a.py"
+    target.write_text("    value = 1\n")
+    dispatcher = ToolDispatcher(tmp_path)
+    assert dispatcher.dispatch(
+        "edit_file", {"path": "a.py", "find": "value = 1", "replace": "value = 2"}
+    ).ok
+    assert target.read_text() == "    value = 2\n"
+
+
+def test_write_file_strips_an_enclosing_code_fence(tmp_path: Path) -> None:
+    """Verifies a fenced answer is written as code, not as Markdown."""
+    dispatcher = ToolDispatcher(tmp_path)
+    fenced = "```python\ndef f():\n    return 1\n```"
+    assert dispatcher.dispatch("write_file", {"path": "a.py", "content": fenced}).ok
+    assert (tmp_path / "a.py").read_text() == "def f():\n    return 1"
+
+
+def test_write_file_keeps_a_fence_inside_the_body(tmp_path: Path) -> None:
+    """Verifies only an enclosing fence is stripped, not one in the content."""
+    dispatcher = ToolDispatcher(tmp_path)
+    body = 'text = """\n```\n"""\n'
+    assert dispatcher.dispatch("write_file", {"path": "a.py", "content": body}).ok
+    assert (tmp_path / "a.py").read_text() == body
+
+
+def test_write_file_leaves_unfenced_content_untouched(tmp_path: Path) -> None:
+    """Verifies ordinary content is written byte for byte."""
+    dispatcher = ToolDispatcher(tmp_path)
+    body = "def f():\n    return 1\n"
+    assert dispatcher.dispatch("write_file", {"path": "a.py", "content": body}).ok
+    assert (tmp_path / "a.py").read_text() == body
