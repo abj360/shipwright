@@ -11,14 +11,14 @@ Contains:
 
 import logging
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_ITERATIONS = 75
 DEFAULT_MAX_COST_USD = 3.0
 
-class TripReason(str, Enum):
+class TripReason(StrEnum):
     """Identifies which limit tripped the breaker."""
 
     ITERATIONS = "iterations"
