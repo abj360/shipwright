@@ -33,7 +33,7 @@ def test_path_escape_is_rejected(tmp_path) -> None:
 def test_disp_mx_5_1(tmp_path) -> None:
     """Verifies dispatch: git_diff fails on null path."""
     dispatcher = ToolDispatcher(tmp_path)
-    result = dispatcher.dispatch("git_diff", {"path": null})
+    result = dispatcher.dispatch("git_diff", {"path": None})
     assert result.ok is False
 
 def test_disp_mx2_extra2(tmp_path) -> None:
@@ -51,7 +51,7 @@ def test_run_shell_rejects_empty_command(tmp_path) -> None:
 def test_disp_mx_2_1(tmp_path) -> None:
     """Verifies dispatch: run_shell fails on null path."""
     dispatcher = ToolDispatcher(tmp_path)
-    result = dispatcher.dispatch("run_shell", {"path": null})
+    result = dispatcher.dispatch("run_shell", {"path": None})
     assert result.ok is False
 
 def test_disp_mx2_extra9(tmp_path) -> None:
@@ -66,7 +66,7 @@ def test_disp_mx2_12(tmp_path) -> None:
     result = dispatcher.dispatch("run_tests", {"selector": "-k x"})
     assert result.ok is True
 
-def test_disp_case_output_truncated() -> None:
+def test_disp_case_output_truncated(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: output is truncated to budget."""
     (tmp_path / 'big.txt').write_text('z' * 9000)
     dispatcher = ToolDispatcher(tmp_path)
@@ -80,7 +80,7 @@ def test_missing_required_arg_is_an_error() -> None:
     assert not result.ok
     assert "missing args" in result.error
 
-def test_dispatch_list_dir_defaults_to_root() -> None:
+def test_dispatch_list_dir_defaults_to_root(tmp_path: Path) -> None:
     """Verifies dispatch behavior: defaults to root."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {})
@@ -116,31 +116,31 @@ def test_disp_mx_final(tmp_path) -> None:
     result = dispatcher.dispatch("read_file", {"path": "x"})
     assert result.ok is False
 
-def test_dispatch_list_dir_missing_dir() -> None:
+def test_dispatch_list_dir_missing_dir(tmp_path: Path) -> None:
     """Verifies dispatch behavior: missing dir."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {"path": "missing-dir"})
     assert result.ok is False
 
-def test_disp_case_resolve_dotdot() -> None:
+def test_disp_case_resolve_dotdot(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: dotdot escape rejected."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('read_file', {'path': 'a/../../etc/passwd'})
     assert not result.ok
 
-def test_disp_case_error_is_toolresult() -> None:
+def test_disp_case_error_is_toolresult(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: errors carry a message."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('read_file', {})
     assert result.error
 
-def test_dispatch_read_file_missing_path() -> None:
+def test_dispatch_read_file_missing_path(tmp_path: Path) -> None:
     """Verifies dispatch behavior: missing path."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {})
     assert result.ok is False
 
-def test_disp_case_shell_stderr() -> None:
+def test_disp_case_shell_stderr(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: stderr is captured."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('run_shell', {'command': 'echo e >&2'})
@@ -161,10 +161,10 @@ def test_disp_mx2_5(tmp_path) -> None:
 def test_disp_mx_1_1(tmp_path) -> None:
     """Verifies dispatch: read_file fails on null path."""
     dispatcher = ToolDispatcher(tmp_path)
-    result = dispatcher.dispatch("read_file", {"path": null})
+    result = dispatcher.dispatch("read_file", {"path": None})
     assert result.ok is False
 
-def test_dispatch_write_file_missing_content_ok() -> None:
+def test_dispatch_write_file_missing_content_ok(tmp_path: Path) -> None:
     """Verifies dispatch behavior: missing content ok?."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("write_file", {"path": "x.txt"})
@@ -185,10 +185,10 @@ def test_disp_mx2_3(tmp_path) -> None:
 def test_disp_mx_0_1(tmp_path) -> None:
     """Verifies dispatch: list_dir fails on null path."""
     dispatcher = ToolDispatcher(tmp_path)
-    result = dispatcher.dispatch("list_dir", {"path": null})
+    result = dispatcher.dispatch("list_dir", {"path": None})
     assert result.ok is False
 
-def test_disp_case_shell_cwd() -> None:
+def test_disp_case_shell_cwd(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: shell runs in the checkout."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('run_shell', {'command': 'pwd'})
@@ -203,7 +203,7 @@ def test_disp_mx2_extra4(tmp_path) -> None:
 def test_disp_mx_4_1(tmp_path) -> None:
     """Verifies dispatch: run_tests fails on null path."""
     dispatcher = ToolDispatcher(tmp_path)
-    result = dispatcher.dispatch("run_tests", {"path": null})
+    result = dispatcher.dispatch("run_tests", {"path": None})
     assert result.ok is False
 
 def test_disp_mx2_4(tmp_path) -> None:
@@ -218,7 +218,7 @@ def test_disp_mx2_extra7(tmp_path) -> None:
     result = dispatcher.dispatch("list_dir", {"path": "."})
     assert result.ok is True
 
-def test_disp_case_resolve_nested() -> None:
+def test_disp_case_resolve_nested(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: nested paths resolve."""
     dispatcher = ToolDispatcher(tmp_path)
     resolved = dispatcher._resolve('a/b/c')
@@ -243,7 +243,7 @@ def test_write_file_creates_parents(tmp_path) -> None:
     assert result.ok
     assert (tmp_path / "x" / "y" / "z.txt").read_text() == "hi"
 
-def test_dispatch_run_tests_no_selector_allowed() -> None:
+def test_dispatch_run_tests_no_selector_allowed(tmp_path: Path) -> None:
     """Verifies dispatch behavior: no selector allowed."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_tests", {})
@@ -255,7 +255,7 @@ def test_disp_mx_0_0(tmp_path) -> None:
     result = dispatcher.dispatch("list_dir", {})
     assert result.ok is False
 
-def test_dispatch_run_shell_missing_command() -> None:
+def test_dispatch_run_shell_missing_command(tmp_path: Path) -> None:
     """Verifies dispatch behavior: missing command."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_shell", {})
@@ -292,13 +292,13 @@ def test_disp_mx2_extra6(tmp_path) -> None:
     result = dispatcher.dispatch("list_dir", {"path": "."})
     assert result.ok is True
 
-def test_disp_case_resolve_root() -> None:
+def test_disp_case_resolve_root(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: dot resolves to the root."""
     dispatcher = ToolDispatcher(tmp_path)
     resolved = dispatcher._resolve('.')
     assert resolved == tmp_path.resolve()
 
-def test_disp_case_read_missing_file() -> None:
+def test_disp_case_read_missing_file(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: reading a missing file errors."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch('read_file', {'path': 'nope.txt'})
@@ -322,13 +322,13 @@ def test_disp_mx2_14(tmp_path) -> None:
     result = dispatcher.dispatch("apply_patch", {"patch": ""})
     assert result.ok is False
 
-def test_dispatch_git_diff_no_path_allowed() -> None:
+def test_dispatch_git_diff_no_path_allowed(tmp_path: Path) -> None:
     """Verifies dispatch behavior: no path allowed."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("git_diff", {})
     assert result.ok is True
 
-def test_dispatch_read_file_empty_path() -> None:
+def test_dispatch_read_file_empty_path(tmp_path: Path) -> None:
     """Verifies dispatch behavior: empty path."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("read_file", {"path": ""})
@@ -358,7 +358,7 @@ def test_disp_mx_2_0(tmp_path) -> None:
     result = dispatcher.dispatch("run_shell", {})
     assert result.ok is False
 
-def test_disp_case_write_overwrite() -> None:
+def test_disp_case_write_overwrite(tmp_path: Path) -> None:
     """Verifies dispatcher behavior: write_file overwrites."""
     (tmp_path / 'x.txt').write_text('old')
     dispatcher = ToolDispatcher(tmp_path)
@@ -374,5 +374,5 @@ def test_disp_mx_4_0(tmp_path) -> None:
 def test_disp_mx_3_1(tmp_path) -> None:
     """Verifies dispatch: write_file fails on null path."""
     dispatcher = ToolDispatcher(tmp_path)
-    result = dispatcher.dispatch("write_file", {"path": null})
+    result = dispatcher.dispatch("write_file", {"path": None})
     assert result.ok is False

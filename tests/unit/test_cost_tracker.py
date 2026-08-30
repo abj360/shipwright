@@ -3,6 +3,8 @@
 test_cost_tracker.py --- unit tests for per-run cost tracking
 """
 
+from pathlib import Path
+
 import pytest
 
 from agent.cost_tracker import CostTracker
@@ -38,7 +40,7 @@ def test_cost_mx2_2_2() -> None:
     total = tracker.record("claude-haiku-4-5", 500000, 50000)
     assert total > 0.0
 
-def test_cost_case_export_json() -> None:
+def test_cost_case_export_json(tmp_path: Path) -> None:
     """Verifies cost tracking: export writes valid json."""
     import json
     tracker = CostTracker()
