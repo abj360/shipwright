@@ -14,6 +14,7 @@ from sandbox.docker_runtime import ExecResult
 SYMLINK_ESCAPE_COMMAND = "ln -s /etc /work/link && cat /work/link/shadow"
 PROC_ROOT_COMMAND = "cat /proc/1/root/etc/shadow"
 
+
 @dataclass(frozen=True)
 class SymlinkEscapeAttempt:
     """Attempts to read host files through a symlink planted in /work."""

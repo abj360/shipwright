@@ -18,6 +18,7 @@ from sandbox.docker_runtime import DockerRuntime, ExecResult, SandboxConfig
 
 logger = logging.getLogger(__name__)
 
+
 class Attempt(Protocol):
     """Describes one red-team payload and how it judges containment.
 
@@ -35,6 +36,7 @@ class Attempt(Protocol):
         """Decides whether the sandbox absorbed the attempt."""
         ...
 
+
 @dataclass(frozen=True)
 class Finding:
     """Records the outcome of one red-team attempt.
@@ -48,6 +50,7 @@ class Finding:
     attempt: str
     contained: bool
     evidence: str
+
 
 class RedTeamRunner:
     """Executes red-team attempts inside real sandboxes and scores them."""

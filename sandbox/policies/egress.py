@@ -21,6 +21,7 @@ import yaml
 
 EGRESS_NETWORK = "shipwright-egress"
 
+
 @dataclass(frozen=True)
 class EgressPolicy:
     """Network egress allowlist enforced on sandbox containers.

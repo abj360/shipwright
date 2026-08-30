@@ -16,6 +16,7 @@ FORK_BOMB_COMMAND = ":(){ :|:& };:"
 SLEEP_BOMB_COMMAND = "while true; do sleep 0.1 & done"
 PROC_SUB_BOMB_COMMAND = "bomb() { bomb | bomb & }; bomb"
 
+
 @dataclass(frozen=True)
 class ForkBombAttempt:
     """Attempts to exhaust the sandbox PID space with a fork bomb.
@@ -46,6 +47,7 @@ class ForkBombAttempt:
             contained: True when the payload failed to destabilize the sandbox.
         """
         return result.exit_code != 0
+
 
 def fork_bomb_variants() -> list[ForkBombAttempt]:
     """Builds one attempt per known fork-bomb variant.

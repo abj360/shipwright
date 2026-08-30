@@ -22,6 +22,7 @@ REQUEST_TIMEOUT_S = 90
 # Pin the API version: unversioned calls broke on us once during a provider rollout.
 API_VERSION_HEADER = "2023-06-01"
 
+
 @dataclass(frozen=True)
 class Message:
     """Represents a single chat message exchanged with the model.
@@ -33,6 +34,7 @@ class Message:
 
     role: str
     content: str
+
 
 @dataclass(frozen=True)
 class Completion:
@@ -49,6 +51,7 @@ class Completion:
     model: str
     input_tokens: int
     output_tokens: int
+
 
 class LLMClient(Protocol):
     """Describes the minimal completion interface the agent loop depends on."""
@@ -70,6 +73,7 @@ class LLMClient(Protocol):
             completion: Model response with token usage attached.
         """
         ...
+
 
 class HttpLLMClient:
     """Calls the Anthropic messages API over HTTP.
@@ -130,6 +134,7 @@ class HttpLLMClient:
             input_tokens=int(usage.get("input_tokens", 0)),
             output_tokens=int(usage.get("output_tokens", 0)),
         )
+
 
 class ScriptedLLM:
     """Plays back a fixed queue of completions for deterministic tests.

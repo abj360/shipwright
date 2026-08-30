@@ -35,6 +35,7 @@ class AuditEvent:
     detail: str
     ts: float
 
+
 class AuditLog:
     """Appends sandbox audit events to a hash-chained JSONL log."""
 
@@ -92,6 +93,7 @@ class AuditLog:
         """
         return hashlib.sha256((self._prev_hash + payload).encode()).hexdigest()
 
+
 RETENTION_DAYS = 14
 
 
@@ -114,6 +116,7 @@ def drop_expired(base_dir: Path, now: float | None = None) -> int:
             dropped += 1
     return dropped
 
+
 EVENT_CONTAINER_STARTED = "container_started"
 EVENT_EXEC = "exec"
 EVENT_EGRESS_DENIED = "egress_denied"
@@ -132,6 +135,7 @@ def rotate_if_needed(path: Path) -> None:
     if path.exists() and path.stat().st_size > MAX_LOG_BYTES:
         rotated = path.with_suffix(f".{int(time.time())}.jsonl")
         os.rename(path, rotated)
+
 
 def verify_chain(path: Path) -> bool:
     """Replays the log and verifies every hash-chain link.

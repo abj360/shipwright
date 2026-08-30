@@ -34,6 +34,7 @@ REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
     "apply_patch": ("patch",),
 }
 
+
 @dataclass(frozen=True)
 class ToolResult:
     """Carries the outcome of one tool invocation.
@@ -48,8 +49,10 @@ class ToolResult:
     output: str
     error: str = ""
 
+
 class ToolError(Exception):
     """Raised when a tool call is malformed or the tool fails."""
+
 
 class ToolDispatcher:
     """Routes parsed tool calls to their implementations with validation.
@@ -93,9 +96,7 @@ class ToolDispatcher:
             return ToolResult(ok=False, output="", error=f"missing args: {', '.join(missing)}")
         untyped = sorted(key for key, value in args.items() if not isinstance(value, str))
         if untyped:
-            return ToolResult(
-                ok=False, output="", error=f"non-string args: {', '.join(untyped)}"
-            )
+            return ToolResult(ok=False, output="", error=f"non-string args: {', '.join(untyped)}")
         try:
             output = tool(args)
         except ToolError as exc:

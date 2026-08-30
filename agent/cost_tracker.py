@@ -31,6 +31,7 @@ FALLBACK_PRICE_PER_MTOK = (3.0, 15.0)
 DEFAULT_BUDGET_USD = 5.0
 WARN_THRESHOLD = 0.9
 
+
 @dataclass(frozen=True)
 class Usage:
     """Records token usage of one completion.
@@ -44,6 +45,7 @@ class Usage:
     model: str
     input_tokens: int
     output_tokens: int
+
 
 class CostTracker:
     """Accumulates per-run model spend.

@@ -40,6 +40,7 @@ CONTAINER_LABEL = "shipwright.task"
 STOP_TIMEOUT_S = 7
 SANDBOX_RUNTIME = "runsc"
 
+
 class SandboxContainer(Protocol):
     """Describes the container surface the sandbox runtime depends on.
 
@@ -83,11 +84,13 @@ class SandboxContainer(Protocol):
         """Samples the container's resource counters."""
         ...
 
+
 class DockerClientLike(Protocol):
     """Describes the docker client surface the sandbox runtime depends on."""
 
     containers: Any
     images: Any
+
 
 @dataclass
 class SandboxConfig:
@@ -111,6 +114,7 @@ class SandboxConfig:
     tmp_size: str = "64m"
     egress: EgressPolicy | None = None
 
+
 @dataclass(frozen=True)
 class ExecResult:
     """Carries the outcome of one command inside the sandbox.
@@ -124,6 +128,7 @@ class ExecResult:
     exit_code: int
     output: str
     error: str = ""
+
 
 @dataclass
 class SandboxHandle:
@@ -228,6 +233,7 @@ class SandboxHandle:
         for chunk in stream:
             yield str(chunk.decode(errors="replace"))
 
+
 class DockerRuntime:
     """Launches short-lived sandbox containers through the docker daemon."""
 
@@ -313,6 +319,7 @@ class DockerRuntime:
         except docker.errors.ImageNotFound:
             logger.info("pulling sandbox image %s", image)
             self._client.images.pull(image)
+
 
 class SandboxPolicyError(Exception):
     """Raised when a launch would violate the sandbox security policy."""

@@ -32,9 +32,7 @@ from agent.repo_map import RepoMap
 logger = logging.getLogger(__name__)
 
 SKIPPED_DIRECTORIES = {".git", "node_modules", "__pycache__", ".venv", "dist", ".mypy_cache"}
-TEXT_EXTENSIONS = {
-    ".js", ".json", ".lock", ".md", ".py", ".toml", ".ts", ".tsx", ".yaml", ".yml"
-}
+TEXT_EXTENSIONS = {".js", ".json", ".lock", ".md", ".py", ".toml", ".ts", ".tsx", ".yaml", ".yml"}
 MAX_FILE_BYTES = 200_000
 PLAN_SYSTEM_PROMPT = "You produce short, ordered, file-scoped implementation plans."
 MAX_PLAN_STEPS = 6
@@ -42,6 +40,7 @@ PLAN_FORMAT_INSTRUCTIONS = (
     "Reply with one numbered step per line, at most 8 steps, each starting with "
     "the file or area it touches."
 )
+
 
 @dataclass(frozen=True)
 class FileInfo:
@@ -57,6 +56,7 @@ class FileInfo:
     size_bytes: int
     text: str
 
+
 @dataclass
 class RepoSummary:
     """Aggregates what the planner learned about a checkout.
@@ -68,6 +68,7 @@ class RepoSummary:
 
     root: Path
     files: list[FileInfo] = field(default_factory=list)
+
 
 class RepoReader:
     """Walks a checkout and loads the files worth planning against.
@@ -119,6 +120,7 @@ class RepoReader:
             return None
         return FileInfo(rel_path=str(path.relative_to(self.root)), size_bytes=size, text=text)
 
+
 @dataclass
 class PlanStep:
     """Represents one step of an execution plan.
@@ -155,6 +157,7 @@ class Plan:
             summary: Numbered plan lines joined by newlines.
         """
         return "\n".join(f"{s.index + 1}. {s.description}" for s in self.steps)
+
 
 MANIFEST_NAMES = ("pyproject.toml", "package.json", "go.mod", "Cargo.toml")
 
@@ -328,6 +331,7 @@ class RepoPlanner:
             kept.append(step)
         return Plan(task=plan.task, steps=kept or plan.steps)
 
+
 def detect_projects(summary: RepoSummary) -> list[Project]:
     """Finds every manifest in the checkout and infers project boundaries.
 
@@ -345,6 +349,7 @@ def detect_projects(summary: RepoSummary) -> list[Project]:
             projects.append(Project(manifest_path=info.rel_path, kind=kind))
     return projects
 
+
 def build_outline(summary: RepoSummary, repo_map: RepoMap) -> str:
     """Renders a compact per-file outline for the planning prompt.
 
@@ -360,6 +365,7 @@ def build_outline(summary: RepoSummary, repo_map: RepoMap) -> str:
         outline = repo_map.outline_for(summary.root / info.rel_path)
         lines.append(f"{info.rel_path}: {outline}")
     return "\n".join(lines)
+
 
 def changed_files(root: Path) -> list[str]:
     """Lists files modified since the last commit using git status.

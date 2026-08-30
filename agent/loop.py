@@ -49,6 +49,7 @@ PARSE_RETRY_HINT = (
     "Respond with exactly one Action: or one FINAL: and nothing else."
 )
 
+
 @dataclass
 class Step:
     """Records one think-act-observe iteration of the agent loop.
@@ -66,6 +67,7 @@ class Step:
     tool_name: str = ""
     tool_args: dict[str, str] = field(default_factory=dict)
     observation: str = ""
+
 
 @dataclass
 class RunResult:
@@ -91,10 +93,7 @@ class RunResult:
         Returns:
             summary: Step count, duration, and cost in one line.
         """
-        return (
-            f"{len(self.steps)} steps in {self.duration_s:.1f}s, "
-            f"cost ${self.total_cost_usd:.4f}"
-        )
+        return f"{len(self.steps)} steps in {self.duration_s:.1f}s, cost ${self.total_cost_usd:.4f}"
 
     @property
     def duration_s(self) -> float:
@@ -104,6 +103,7 @@ class RunResult:
             duration_s: Elapsed seconds between run start and end.
         """
         return self.ended_at - self.started_at
+
 
 @dataclass
 class AgentConfig:
@@ -126,6 +126,7 @@ class AgentConfig:
     planner: RepoPlanner | None = None
     breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
     cost_tracker: CostTracker | None = None
+
 
 class AgentLoop:
     """Drives a ReAct-style loop of thought, tool action, and observation.

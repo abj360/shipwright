@@ -18,11 +18,13 @@ logger = logging.getLogger(__name__)
 DEFAULT_MAX_ITERATIONS = 75
 DEFAULT_MAX_COST_USD = 3.0
 
+
 class TripReason(StrEnum):
     """Identifies which limit tripped the breaker."""
 
     ITERATIONS = "iterations"
     COST = "cost"
+
 
 class RunawayRunError(Exception):
     """Raised when a run exceeds its iteration or cost ceiling.
@@ -40,6 +42,7 @@ class RunawayRunError(Exception):
         """
         super().__init__(detail)
         self.reason = reason
+
 
 @dataclass
 class CircuitBreaker:

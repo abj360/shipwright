@@ -33,6 +33,7 @@ RUBRIC_WEIGHTS: dict[str, float] = {
     "style": 0.15,
 }
 
+
 @dataclass(frozen=True)
 class ScoreResult:
     """Carries judgeline's verdict on one PR diff.
@@ -46,6 +47,7 @@ class ScoreResult:
     score: float
     verdict: str
     reasons: list[str] = field(default_factory=list)
+
 
 class JudgelineClient:
     """Calls the judgeline scoring service over HTTP.
@@ -161,6 +163,7 @@ class JudgelineClient:
             time.sleep(2**attempt)
         logger.error("judgeline kept returning 5xx; failing closed")
         return None
+
 
 def format_score_comment(result: ScoreResult, ready: bool) -> str:
     """Renders a score verdict as a Markdown PR comment.

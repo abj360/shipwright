@@ -27,6 +27,7 @@ MAX_CACHE_ENTRIES = 4000
 CACHE_VERSION = 1
 CACHE_DIR_NAME = ".shipwright"
 
+
 @dataclass
 class OutlineEntry:
     """Caches one file's outline alongside its modification time.
@@ -38,6 +39,7 @@ class OutlineEntry:
 
     mtime: float
     outline: str
+
 
 class RepoMap:
     """Builds and caches compact per-file outlines for planning prompts.

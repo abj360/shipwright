@@ -20,6 +20,7 @@ from dataclasses import dataclass
 CPU_PERIOD_MICROS = 100_000
 NANOS_PER_CPU = 1_000_000_000
 
+
 @dataclass(frozen=True)
 class CgroupLimits:
     """Hard resource limits applied to every sandbox container.
@@ -81,8 +82,10 @@ class CgroupLimits:
         if self.pids_max < 16:
             raise ValueError("pids_max must be at least 16")
 
+
 DEFAULT_LIMITS = CgroupLimits()
 CI_LIMITS = CgroupLimits(cpu_quota_micros=300_000, mem_bytes=1024 * 1024 * 1024)
+
 
 def limits_from_env() -> CgroupLimits:
     """Builds limits from SHIPWRIGHT_SANDBOX_* environment variables.
@@ -96,6 +99,7 @@ def limits_from_env() -> CgroupLimits:
         mem_bytes=int(os.environ.get("SHIPWRIGHT_SANDBOX_MEM", base.mem_bytes)),
         pids_max=int(os.environ.get("SHIPWRIGHT_SANDBOX_PIDS", base.pids_max)),
     )
+
 
 HEAVY_LIMITS = CgroupLimits(cpu_quota_micros=400_000, mem_bytes=2 * 1024 * 1024 * 1024)
 RED_TEAM_LIMITS = CgroupLimits(cpu_quota_micros=50_000, pids_max=96)

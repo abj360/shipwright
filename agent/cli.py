@@ -31,6 +31,7 @@ EXIT_OK = 0
 EXIT_FAILED = 1
 EXIT_INFRA = 2
 
+
 def build_parser() -> argparse.ArgumentParser:
     """Builds the command-line argument parser.
 
@@ -49,6 +50,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--resume", metavar="TRANSCRIPT", help="resume from a saved transcript")
     parser.add_argument("--plan-mode", action="store_true", help="plan first, then execute")
     return parser
+
 
 def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
     """Runs the loop, streaming each output line as it arrives.
@@ -92,6 +94,7 @@ def _run_interactive(loop: AgentLoop) -> int:
     print(f"final: {result.final_answer}")
     return EXIT_OK if result.final_answer else EXIT_FAILED
 
+
 def main(argv: list[str] | None = None) -> int:
     """Runs one agent task from the command line.
 
@@ -130,6 +133,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"run flagged as runaway and halted: {exc}", file=sys.stderr)
         return EXIT_FAILED
 
+
 def _format_step(step: Step) -> str:
     """Renders one step as a single output line.
 
@@ -141,6 +145,7 @@ def _format_step(step: Step) -> str:
     """
     tool = step.tool_name or "final"
     return f"[step {step.index}] {tool}"
+
 
 def _emit_json_step(step: Step) -> None:
     """Prints one step as a JSON line for machine consumers.
@@ -155,6 +160,7 @@ def _emit_json_step(step: Step) -> None:
     }
     sys.stdout.write(json.dumps(payload) + "\n")
 
+
 def _load_transcript(path: str) -> list[Step]:
     """Loads prior steps from a saved transcript file.
 
@@ -167,6 +173,7 @@ def _load_transcript(path: str) -> list[Step]:
     with open(path) as handle:
         raw = json.load(handle)
     return [Step(index=i, thought=s["thought"]) for i, s in enumerate(raw)]
+
 
 def _build_planner(client: HttpLLMClient, repo_path: str) -> RepoPlanner:
     """Builds a planner with an outline of the checkout.

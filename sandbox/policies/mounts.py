@@ -43,9 +43,8 @@ class MountSpec:
         mode = "ro" if self.read_only else "rw"
         return f"{self.source}:{self.target}:{mode}"
 
-def build_mounts(
-    workdir: str, extra: list[MountSpec] | None = None
-) -> list[MountSpec]:
+
+def build_mounts(workdir: str, extra: list[MountSpec] | None = None) -> list[MountSpec]:
     """Builds the mount set: read-only root plus one writable workdir.
 
     Args:
@@ -93,10 +92,13 @@ def to_docker_volumes(mounts: list[MountSpec]) -> dict[str, dict[str, str]]:
         volumes[mount.source] = {"bind": mount.target, "mode": mode}
     return volumes
 
+
 WORKSPACE_ROOT = Path("/tmp/shipwright-work")
+
 
 class MountError(Exception):
     """Raised when a workdir mount would escape the sandbox workspace."""
+
 
 def _within_workspace(resolved: Path) -> bool:
     """Decides whether an already-resolved path sits inside the workspace.
@@ -109,6 +111,7 @@ def _within_workspace(resolved: Path) -> bool:
     """
     return resolved.is_relative_to(WORKSPACE_ROOT.resolve())
 
+
 def describe_mounts(mounts: list[MountSpec]) -> str:
     """Renders the full mount set for logs and audit records.
 
@@ -119,6 +122,7 @@ def describe_mounts(mounts: list[MountSpec]) -> str:
         summary: One rendered mount per line.
     """
     return "\n".join(mount.render() for mount in mounts)
+
 
 def cleanup_workspace(workdir: str) -> None:
     """Deletes one task workdir after the sandbox exits.
