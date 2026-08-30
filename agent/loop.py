@@ -80,6 +80,12 @@ TOOL_USAGE_INSTRUCTIONS = (
     "Only the tool names listed above exist; anything else is rejected."
 )
 TRUNCATED_OBSERVATION_NOTE = "[older observation trimmed to fit the context budget]"
+MAX_UNGROUNDED_FINALS = 2
+UNGROUNDED_FINAL_NOTE = (
+    "You have not used a single tool yet, so you have not seen this checkout and "
+    "cannot know whether the task is done. Inspect the repository and make the "
+    "change before answering FINAL."
+)
 REPEATED_CALL_NOTE = (
     "This exact call already failed the same way. Repeating it will not help: "
     "use a different tool or different arguments."
@@ -211,6 +217,9 @@ class AgentConfig:
         planner: Planner used when mode is "plan_execute".
         breaker: Iteration and spend ceilings that halt a runaway run.
         cost_tracker: Optional tracker accumulating the run's model spend.
+        require_tool_before_final: Refuse a final answer from a run that has
+            not called a single tool, so the agent cannot report work it
+            never did.
     """
 
     repo_path: str
@@ -220,6 +229,7 @@ class AgentConfig:
     planner: RepoPlanner | None = None
     breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
     cost_tracker: CostTracker | None = None
+    require_tool_before_final: bool = True
 
 
 class AgentLoop:
@@ -246,6 +256,8 @@ class AgentLoop:
         self._dispatcher = ToolDispatcher(Path(config.repo_path))
         self._failed_calls: set[tuple[str, str]] = set()
         self._consecutive_failures = 0
+        self._tool_calls = 0
+        self._ungrounded_finals = 0
         logger.debug("agent loop initialised for %s", config.repo_path)
 
     def run(self, on_step: Callable[[Step], None] | None = None) -> RunResult:
@@ -267,6 +279,17 @@ class AgentLoop:
             step = self._think()
             self._transcript.append(step)
             if not step.tool_name:
+                if (
+                    self.config.require_tool_before_final
+                    and self._tool_calls == 0
+                    and self._ungrounded_finals < MAX_UNGROUNDED_FINALS
+                ):
+                    self._ungrounded_finals += 1
+                    self._observe(step, UNGROUNDED_FINAL_NOTE)
+                    logger.info("run %s refused a final answer with no tool call", self._run_id)
+                    if on_step is not None:
+                        on_step(step)
+                    continue
                 ended = time.time()
                 logger.info("run %s finished after %d steps", self._run_id, len(self._transcript))
                 return RunResult(
@@ -279,6 +302,7 @@ class AgentLoop:
                     output_tokens=self._output_tokens,
                 )
             output = self._act(step)
+            self._tool_calls += 1
             self._observe(step, output)
             failed = output.startswith(TOOL_ERROR_PREFIX)
             self._consecutive_failures = self._consecutive_failures + 1 if failed else 0

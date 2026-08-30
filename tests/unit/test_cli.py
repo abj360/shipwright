@@ -16,13 +16,19 @@ from agent.loop import AgentConfig, AgentLoop
 def make_loop(responses: list[str]) -> AgentLoop:
     """Builds a loop backed by scripted model responses.
 
+    The tool-before-final guard is off here: these tests are about CLI output
+    and exit codes, and script the shortest exchange that produces them.
+
     Args:
         responses: Responses to play back.
 
     Returns:
         loop: Agent loop ready to run.
     """
-    return AgentLoop(ScriptedLLM(responses), AgentConfig(repo_path=".", task="t"))
+    return AgentLoop(
+        ScriptedLLM(responses),
+        AgentConfig(repo_path=".", task="t", require_tool_before_final=False),
+    )
 
 
 def test_headless_prints_step_lines(capsys: pytest.CaptureFixture[str]) -> None:

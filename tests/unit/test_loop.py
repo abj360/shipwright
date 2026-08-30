@@ -11,7 +11,13 @@ import pytest
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError, TripReason
 from agent.cost_tracker import CostTracker
 from agent.llm_client import ScriptedLLM
-from agent.loop import TRUNCATED_OBSERVATION_NOTE, AgentConfig, AgentLoop, Step
+from agent.loop import (
+    MAX_UNGROUNDED_FINALS,
+    TRUNCATED_OBSERVATION_NOTE,
+    AgentConfig,
+    AgentLoop,
+    Step,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -23,13 +29,17 @@ def _isolated_checkout(tmp_path, monkeypatch) -> None:
 def make_config(task: str = "fix the bug") -> AgentConfig:
     """Builds a minimal agent config for tests.
 
+    The tool-before-final guard is off here: these tests script the shortest
+    exchange that exercises whatever they are about, and the guard has its own
+    tests below.
+
     Args:
         task: Task text for the run.
 
     Returns:
         config: Agent config rooted at the current directory.
     """
-    return AgentConfig(repo_path=".", task=task)
+    return AgentConfig(repo_path=".", task=task, require_tool_before_final=False)
 
 
 def test_final_answer_stops_run() -> None:
@@ -961,3 +971,49 @@ def test_the_halt_names_why_it_stopped() -> None:
     config.breaker = CircuitBreaker(max_consecutive_failures=2)
     with pytest.raises(RunawayRunError, match="failed"):
         AgentLoop(ScriptedLLM(["t\nAction: read_file\npath=missing.txt"] * 5), config).run()
+
+
+def guarded_config(task: str = "fix the bug") -> AgentConfig:
+    """Builds a config with the tool-before-final guard left on.
+
+    Args:
+        task: Task text for the run.
+
+    Returns:
+        config: Agent config that refuses an ungrounded final answer.
+    """
+    return AgentConfig(repo_path=".", task=task, require_tool_before_final=True)
+
+
+def test_final_before_any_tool_is_refused() -> None:
+    """Verifies a run that touched nothing cannot report the work as done."""
+    responses = [
+        "FINAL: added validation and tests, all pass",
+        "think\nAction: list_dir\npath=.",
+        "FINAL: really done",
+    ]
+    result = AgentLoop(ScriptedLLM(responses), guarded_config()).run()
+    assert result.final_answer == "really done"
+    assert [step.tool_name for step in result.steps] == ["", "list_dir", ""]
+
+
+def test_refusal_tells_the_model_it_has_seen_nothing() -> None:
+    """Verifies the refused step carries an observation explaining why."""
+    responses = ["FINAL: done", "think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), guarded_config()).run()
+    assert "not used a single tool" in (result.steps[0].observation or "")
+
+
+def test_final_after_a_tool_call_is_accepted() -> None:
+    """Verifies the guard only fires when nothing has been inspected."""
+    responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
+    result = AgentLoop(ScriptedLLM(responses), guarded_config()).run()
+    assert result.final_answer == "done"
+    assert len(result.steps) == 2
+
+
+def test_repeated_ungrounded_finals_give_up_rather_than_spin() -> None:
+    """Verifies a model that will not use a tool ends the run instead of looping."""
+    result = AgentLoop(ScriptedLLM(["FINAL: a", "FINAL: b", "FINAL: c"]), guarded_config()).run()
+    assert result.final_answer == "c"
+    assert len(result.steps) == MAX_UNGROUNDED_FINALS + 1
