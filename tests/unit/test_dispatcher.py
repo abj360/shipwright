@@ -250,10 +250,10 @@ def test_dispatch_run_tests_no_selector_allowed(tmp_path: Path) -> None:
     assert result.ok is True
 
 def test_disp_mx_0_0(tmp_path) -> None:
-    """Verifies dispatch: list_dir fails without args."""
+    """Verifies dispatch: list_dir without args lists the checkout root."""
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("list_dir", {})
-    assert result.ok is False
+    assert result.ok is True
 
 def test_dispatch_run_shell_missing_command(tmp_path: Path) -> None:
     """Verifies dispatch behavior: missing command."""
