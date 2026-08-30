@@ -100,6 +100,7 @@ class Composer(Static):
         if self.is_busy:
             self.pending.append(instruction)
             return QUEUED_NOTICE
+
         self.post_message(self.Submitted(instruction))
         return SENT_NOTICE
 
