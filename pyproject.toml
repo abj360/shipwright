@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.4", "ruff>=0.7", "mypy>=1.12"]
+dev = ["pytest>=8.4", "ruff>=0.7", "mypy>=1.12", "types-PyYAML>=6.0"]
 
 [project.scripts]
 shipwright = "agent.cli:main"
@@ -32,6 +32,11 @@ select = ["E", "F", "I", "UP", "B", "SIM", "W"]
 [tool.mypy]
 strict = true
 python_version = "3.12"
+
+[[tool.mypy.overrides]]
+module = ["docker", "docker.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "security"]
