@@ -115,6 +115,8 @@ class AgentConfig:
         system_prompt: Steering prompt prepended to every completion.
         mode: Execution mode: "react" for free-form, "plan_execute" for planned runs.
         planner: Planner used when mode is "plan_execute".
+        breaker: Iteration and spend ceilings that halt a runaway run.
+        cost_tracker: Optional tracker accumulating the run's model spend.
     """
 
     repo_path: str
