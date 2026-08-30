@@ -48,6 +48,20 @@ class AuditLog:
         self._mirror = mirror_stdout
         self._prev_hash = "0" * 64
 
+    @classmethod
+    def for_task(cls, base_dir: Path, task_id: str) -> "AuditLog":
+        """Opens a per-task audit log under a shared directory.
+
+        Args:
+            base_dir: Directory holding per-task logs.
+            task_id: Task identifier used in the file name.
+
+        Returns:
+            log: Audit log writing to base_dir/<task_id>.jsonl.
+        """
+        base_dir.mkdir(parents=True, exist_ok=True)
+        return cls(base_dir / f"{task_id}.jsonl")
+
     def record(self, kind: str, detail: str) -> None:
         """Appends one event to the chain.
 
@@ -98,20 +112,6 @@ def drop_expired(base_dir: Path, now: float | None = None) -> int:
             path.unlink()
             dropped += 1
     return dropped
-
-    @classmethod
-    def for_task(cls, base_dir: Path, task_id: str) -> "AuditLog":
-        """Opens a per-task audit log under a shared directory.
-
-        Args:
-            base_dir: Directory holding per-task logs.
-            task_id: Task identifier used in the file name.
-
-        Returns:
-            log: Audit log writing to base_dir/<task_id>.jsonl.
-        """
-        base_dir.mkdir(parents=True, exist_ok=True)
-        return cls(base_dir / f"{task_id}.jsonl")
 
 EVENT_CONTAINER_STARTED = "container_started"
 EVENT_EXEC = "exec"
