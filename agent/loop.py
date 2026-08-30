@@ -110,6 +110,39 @@ def _elide(value: str) -> str:
     return f"{value[:MAX_ECHOED_ARG_CHARS]}... [{len(value)} chars]"
 
 
+INVOKE_PATTERN = re.compile(
+    r"<invoke\s+name=[\"'](?P<tool>[^\"']+)[\"']\s*>(?P<body>.*?)</invoke>",
+    re.IGNORECASE | re.DOTALL,
+)
+PARAMETER_PATTERN = re.compile(
+    r"<parameter\s+name=[\"'](?P<name>[^\"']+)[\"']\s*>(?P<value>.*?)</(?:parameter|(?P=name))\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _parse_invoke(text: str) -> tuple[str, dict[str, str], int] | None:
+    """Reads the first structured tool call a model emitted, if there is one.
+
+    Models trained on a structured tool-call syntax answer with an <invoke>
+    block whatever the prompt asks for. Left unparsed the reply looks like
+    pure prose, so the run ends on the trailing FINAL: having done nothing.
+
+    Args:
+        text: Raw completion text.
+
+    Returns:
+        call: Tool name, arguments, and where the block started, or None.
+    """
+    match = INVOKE_PATTERN.search(text)
+    if match is None:
+        return None
+    args = {
+        param.group("name").strip(): param.group("value").strip()
+        for param in PARAMETER_PATTERN.finditer(match.group("body"))
+    }
+    return match.group("tool").strip(), args, match.start()
+
+
 def _name_from_next_line(text: str) -> tuple[str, str]:
     """Recovers a tool name that the model put below its Action marker.
 
@@ -380,6 +413,15 @@ class AgentLoop:
         """
         index = len(self._transcript)
         cleaned = text.replace("<think>", "").replace("</think>", "").strip()
+        invoke = _parse_invoke(cleaned)
+        if invoke is not None:
+            tool, invoke_args, start = invoke
+            return Step(
+                index=index,
+                thought=cleaned[:start].strip(),
+                tool_name=tool,
+                tool_args=invoke_args,
+            )
         action = ACTION_PATTERN.search(cleaned)
         final = FINAL_PATTERN.search(cleaned)
         # A reply carrying both markers has not seen the tool result yet, so the

@@ -1017,3 +1017,47 @@ def test_repeated_ungrounded_finals_give_up_rather_than_spin() -> None:
     result = AgentLoop(ScriptedLLM(["FINAL: a", "FINAL: b", "FINAL: c"]), guarded_config()).run()
     assert result.final_answer == "c"
     assert len(result.steps) == MAX_UNGROUNDED_FINALS + 1
+
+
+def test_structured_tool_call_is_executed() -> None:
+    """Verifies an <invoke> block is run rather than read as prose."""
+    reply = (
+        "I'll read the file first.\n"
+        '<invoke name="read_file"><parameter name="path">a.py</parameter></invoke>'
+    )
+    result = AgentLoop(ScriptedLLM([reply, "FINAL: done"]), guarded_config()).run()
+    assert result.steps[0].tool_name == "read_file"
+    assert result.steps[0].tool_args == {"path": "a.py"}
+
+
+def test_structured_call_wins_over_a_trailing_final() -> None:
+    """Verifies a reply that acts and then claims success is not taken as final.
+
+    Models answer with a tool call followed by a summary of what they intend.
+    Reading that as a final answer ends the run having done nothing.
+    """
+    reply = (
+        '<invoke name="list_dir"><parameter name="path">.</parameter></invoke>\n'
+        "FINAL: already handled it"
+    )
+    result = AgentLoop(ScriptedLLM([reply, "FINAL: really done"]), guarded_config()).run()
+    assert result.final_answer == "really done"
+    assert result.steps[0].tool_name == "list_dir"
+
+
+def test_structured_call_tolerates_a_mismatched_closing_tag() -> None:
+    """Verifies a parameter closed with its own name still parses."""
+    reply = (
+        '<invoke name="write_file"><parameter name="path">a.py</parameter>'
+        '<parameter name="content">x = 1</content></invoke>'
+    )
+    result = AgentLoop(ScriptedLLM([reply, "FINAL: done"]), guarded_config()).run()
+    assert result.steps[0].tool_args == {"path": "a.py", "content": "x = 1"}
+
+
+def test_action_protocol_still_parses() -> None:
+    """Verifies adding the structured form left the Action: protocol working."""
+    result = AgentLoop(
+        ScriptedLLM(["think\nAction: list_dir\npath=.", "FINAL: done"]), guarded_config()
+    ).run()
+    assert result.steps[0].tool_name == "list_dir"
