@@ -22,13 +22,16 @@ pytestmark = pytest.mark.skipif(
 EGRESS = EgressPolicy(allowed_hosts=("github.com",))
 
 
-def make_config(**overrides) -> SandboxConfig:
+def make_config(**overrides: object) -> SandboxConfig:
     """Builds a hardened sandbox config for isolation tests.
+
+    Args:
+        overrides: Fields to override on the hardened baseline.
 
     Returns:
         config: gVisor-isolated, egress-restricted sandbox config.
     """
-    base = {"gvisor": True, "egress": EGRESS, "limits": CgroupLimits()}
+    base: dict[str, object] = {"egress": EGRESS, "limits": CgroupLimits()}
     base.update(overrides)
     return SandboxConfig(**base)
 
