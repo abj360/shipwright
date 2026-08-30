@@ -4,6 +4,7 @@ cgroup_limits.py --- hard cgroup v2 resource limits applied to every sandbox
 
 Contains:
     CgroupLimits: hard resource limits per sandbox
+    CPU_PERIOD_MICROS / NANOS_PER_CPU: cgroup period and docker CPU unit
     CgroupLimits.to_docker_kwargs(): renders limits for docker-py
     CgroupLimits.describe(): one-line human summary
     CgroupLimits.scaled(): scales CPU and memory by a factor
@@ -15,6 +16,9 @@ Contains:
 
 import os
 from dataclasses import dataclass
+
+CPU_PERIOD_MICROS = 100_000
+NANOS_PER_CPU = 1_000_000_000
 
 @dataclass(frozen=True)
 class CgroupLimits:
@@ -37,7 +41,7 @@ class CgroupLimits:
             kwargs: Container keyword arguments enforcing the limits.
         """
         return {
-            "nano_cpus": self.cpu_quota_micros * 10,
+            "nano_cpus": self.cpu_quota_micros * NANOS_PER_CPU // CPU_PERIOD_MICROS,
             "mem_limit": self.mem_bytes,
             "memswap_limit": self.mem_bytes,
             "pids_limit": self.pids_max,
@@ -49,7 +53,7 @@ class CgroupLimits:
         Returns:
             summary: CPU, memory, and PID ceilings in one line.
         """
-        cpu_cores = self.cpu_quota_micros / 100_000
+        cpu_cores = self.cpu_quota_micros / CPU_PERIOD_MICROS
         mem_mib = self.mem_bytes // (1024 * 1024)
         return f"cpu={cpu_cores:.1f} cores, mem={mem_mib}MiB, pids={self.pids_max}"
 
