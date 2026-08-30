@@ -11,7 +11,7 @@ Contains:
     CgroupLimits.__post_init__(): rejects unusable limits
     DEFAULT_LIMITS / CI_LIMITS: limit presets
     limits_from_env(): builds limits from the environment
-    HEAVY_LIMITS: preset for heavy build tasks
+    HEAVY_LIMITS / RED_TEAM_LIMITS: presets for heavy builds and red-team runs
 """
 
 import os
@@ -92,9 +92,9 @@ def limits_from_env() -> CgroupLimits:
     """
     base = CgroupLimits()
     return CgroupLimits(
-        cpu_quota_micros=int(os.environ.get("SHIPWRIGHT_SANDBOX_CPU", "100000")),
-        mem_bytes=int(os.environ.get("SHIPWRIGHT_SANDBOX_MEM", str(512 * 1024 * 1024))),
-        pids_max=int(os.environ.get("SHIPWRIGHT_SANDBOX_PIDS", "256")),
+        cpu_quota_micros=int(os.environ.get("SHIPWRIGHT_SANDBOX_CPU", base.cpu_quota_micros)),
+        mem_bytes=int(os.environ.get("SHIPWRIGHT_SANDBOX_MEM", base.mem_bytes)),
+        pids_max=int(os.environ.get("SHIPWRIGHT_SANDBOX_PIDS", base.pids_max)),
     )
 
 HEAVY_LIMITS = CgroupLimits(cpu_quota_micros=400_000, mem_bytes=2 * 1024 * 1024 * 1024)
