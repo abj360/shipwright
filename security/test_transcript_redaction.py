@@ -7,6 +7,7 @@ Contains:
     test_anthropic_shaped_key_is_removed(): an unregistered key is still caught
     test_surrounding_text_is_preserved(): redaction leaves other text intact
     test_openai_shaped_key_is_removed(): an OpenAI-shaped key is caught too
+    test_empty_secret_is_ignored(): an empty registered value changes nothing
 """
 
 from tui.redaction import REDACTION_PLACEHOLDER, redact_secrets
@@ -46,3 +47,10 @@ def test_openai_shaped_key_is_removed() -> None:
     cleaned = redact_secrets(f"OPENAI_API_KEY={openai_key}")
 
     assert openai_key not in cleaned
+
+
+def test_empty_secret_is_ignored() -> None:
+    """Asserts an empty registered value does not shred the surrounding text."""
+    cleaned = redact_secrets("nothing secret here", [""])
+
+    assert cleaned == "nothing secret here"

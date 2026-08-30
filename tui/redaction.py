@@ -33,6 +33,8 @@ def redact_secrets(text: str, known_secrets: Iterable[str] = ()) -> str:
     """
     cleaned = text
     for secret in known_secrets:
+        if not secret:
+            continue
         cleaned = cleaned.replace(secret, REDACTION_PLACEHOLDER)
     for pattern in SECRET_PATTERNS:
         cleaned = pattern.sub(REDACTION_PLACEHOLDER, cleaned)
