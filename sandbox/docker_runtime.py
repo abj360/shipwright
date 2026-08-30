@@ -98,6 +98,10 @@ class SandboxConfig:
         image: OCI image the sandbox runs.
         workdir: Working directory inside the container.
         env: Environment variables injected into the container.
+        limits: Hard cgroup ceilings applied to the container.
+        host_workdir: Host directory bind-mounted as the writable workdir.
+        tmp_size: Size ceiling for the container's /tmp tmpfs.
+        egress: Network allowlist; a launch without one is refused.
     """
 
     image: str = DEFAULT_IMAGE
@@ -107,7 +111,6 @@ class SandboxConfig:
     host_workdir: str = "/tmp/shipwright-work"
     tmp_size: str = "64m"
     egress: EgressPolicy | None = None
-    gvisor: bool = False
 
 @dataclass(frozen=True)
 class ExecResult:
