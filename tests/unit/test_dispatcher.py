@@ -566,3 +566,39 @@ def test_run_tests_reports_a_failing_suite(tmp_path: Path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("run_tests", {})
     assert "1 failed" in result.output
+
+
+def test_edit_file_decodes_a_multi_line_replacement(tmp_path: Path) -> None:
+    """Verifies an escaped newline becomes a real one, not a literal backslash-n."""
+    target = tmp_path / "invoice.py"
+    target.write_text("def f(percent):\n    return percent / 100\n")
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch(
+        "edit_file",
+        {
+            "path": "invoice.py",
+            "find": "return percent / 100",
+            "replace": (
+                "if percent < 0:\\n        raise ValueError('negative')\\n    return percent / 100"
+            ),
+        },
+    )
+    assert result.ok
+    assert "\\n" not in target.read_text()
+    assert target.read_text() == (
+        "def f(percent):\n"
+        "    if percent < 0:\n"
+        "        raise ValueError('negative')\n"
+        "    return percent / 100\n"
+    )
+
+
+def test_edit_file_keeps_a_single_line_replacement_intact(tmp_path: Path) -> None:
+    """Verifies decoding escapes leaves an ordinary replacement unchanged."""
+    target = tmp_path / "a.py"
+    target.write_text("    value = 1\n")
+    dispatcher = ToolDispatcher(tmp_path)
+    assert dispatcher.dispatch(
+        "edit_file", {"path": "a.py", "find": "value = 1", "replace": "value = 2"}
+    ).ok
+    assert target.read_text() == "    value = 2\n"
