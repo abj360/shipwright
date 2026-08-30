@@ -11,7 +11,12 @@ import pytest
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
 from agent.llm_client import ScriptedLLM
-from agent.loop import AgentConfig, AgentLoop, Step
+from agent.loop import TRUNCATED_OBSERVATION_NOTE, AgentConfig, AgentLoop, Step
+
+@pytest.fixture(autouse=True)
+def _isolated_checkout(tmp_path, monkeypatch) -> None:
+    """Runs each loop test in a throwaway checkout so tool writes miss the repo."""
+    monkeypatch.chdir(tmp_path)
 
 def make_config(task: str = "fix the bug") -> AgentConfig:
     """Builds a minimal agent config for tests.
@@ -133,7 +138,7 @@ def test_loop_mx2_1_7() -> None:
     """Verifies loop behavior: read_file call: transcript length."""
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
-    assert len(result.transcript) == 2
+    assert len(result.steps) == 2
 
 def test_loop_case_equals_in_values() -> None:
     """Verifies loop behavior: equals sign inside values."""
@@ -286,7 +291,7 @@ def test_trim_drops_oldest_observations() -> None:
             Step(index=index, thought="t", observation="x" * 4000)
         )
     loop._trim_transcript()
-    assert loop._transcript[0].observation.startswith("[observation trimmed")
+    assert loop._transcript[0].observation == TRUNCATED_OBSERVATION_NOTE
 
 def test_write_file_then_read_back(tmp_path) -> None:
     """Verifies the write_file tool persists content the agent can re-read."""
@@ -494,7 +499,7 @@ def test_loop_mx2_0_7() -> None:
     """Verifies loop behavior: list_dir call: transcript length."""
     responses = ["think\nAction: list_dir\npath=.", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
-    assert len(result.transcript) == 2
+    assert len(result.steps) == 2
 
 def test_loop_mx_2_2() -> None:
     """Verifies loop behavior: run_shell call stores args."""
@@ -650,7 +655,7 @@ def test_loop_mx2_3_7() -> None:
     """Verifies loop behavior: write_file call: transcript length."""
     responses = ["think\nAction: write_file\npath=b.txt; content=x", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
-    assert len(result.transcript) == 2
+    assert len(result.steps) == 2
 
 def test_loop_mx2_3_1() -> None:
     """Verifies loop behavior: write_file call: final answer returned."""
