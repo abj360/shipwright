@@ -54,6 +54,9 @@ MARKUP_CHARS = "*_` "
 TOOL_NAME_PATTERN = re.compile(r"^[a-z_][a-z0-9_]*$")
 # Arguments whose value may run past the end of the line.
 MULTILINE_ARGS = frozenset({"content", "patch"})
+# A lone closing tag on its own line is tool-protocol residue, never file
+# content, and a multi-line argument would otherwise swallow it.
+CLOSING_TAG_PATTERN = re.compile(r"^\s*</[A-Za-z_][\w.-]*>\s*$")
 TOOL_USAGE_INSTRUCTIONS = (
     "Work in small steps. Each reply is your reasoning followed by EITHER one "
     "tool call OR a final answer, never both.\n\n"
@@ -445,6 +448,8 @@ class AgentLoop:
         for line in arg_text.splitlines():
             if ACTION_PATTERN.match(line) or FINAL_PATTERN.match(line):
                 break
+            if CLOSING_TAG_PATTERN.match(line):
+                continue
             arg_lines.append(line)
         pending = ""
         for line in arg_lines:

@@ -1061,3 +1061,10 @@ def test_action_protocol_still_parses() -> None:
         ScriptedLLM(["think\nAction: list_dir\npath=.", "FINAL: done"]), guarded_config()
     ).run()
     assert result.steps[0].tool_name == "list_dir"
+
+
+def test_multiline_argument_drops_a_stray_closing_tag() -> None:
+    """Verifies protocol residue does not end up inside written file content."""
+    reply = "Action: write_file\npath=a.py; content=x = 1\ny = 2\n</content>"
+    step = AgentLoop(ScriptedLLM([reply]), guarded_config())._parse_step(reply)
+    assert step.tool_args["content"] == "x = 1\ny = 2"
