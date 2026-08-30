@@ -602,3 +602,27 @@ def test_edit_file_keeps_a_single_line_replacement_intact(tmp_path: Path) -> Non
         "edit_file", {"path": "a.py", "find": "value = 1", "replace": "value = 2"}
     ).ok
     assert target.read_text() == "    value = 2\n"
+
+
+def test_write_file_strips_an_enclosing_code_fence(tmp_path: Path) -> None:
+    """Verifies a fenced answer is written as code, not as Markdown."""
+    dispatcher = ToolDispatcher(tmp_path)
+    fenced = "```python\ndef f():\n    return 1\n```"
+    assert dispatcher.dispatch("write_file", {"path": "a.py", "content": fenced}).ok
+    assert (tmp_path / "a.py").read_text() == "def f():\n    return 1"
+
+
+def test_write_file_keeps_a_fence_inside_the_body(tmp_path: Path) -> None:
+    """Verifies only an enclosing fence is stripped, not one in the content."""
+    dispatcher = ToolDispatcher(tmp_path)
+    body = 'text = """\n```\n"""\n'
+    assert dispatcher.dispatch("write_file", {"path": "a.py", "content": body}).ok
+    assert (tmp_path / "a.py").read_text() == body
+
+
+def test_write_file_leaves_unfenced_content_untouched(tmp_path: Path) -> None:
+    """Verifies ordinary content is written byte for byte."""
+    dispatcher = ToolDispatcher(tmp_path)
+    body = "def f():\n    return 1\n"
+    assert dispatcher.dispatch("write_file", {"path": "a.py", "content": body}).ok
+    assert (tmp_path / "a.py").read_text() == body

@@ -95,6 +95,30 @@ def _comparable(line: str) -> str:
     return " ".join(unescaped.split())
 
 
+def _unfence(text: str) -> str:
+    """Strips a Markdown code fence a model wrapped around file content.
+
+    Models routinely answer with the body inside ```lang ... ```, and writing
+    those delimiters into a source file leaves it unparseable. Only a fence
+    enclosing the whole body is removed, so content that merely contains a
+    fence is left alone.
+
+    Args:
+        text: Content as the model supplied it.
+
+    Returns:
+        body: The content with an enclosing fence removed.
+    """
+    lines = text.split("\n")
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if len(lines) >= 2 and lines[0].lstrip().startswith("```") and lines[-1].strip() == "```":
+        return "\n".join(lines[1:-1])
+    return text
+
+
 def _numbered(lines: list[str]) -> str:
     """Renders a file's lines so a failed match can be corrected.
 
@@ -375,6 +399,6 @@ class ToolDispatcher:
         """
         target = self._resolve(args["path"])
         target.parent.mkdir(parents=True, exist_ok=True)
-        content = args.get("content", "")
+        content = _unfence(args.get("content", ""))
         target.write_text(content)
         return f"wrote {len(content)} bytes to {args['path']}"
