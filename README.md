@@ -7,13 +7,9 @@
 [![node](https://img.shields.io/badge/node-22-2f81f7)](gateway/package.json)
 [![license](https://img.shields.io/badge/license-MIT-2f81f7)](LICENSE.md)
 
-</div>
-
-&nbsp;&nbsp;&nbsp;&nbsp;Shipwright is an autonomous coding agent that reads a repository, edits code,
+Shipwright is an autonomous coding agent that reads a repository, edits code,
 runs the tests, and opens a draft PR, with every command it issues executing inside a
 gVisor-isolated sandbox under hard resource limits and a default-deny egress allowlist.
-
-<div align="center">
 
 <img src="docs/media/live-viewer.gif" alt="A run in the live viewer, from typing the request to the diff" width="940" />
 
