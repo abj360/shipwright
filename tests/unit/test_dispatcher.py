@@ -549,3 +549,20 @@ def test_edit_file_shows_the_file_when_nothing_matches(tmp_path: Path) -> None:
     )
     assert "1: alpha = 1" in error
     assert "2: beta = 2" in error
+
+
+def test_run_tests_uses_the_running_interpreter(tmp_path: Path) -> None:
+    """Verifies run_tests invokes sys.executable, not a bare "python"."""
+    (tmp_path / "test_ok.py").write_text("def test_ok():\n    assert True\n")
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {})
+    assert result.ok
+    assert "command not found" not in result.output
+
+
+def test_run_tests_reports_a_failing_suite(tmp_path: Path) -> None:
+    """Verifies a failing suite reaches the agent as output rather than silence."""
+    (tmp_path / "test_bad.py").write_text("def test_bad():\n    assert False\n")
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch("run_tests", {})
+    assert "1 failed" in result.output

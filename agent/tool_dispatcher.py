@@ -19,7 +19,9 @@ Contains:
 
 import logging
 import re
+import shlex
 import subprocess
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -332,6 +334,10 @@ class ToolDispatcher:
     def _run_tests(self, args: dict[str, str]) -> str:
         """Runs the repo's test suite and reports the tail of the output.
 
+        Invokes the interpreter running the agent rather than a bare "python",
+        which is absent on modern macOS and on Debian without python-is-python3
+        and is not necessarily the interpreter pytest is installed under.
+
         Args:
             args: Tool arguments; accepts an optional "selector" entry.
 
@@ -339,7 +345,7 @@ class ToolDispatcher:
             output: Last lines of the test runner output.
         """
         selector = args.get("selector", "")
-        command = f"python -m pytest {selector} -q".strip()
+        command = f"{shlex.quote(sys.executable)} -m pytest {selector} -q".strip()
         proc = subprocess.run(
             command,
             shell=True,
