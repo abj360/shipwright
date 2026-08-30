@@ -120,7 +120,7 @@ class AgentConfig:
     repo_path: str
     task: str
     system_prompt: str = ""
-    mode: str = "react"  # "react" or "plan_execute"
+    mode: str = "react"
     planner: RepoPlanner | None = None
     breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
     cost_tracker: CostTracker | None = None
@@ -254,7 +254,7 @@ class AgentLoop:
             return f"error: {result.error}"
         return result.output[:MAX_TOOL_OUTPUT_CHARS]
 
-    def _observe(self, step: Step, output: str) -> None:  # mutates step in place
+    def _observe(self, step: Step, output: str) -> None:
         """Attaches a tool result to its step so the model sees it next turn.
 
         Args:
