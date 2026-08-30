@@ -62,10 +62,12 @@ class ExecResult:
     Attributes:
         exit_code: Process exit status.
         output: Combined stdout and stderr.
+        error: Failure description when the command could not run.
     """
 
     exit_code: int
     output: str
+    error: str = ""
 
 @dataclass
 class SandboxHandle:
