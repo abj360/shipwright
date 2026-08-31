@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * webhooks.ts --- GitHub webhook receiver turning issue events into agent runs
  *

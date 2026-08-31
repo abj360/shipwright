@@ -70,8 +70,10 @@ pip install -e '.[dev]'          # python 3.12, pytest, ruff, mypy
 Every Python file starts with the shebang, then a structured module docstring
 (`<filename> --- <role>`, a blank line, then `Contains:` listing what the file
 exposes), then imports ordered stdlib → third-party → local, alphabetized.
-TypeScript/JavaScript files follow the same shape with `#!/usr/bin/env ts-node`
-and a JSDoc header block. Look at any existing file for the exact layout.
+TypeScript/JavaScript files follow the same shape with a JSDoc header block,
+and no shebang: vite and vitest both wrap a module before evaluating it, and a
+hashbang that is no longer on line one is a syntax error. Look at any existing
+file for the exact layout.
 
 ### Docstrings
 
@@ -117,8 +119,9 @@ and a JSDoc header block. Look at any existing file for the exact layout.
 
 ## Testing
 
-- Tests live next to what they test: `tests/unit` and `tests/integration`
-  mirror the source tree; gateway tests live beside the gateway sources.
+- Tests live next to what they test but never inside a build root: `tests/unit`
+  and `tests/integration` mirror the Python source tree, and gateway tests live
+  in `gateway/tests/` so `tsc -p tsconfig.json` never ships them in `dist/`.
 - New logic ships with tests in the same PR, not a follow-up ticket.
 - A test asserts on real behavior. A mock that always returns success proves
   nothing — mocked dependencies must be able to fail in the test.

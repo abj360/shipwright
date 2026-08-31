@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * task_queue.ts --- in-process task queue with bounded concurrency for agent runs
  *

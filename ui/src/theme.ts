@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * theme.ts --- color tokens and xterm theme for the live view
  *

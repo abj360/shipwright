@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * DiffViewer.tsx --- renders the run's unified diff alongside the terminal output
  *

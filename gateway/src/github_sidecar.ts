@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * github_sidecar.ts --- git and GitHub API operations for agent runs
  *

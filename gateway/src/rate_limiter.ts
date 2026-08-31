@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * rate_limiter.ts --- request queue with Retry-After-aware backoff for the GitHub API
  *

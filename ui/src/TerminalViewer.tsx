@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * TerminalViewer.tsx --- xterm.js live terminal streaming one run's sandbox output
  *

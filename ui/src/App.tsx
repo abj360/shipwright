@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * App.tsx --- top-level layout for the live run view
  *

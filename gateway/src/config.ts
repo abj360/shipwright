@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * config.ts --- environment parsing and typed gateway configuration
  *

@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * vite.config.ts --- dev server and build settings for the live view
  *

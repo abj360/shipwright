@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * server.ts --- Express API gateway fronting agent runs and PR creation
  *
