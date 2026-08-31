@@ -6,10 +6,15 @@
  *   RunOutcome: exit status and working-tree diff of a finished run
  *   RunExecutor: executes one run, streaming output line by line
  *   SpawnRunExecutor: runs the agent CLI as a child process
- *   diffFor(): reads the working-tree diff of a checkout
+ *   snapshotTree(): records the checkout state as a git tree
+ *   diffSince(): diffs the checkout against a pre-run snapshot
  */
 
 import { execFile, spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 import pino from "pino";
@@ -69,8 +74,9 @@ export class SpawnRunExecutor implements RunExecutor {
      * @returns outcome - Exit status and the resulting working-tree diff.
      */
     const args = ["-m", AGENT_MODULE, "--task", request.task, "--repo", request.repo, "--headless"];
+    const before = await snapshotTree(request.repo);
     const exitCode = await this.stream(args, onLine);
-    return { exitCode, diff: await diffFor(request.repo) };
+    return { exitCode, diff: await diffSince(request.repo, before) };
   }
 
   private stream(args: string[], onLine: (line: string) => void): Promise<number> {
@@ -117,24 +123,52 @@ function lineSplitter(onLine: (line: string) => void): (chunk: string | null) =>
   };
 }
 
-export async function diffFor(repo: string): Promise<string> {
+export async function snapshotTree(repo: string): Promise<string | null> {
   /**
-   * Reads the working-tree diff of a checkout, including untracked files.
+   * Records the current state of a checkout as a git tree object.
    *
-   * A repo that is not a git checkout is not an error here: the run still
-   * happened, there is just nothing to show, so the diff comes back empty.
+   * Written through a throwaway index so the caller's staged changes are left
+   * exactly as they were; only loose objects are added to the database.
+   *
+   * @param repo - Checkout to snapshot.
+   * @returns tree - Tree object id, or null when the path is not a checkout.
+   */
+  const indexFile = join(tmpdir(), `shipwright-index-${randomUUID()}`);
+  const env = { ...process.env, GIT_INDEX_FILE: indexFile };
+  try {
+    await execFileAsync("git", ["-C", repo, "add", "-A"], { env });
+    const { stdout } = await execFileAsync("git", ["-C", repo, "write-tree"], { env });
+    return stdout.trim();
+  } catch (error) {
+    logger.warn({ err: error, repo }, "could not snapshot the checkout");
+    return null;
+  } finally {
+    await rm(indexFile, { force: true });
+  }
+}
+
+export async function diffSince(repo: string, before: string | null): Promise<string> {
+  /**
+   * Diffs a checkout against a snapshot taken before the run started.
+   *
+   * Diffing the working tree instead would fold in every earlier run's edits,
+   * so a second request appeared to have changed what the first one did.
    *
    * @param repo - Checkout the agent worked in.
-   * @returns diff - Unified diff text, empty when there is nothing to show.
+   * @param before - Tree recorded before the run, or null when unavailable.
+   * @returns diff - Unified diff of just this run's changes.
    */
+  const after = await snapshotTree(repo);
+  if (before === null || after === null || before === after) {
+    return "";
+  }
   try {
-    await execFileAsync("git", ["-C", repo, "add", "--intent-to-add", "--all"]);
-    const { stdout } = await execFileAsync("git", ["-C", repo, "diff"], {
+    const { stdout } = await execFileAsync("git", ["-C", repo, "diff", before, after], {
       maxBuffer: DIFF_MAX_BUFFER_BYTES,
     });
     return stdout;
   } catch (error) {
-    logger.warn({ err: error, repo }, "could not read the working-tree diff");
+    logger.warn({ err: error, repo }, "could not diff against the pre-run snapshot");
     return "";
   }
 }
