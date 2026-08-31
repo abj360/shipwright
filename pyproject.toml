@@ -42,6 +42,10 @@ module = ["docker", "docker.*"]
 ignore_missing_imports = true
 follow_imports = "skip"
 
+[[tool.mypy.overrides]]
+module = ["textual.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests", "security"]
 markers = { integration = "requires the integration environment" }
