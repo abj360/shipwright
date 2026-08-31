@@ -10,6 +10,8 @@ Contains:
     test_plain_text_is_not_a_command(): an ordinary task is left alone
     test_missing_transcript_raises(): a path that does not exist fails loudly
     test_bare_resume_shows_usage(): /resume with no path explains itself
+    test_absent_path_reports_itself(): a wrong path is reported, not raised
+    test_malformed_tool_args_survive(): a non-object tool_args does not crash
 """
 
 import json
@@ -87,3 +89,20 @@ def test_bare_resume_shows_usage() -> None:
     """Asserts a bare /resume explains what it needs instead of failing."""
     assert resume("") == MISSING_PATH_NOTICE
     assert resume("   ") == MISSING_PATH_NOTICE
+
+
+def test_absent_path_reports_itself(tmp_path: Path) -> None:
+    """Asserts a wrong path is reported to the operator rather than raising."""
+    message = resume(str(tmp_path / "nope.json"))
+
+    assert "no transcript at" in message
+
+
+def test_malformed_tool_args_survive(tmp_path: Path) -> None:
+    """Asserts a transcript whose tool_args is not an object still loads."""
+    path = tmp_path / "odd.json"
+    path.write_text(json.dumps([{"thought": "x", "tool_name": "read_file", "tool_args": "oops"}]))
+
+    rows = load_prior_rows(path)
+
+    assert rows[0].target == ""
