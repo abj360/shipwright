@@ -4,7 +4,10 @@
  *
  * Contains:
  *   runRequestSchema: validates POST /runs bodies
+ *   prRequestSchema: validates POST /prs bodies
+ *   app: the configured Express application
  *   GET /health: liveness probe
+ *   POST /webhooks/github: HMAC-verified issue and comment triggers
  *   POST /runs: enqueues one agent run
  *   GET /runs/:id: fetches one run record
  *   GET /runs: lists run records
@@ -18,13 +21,14 @@ import { randomUUID } from "node:crypto";
 import { loadConfig } from "./config";
 import { createPrFromRun, type SidecarConfig } from "./github_sidecar";
 import { TaskQueue } from "./task_queue";
+import { createWebhookRouter } from "./webhooks";
 import express from "express";
 import pino from "pino";
 import { z } from "zod";
 
 const logger = pino({ name: "gateway" });
 const config = loadConfig();
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
   req.headers["x-request-id"] = req.headers["x-request-id"] ?? randomUUID();
@@ -34,12 +38,12 @@ app.use((req, res, next) => {
 
 const queue = new TaskQueue({ concurrency: 2 });
 
-const prRequestSchema = z.object({
+export const prRequestSchema = z.object({
   taskId: z.string().min(1),
   summary: z.string().min(1),
 });
 
-const runRequestSchema = z.object({
+export const runRequestSchema = z.object({
   task: z.string().min(1),
   issueUrl: z.string().url().optional(),
 });
@@ -65,6 +69,8 @@ const sidecarConfig: SidecarConfig = {
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
+
+app.use(createWebhookRouter(config.WEBHOOK_SECRET, queue));
 
 app.use((req, res, next) => {
   if (req.path === "/health" || req.path.startsWith("/webhooks")) {
@@ -110,18 +116,6 @@ app.get("/runs/:id", (req, res) => {
   res.json(record);
 });
 
-const port = config.PORT;
-const server = app.listen(port, () => {
-  logger.info({ port }, "gateway listening");
-});
-
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
-  process.on(signal, () => {
-    logger.info({ signal }, "shutting down");
-    server.close(() => process.exit(0));
-  });
-}
-
 app.get("/runs", (req, res) => {
   const page = Math.max(1, Number(req.query.page ?? 1));
   const perPage = Math.min(200, Math.max(1, Number(req.query.perPage ?? 20)));
@@ -144,11 +138,6 @@ app.post("/prs", async (req, res) => {
   }
 });
 
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  logger.error({ err }, "unhandled route error");
-  res.status(500).json({ error: "internal error" });
-});
-
 app.get("/runs/:id/logs", (req, res) => {
   const record = runs.get(req.params.id);
   if (record === undefined) {
@@ -163,6 +152,24 @@ app.get("/runs/:id/logs", (req, res) => {
   req.on("close", () => clearInterval(timer));
 });
 
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  logger.error({ err }, "unhandled route error");
+  res.status(500).json({ error: "internal error" });
+});
+
 app.use((_req, res) => {
   res.status(404).json({ error: "not found" });
 });
+
+if (require.main === module) {
+  const port = config.PORT;
+  const server = app.listen(port, () => {
+    logger.info({ port }, "gateway listening");
+  });
+  for (const signal of ["SIGINT", "SIGTERM"] as const) {
+    process.on(signal, () => {
+      logger.info({ signal }, "shutting down");
+      server.close(() => process.exit(0));
+    });
+  }
+}
