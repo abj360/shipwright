@@ -1,11 +1,11 @@
 /**
- * index.css --- layout and palette for the live run view
+ * index.css --- layout and palette for the conversation view
  *
  * Contains:
  *   :root: the dark palette tokens mirrored from theme.ts
- *   .app-shell: page layout
- *   .terminal-viewer: live terminal panel, its toolbar, and status badge
- *   .diff-viewer: diff panel, file tree, and per-line styling
+ *   .app-shell: title, scrolling conversation, pinned composer
+ *   .turn: one request with its output and diff
+ *   .diff-viewer: diff rendering and per-line styling
  */
 
 :root {
@@ -15,9 +15,7 @@
   --add: #2ea043;
   --del: #f85149;
   --hunk: #8b949e;
-  --status-ok: #3fb950;
   --status-err: #f85149;
-  --status-warn: #d29922;
   --panel-bg: #161b22;
   --panel-border: #21262d;
   --border-subtle: #30363d;
@@ -34,70 +32,70 @@ body {
 
 .app-shell {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
   gap: 1rem;
   height: 100vh;
+  margin: 0 auto;
+  max-width: 56rem;
   padding: 1rem 1.25rem;
   box-sizing: border-box;
 }
 
 .app-shell header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
   border-bottom: 1px solid var(--panel-border);
   padding-bottom: 0.75rem;
 }
 
 .app-shell h1 {
-  margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   letter-spacing: 0.02em;
+  margin: 0;
 }
 
-.task-form {
+.conversation {
   display: flex;
-  flex: 1;
-  gap: 0.5rem;
-  max-width: 46rem;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
-.app-shell header input {
-  background: var(--panel-bg);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  color: var(--foreground);
-  flex: 1;
-  font-family: var(--font-ui);
-  font-size: 0.9rem;
-  padding: 0.4rem 0.7rem;
+.turn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
-.app-shell header input:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-
-.app-shell header button {
+.turn-request {
+  align-self: flex-end;
   background: var(--accent);
-  border: none;
-  border-radius: 6px;
+  border-radius: 14px 14px 4px 14px;
   color: var(--background);
-  cursor: pointer;
-  font-family: inherit;
-  font-weight: 600;
-  padding: 0.4rem 1.1rem;
+  margin: 0;
+  max-width: 80%;
+  padding: 0.5rem 0.85rem;
 }
 
-.app-shell header button:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.run-id {
-  color: var(--hunk);
+.turn-output {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px 14px 14px 14px;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0;
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.75rem 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.turn-waiting {
+  color: var(--hunk);
+  font-style: italic;
+  margin: 0;
 }
 
 .run-error {
@@ -105,84 +103,56 @@ body {
   margin: 0;
 }
 
-.run-hint {
-  color: var(--hunk);
-  margin: 0;
+.composer {
+  display: flex;
+  gap: 0.6rem;
 }
 
-.terminal-viewer,
+.composer input {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--foreground);
+  flex: 1;
+  font-family: inherit;
+  font-size: 0.92rem;
+  padding: 0.6rem 1rem;
+}
+
+.composer input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.composer button {
+  align-items: center;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  color: var(--background);
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  height: 2.4rem;
+  justify-content: center;
+  width: 2.4rem;
+}
+
+.composer button:disabled {
+  background: var(--border-subtle);
+  color: var(--foreground);
+  cursor: default;
+}
+
 .diff-viewer {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 8px;
-  overflow: hidden;
-  padding: 0.6rem;
-}
-
-.terminal-viewer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-height: 0;
-}
-
-.terminal-toolbar {
-  align-items: center;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.terminal-viewer > [role="log"] {
-  flex: 1;
-  min-height: 0;
-}
-
-.status-badge {
-  border-radius: 999px;
-  flex: none;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  margin-right: 0.5rem;
-  padding: 0.15rem 0.6rem;
-  text-transform: uppercase;
-}
-
-.status-open {
-  background: #1a7f3733;
-  color: var(--status-ok);
-}
-
-.status-connecting {
-  background: #9a670033;
-  color: var(--status-warn);
-}
-
-.status-closed {
-  background: #d1242f33;
-  color: var(--status-err);
-}
-
-.status-ended {
-  background: #1a7f3733;
-  color: var(--status-ok);
-}
-
-.terminal-viewer button,
-.diff-viewer button {
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  color: var(--foreground);
-  cursor: pointer;
-  font-family: inherit;
-  padding: 0.2rem 0.7rem;
-}
-
-.diff-viewer {
+  border-radius: 10px;
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  max-height: 40vh;
+  font-size: 0.76rem;
+  max-height: 26rem;
   overflow: auto;
+  padding: 0.6rem 0.75rem;
 }
 
 .diff-empty {
@@ -195,11 +165,25 @@ body {
   margin: 0 0.75rem;
 }
 
+.diff-viewer label {
+  color: var(--hunk);
+}
+
+.diff-viewer button {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--foreground);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0.15rem 0.6rem;
+}
+
 .diff-tree {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
 }
 
 .diff-tree a {
@@ -210,8 +194,8 @@ body {
 .diff-viewer h3 {
   border-bottom: 1px solid var(--panel-border);
   cursor: pointer;
-  font-size: 0.8rem;
-  margin: 0.75rem 0 0.25rem;
+  font-size: 0.78rem;
+  margin: 0.6rem 0 0.25rem;
   padding-bottom: 0.25rem;
 }
 

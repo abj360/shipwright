@@ -1,47 +1,56 @@
 /**
- * App.tsx --- top-level layout for the live run view
+ * App.tsx --- the conversation view: requests, agent output, and diffs
  *
  * Contains:
  *   GATEWAY_URL: same-origin base the gateway is proxied under
- *   App: task box, live terminal, and diff for the current run
- *   useRunPatch(): fetches and refreshes the run diff
+ *   App: title, conversation, and the composer that queues runs
+ *   SendIcon: arrow while idle, square while a run is in flight
  */
 
-import { DiffViewer } from "./DiffViewer";
 import { startRun } from "./runs";
-import { TerminalViewer } from "./TerminalViewer";
-import { useEffect, useState } from "react";
+import { Turn } from "./Turn";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Same-origin: the vite dev proxy and the nginx image both forward /runs to the
 // gateway, so the browser never makes a cross-origin request.
 const GATEWAY_URL = "";
-const PATCH_POLL_MS = 3_000;
+
+interface ConversationTurn {
+  runId: string;
+  task: string;
+}
 
 export function App() {
   /**
-   * Renders the task box and, once a run is queued, its output and diff.
+   * Renders the conversation and the composer that adds to it.
    */
-  const [runId, setRunId] = useState("");
+  const [turns, setTurns] = useState<ConversationTurn[]>([]);
   const [task, setTask] = useState("");
-  const [starting, setStarting] = useState(false);
+  const [runningId, setRunningId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const patch = useRunPatch(GATEWAY_URL, runId);
+  const foot = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    foot.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [turns.length, runningId]);
+
+  const handleEnded = useCallback((runId: string) => {
+    setRunningId((current) => (current === runId ? null : current));
+  }, []);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (starting) {
+    if (runningId !== null) {
       return;
     }
-    setStarting(true);
     setError("");
     try {
       const record = await startRun(GATEWAY_URL, task);
-      setRunId(record.id);
+      setTurns((current) => [...current, { runId: record.id, task: record.task }]);
+      setRunningId(record.id);
       setTask("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "could not start the run");
-    } finally {
-      setStarting(false);
     }
   };
 
@@ -49,66 +58,61 @@ export function App() {
     <main className="app-shell">
       <header>
         <h1>shipwright</h1>
-        <form className="task-form" onSubmit={submit}>
-          <input
-            value={task}
-            onChange={(event) => setTask(event.target.value)}
-            placeholder="what should the agent do?"
-            aria-label="task"
-            autoFocus
-          />
-          <button type="submit" disabled={starting}>
-            {starting ? "starting…" : "run"}
-          </button>
-        </form>
-        {runId !== "" && <code className="run-id">{runId}</code>}
       </header>
+
+      <section className="conversation" aria-label="conversation">
+        {turns.map((turn) => (
+          <Turn
+            key={turn.runId}
+            runId={turn.runId}
+            task={turn.task}
+            gatewayUrl={GATEWAY_URL}
+            onEnded={handleEnded}
+          />
+        ))}
+        <div ref={foot} />
+      </section>
+
       {error !== "" && <p className="run-error">{error}</p>}
-      {runId === "" ? (
-        <p className="run-hint">Describe a task and press enter to start a run.</p>
-      ) : (
-        <>
-          <TerminalViewer runId={runId} gatewayUrl={GATEWAY_URL} />
-          <DiffViewer patch={patch} />
-        </>
-      )}
+
+      <form className="composer" onSubmit={submit}>
+        <input
+          value={task}
+          onChange={(event) => setTask(event.target.value)}
+          aria-label="task"
+          autoFocus
+        />
+        <button
+          type="submit"
+          disabled={runningId !== null}
+          aria-label={runningId !== null ? "run in progress" : "send"}
+          title={runningId !== null ? "run in progress" : "send"}
+        >
+          <SendIcon running={runningId !== null} />
+        </button>
+      </form>
     </main>
   );
 }
 
-export function useRunPatch(gatewayUrl: string, runId: string): string {
+export function SendIcon({ running }: { running: boolean }) {
   /**
-   * Fetches the current diff for a run, refreshing while it is active.
-   *
-   * @param gatewayUrl - Gateway base URL.
-   * @param runId - Run to fetch the diff for.
-   * @returns patch - Unified diff text, empty while unavailable.
+   * Draws the composer's icon: an arrow to send, a square while a run is live.
    */
-  const [patch, setPatch] = useState("");
-
-  useEffect(() => {
-    setPatch("");
-    if (runId === "") {
-      return;
-    }
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const response = await fetch(`${gatewayUrl}/runs/${runId}/diff`);
-        if (response.ok && !cancelled) {
-          setPatch(await response.text());
-        }
-      } catch {
-        // A gateway that is down or still starting is expected; the next poll retries.
-      }
-    };
-    const timer = setInterval(load, PATCH_POLL_MS);
-    void load();
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [gatewayUrl, runId]);
-
-  return patch;
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+      {running ? (
+        <rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" />
+      ) : (
+        <path
+          d="M12 19V5M12 5l-6 6M12 5l6 6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+    </svg>
+  );
 }
