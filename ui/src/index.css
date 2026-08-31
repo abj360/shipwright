@@ -55,13 +55,54 @@ body {
   letter-spacing: 0.02em;
 }
 
+.task-form {
+  display: flex;
+  flex: 1;
+  gap: 0.5rem;
+  max-width: 46rem;
+}
+
 .app-shell header input {
   background: var(--panel-bg);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--foreground);
+  flex: 1;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 0.4rem 0.7rem;
+}
+
+.app-shell header input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.app-shell header button {
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: var(--background);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 0.4rem 1.1rem;
+}
+
+.app-shell header button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.run-id {
+  color: var(--hunk);
   font-family: var(--font-mono);
-  padding: 0.35rem 0.6rem;
+  font-size: 0.7rem;
+}
+
+.run-error {
+  color: var(--status-err);
+  margin: 0;
 }
 
 .run-hint {
