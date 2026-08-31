@@ -72,7 +72,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.post("/runs", async (req, res) => {
+app.post("/runs", (req, res) => {
   const parsed = runRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues });
@@ -85,13 +85,13 @@ app.post("/runs", async (req, res) => {
     status: "queued",
     createdAt: new Date().toISOString(),
   };
-  runs.set(id, record);
-  await queue.enqueue(id, async () => {
-    record.status = "running";
+  runs.set(id, runRecord);
+  queue.enqueue(id, async () => {
+    runRecord.status = "running";
     logger.info({ runId: id }, "run started");
-    record.status = "done";
+    runRecord.status = "done";
   });
-  res.status(202).json(record);
+  res.status(202).json(runRecord);
 });
 
 app.get("/runs/:id", (req, res) => {
