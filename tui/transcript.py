@@ -109,9 +109,10 @@ def resume(argument: str) -> str:
     Returns:
         line: Summary of what was restored, or a usage hint.
     """
-    if not argument.strip():
+    trimmed = argument.strip()
+    if not trimmed:
         return MISSING_PATH_NOTICE
-    path = Path(argument.strip())
+    path = Path(trimmed)
     if not path.exists():
         return f"no transcript at {path}"
     return describe_resume(load_prior_rows(path))
