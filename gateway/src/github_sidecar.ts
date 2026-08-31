@@ -45,7 +45,6 @@ const logger = pino({ name: "github-sidecar" });
 const BRANCH_PREFIX = "shipwright/";
 const mutationQueue = new RequestQueue();
 const CLONE_DEPTH = 1;
-const API_TIMEOUT_MS = 20_000;
 const DEFAULT_REVIEWERS: string[] = [];
 
 async function git(args: string[]): Promise<void> {
@@ -176,6 +175,7 @@ export async function createDraftPr(
       issue_number: response.data.number,
       labels: ["shipwright"],
     });
+    logger.info({ pr: response.data.html_url }, "draft PR opened");
     return response.data.html_url;
   });
 }
@@ -224,15 +224,20 @@ export async function batchGetFileContents(
    */
   const octokit = octokitFor(config.githubToken);
   const { owner, repo } = repoCoordinates(config.repoUrl);
-  const entries = paths
-    .map((path, i) => `f${i}: object(expression: "HEAD:${path}") { ... on Blob { text } }`)
-    .join("\n");
-  const query = `query { repository(owner: "${owner}", name: "${repo}") { ${entries} } }`;
-  const response = await octokit.graphql<{ repository: Record<string, { text?: string }> }>(query);
   const contents = new Map<string, string>();
-  paths.forEach((path, i) => {
-    contents.set(path, response.repository[`f${i}`]?.text ?? "");
-  });
+  for (let start = 0; start < paths.length; start += MAX_BATCH_PATHS) {
+    const batch = paths.slice(start, start + MAX_BATCH_PATHS);
+    const entries = batch
+      .map((path, i) => `f${i}: object(expression: "HEAD:${path}") { ... on Blob { text } }`)
+      .join("\n");
+    const query = `query { repository(owner: "${owner}", name: "${repo}") { ${entries} } }`;
+    const response = await octokit.graphql<{
+      repository: Record<string, { text?: string }>;
+    }>(query);
+    batch.forEach((path, i) => {
+      contents.set(path, response.repository[`f${i}`]?.text ?? "");
+    });
+  }
   return contents;
 }
 
