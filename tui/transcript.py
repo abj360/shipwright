@@ -4,6 +4,7 @@ transcript.py --- reads a saved transcript back as completed timeline rows
 
 Contains:
     HistoricalStep: one step replayed from an earlier run
+    _row_from_entry(): builds one replayed row from a transcript entry
     load_prior_rows(): reads a saved transcript into dimmed completed rows
     MISSING_PATH_NOTICE: usage line shown when /resume is typed bare
     describe_resume(): summarizes what a resume loaded, for the timeline
@@ -55,6 +56,26 @@ class HistoricalStep:
         return True
 
 
+def _row_from_entry(index: int, entry: dict[str, object]) -> HistoricalStep:
+    """Builds one replayed row from a single transcript entry.
+
+    Args:
+        index: Position the step held in the original run.
+        entry: One deserialized transcript step.
+
+    Returns:
+        row: Replayed step ready for the timeline.
+    """
+    observation = entry.get("observation", "")
+    args = entry.get("tool_args", {})
+    return HistoricalStep(
+        index=index,
+        label=label_for(str(entry.get("tool_name", ""))),
+        target=str(args.get("path", "")) if isinstance(args, dict) else "",
+        failed=isinstance(observation, str) and observation.startswith("error:"),
+    )
+
+
 def load_prior_rows(path: Path) -> list[HistoricalStep]:
     """Reads a saved transcript into rows the timeline renders dimmed.
 
@@ -65,18 +86,7 @@ def load_prior_rows(path: Path) -> list[HistoricalStep]:
         rows: Completed steps in the order they originally ran.
     """
     raw = json.loads(path.read_text())
-    rows = []
-    for index, entry in enumerate(raw):
-        observation = entry.get("observation", "")
-        rows.append(
-            HistoricalStep(
-                index=index,
-                label=label_for(entry.get("tool_name", "")),
-                target=entry.get("tool_args", {}).get("path", ""),
-                failed=observation.startswith("error:"),
-            )
-        )
-    return rows
+    return [_row_from_entry(index, entry) for index, entry in enumerate(raw)]
 
 
 def describe_resume(rows: list[HistoricalStep]) -> str:
