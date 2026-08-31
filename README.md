@@ -142,6 +142,8 @@ either way.
 | `/runs`                   | POST   | Enqueue an agent run (`{task, issueUrl?}`)  |
 | `/runs`                   | GET    | List runs, paginated (`page`, `perPage`)    |
 | `/runs/:id`               | GET    | Fetch one run record                        |
+| `/runs/:id/diff`          | GET    | Working-tree diff the run produced          |
+| `/runs/:id/stream`        | WS     | Live agent output for one run               |
 | `/runs/:id/logs`          | GET    | Stream run status over SSE                  |
 | `/prs`                    | POST   | Open a draft PR for a finished run          |
 | `/webhooks/github`        | POST   | HMAC-verified issue/comment triggers        |
@@ -153,9 +155,33 @@ are explicitly ignored so runs can never trigger themselves in a loop.
 
 ## Live UI
 
-The React + xterm.js viewer (`ui/`) streams one run's sandbox output live over
-the gateway and renders the run's diff alongside it, with per-file collapsible
+The React + xterm.js viewer (`ui/`) streams one run's output live over the
+gateway and renders the run's diff alongside it, with per-file collapsible
 sections, line numbers, add/remove stats, and a copy-patch button.
+
+### Using it
+
+1. Start the stack (`docker compose … up`, or `scripts/run_local.sh`).
+2. Kick off a run and keep its id:
+
+   ```bash
+   curl -s -X POST localhost:4000/runs \
+     -H "Authorization: Bearer $GATEWAY_TOKEN" -H "content-type: application/json" \
+     -d '{"task": "fix the sign in add()"}'
+   ```
+
+   A GitHub issue labelled `shipwright`, or a `/shipwright` comment, starts one
+   the same way.
+3. Open the UI on `:5173` and paste that id into the box. The terminal replays
+   whatever the run has already printed and then follows it live; the diff panel
+   refreshes underneath. The badge turns green when the run ends.
+
+The browser never holds `GATEWAY_TOKEN`: it calls the gateway same-origin and
+the proxy in front of the UI attaches the header — the vite dev server in
+development, nginx in the built image.
+
+Which checkout a run edits comes from `AGENT_REPO`, or per run via
+`{"repo": "/path/to/checkout"}` on `POST /runs`.
 
 ## Quality gating
 
