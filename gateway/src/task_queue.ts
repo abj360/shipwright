@@ -130,7 +130,6 @@ export class TaskQueue {
       this.kick();
     }
   }
-}
 
   async drain(): Promise<void> {
     /**
@@ -150,3 +149,4 @@ export class TaskQueue {
     });
     appendFileSync(this.deadLetterPath, line + "\n");
   }
+}
