@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-cost_tracker.py --- tracks model spend per agent run
+cost_tracker.py --- tracks model spend per agent run across providers
 
 Contains:
     Usage: token usage of one completion
@@ -25,6 +25,10 @@ PRICE_PER_MTOK: dict[str, tuple[float, float]] = {
     "claude-sonnet-4-5": (3.0, 15.0),
     "claude-opus-4-1": (15.0, 75.0),
     "claude-haiku-4-5": (1.0, 5.0),
+    "gpt-4o": (2.5, 10.0),
+    "gpt-4o-mini": (0.15, 0.6),
+    "gpt-4.1": (2.0, 8.0),
+    "gpt-4.1-mini": (0.4, 1.6),
     "scripted": (0.0, 0.0),
 }
 FALLBACK_PRICE_PER_MTOK = (3.0, 15.0)
