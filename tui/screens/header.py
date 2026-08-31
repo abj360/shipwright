@@ -12,6 +12,7 @@ Contains:
     format_repo(): renders the checkout path for the bar
     NO_SPEND_LABEL: cost field shown before anything has been spent
     OVER_BUDGET_MARKER: appended once spend passes the tracker's warn threshold
+    _is_over_budget(): whether spend has passed the tracker's warn threshold
     format_cost(): renders spend and token counts for the bar
     HeaderBar: status bar across the top of the interface
     HeaderBar.compose(): builds the single status line
@@ -81,6 +82,18 @@ def format_repo(repo_path: Path) -> str:
     return resolved.name or str(resolved)
 
 
+def _is_over_budget(tracker: CostTracker) -> bool:
+    """Reports whether spend has passed the tracker's warn threshold.
+
+    Args:
+        tracker: Cost tracker accumulating the run's spend.
+
+    Returns:
+        is_over: True once spend crosses the tracker's warning threshold.
+    """
+    return tracker.total_usd() > tracker.budget_usd * WARN_THRESHOLD
+
+
 def format_cost(tracker: CostTracker | None, tokens: int = 0) -> str:
     """Renders spend and token counts as the header shows them.
 
@@ -98,7 +111,7 @@ def format_cost(tracker: CostTracker | None, tokens: int = 0) -> str:
         return NO_SPEND_LABEL
     total = tracker.total_usd()
     spend = f"${total:.4f}"
-    if total > tracker.budget_usd * WARN_THRESHOLD:
+    if _is_over_budget(tracker):
         spend += OVER_BUDGET_MARKER
     return f"{spend}  {tokens} tok" if tokens else spend
 
