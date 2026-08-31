@@ -59,16 +59,23 @@ TOOL_USAGE_INSTRUCTIONS = (
     "To call a tool, end your reply with the tool name on an Action line and "
     "its arguments on the next line, separated by semicolons:\n\n"
     "Action: read_file\n"
-    "path=calc.py\n\n"
+    "path=pkg/widget.py\n\n"
     "Action: write_file\n"
-    "path=calc.py; content=def add(a, b):\n"
-    "    return a + b\n\n"
-    "Reading a file does not change it. Every edit must go through write_file "
-    "or apply_patch, and write_file replaces the whole file, so include the "
-    "complete new contents.\n\n"
+    "path=pkg/widget.py; content=def area(w, h):\n"
+    "    return w * h\n\n"
+    "Reading a file does not change it. To change one line, use edit_file: it "
+    "leaves the rest of the file exactly as it was.\n\n"
+    "Action: edit_file\n"
+    "path=pkg/widget.py; find=return w - h; replace=return w * h\n\n"
+    "Reach for write_file only to create a file or rewrite one completely; it "
+    "replaces everything, so anything you leave out is lost.\n\n"
+    "Do only what the task asks. Do not add tests, scaffolding, dependencies or "
+    "files it did not ask for, and do not edit anything it did not mention.\n\n"
     "Never answer FINAL before you have used a tool: inspect the checkout "
     "first, make the change, then finish with\n\n"
     "FINAL: <one sentence describing the change you made>\n\n"
+    "The paths above are only examples of the format. Use the paths from the "
+    "task and from what the tools actually show you.\n\n"
     "Only the tool names listed above exist; anything else is rejected."
 )
 TRUNCATED_OBSERVATION_NOTE = "[older observation trimmed to fit the context budget]"
@@ -506,12 +513,21 @@ class AgentLoop:
     def _build_system_prompt(self) -> str:
         """Composes the system prompt from config plus tool usage instructions.
 
+        The task is repeated here rather than left as the opening message: a
+        long transcript pushes it out of view and the run drifts into work
+        nobody asked for.
+
         Returns:
             prompt: System prompt sent with every completion.
         """
         base = self.config.system_prompt or "You are an autonomous coding agent."
         tools = self._dispatcher.describe_tools()
-        return f"{base}\n\nAvailable tools:\n{tools}\n\n{TOOL_USAGE_INSTRUCTIONS}"
+        return (
+            f"{base}\n\n"
+            f"Your task:\n{self.config.task}\n\n"
+            f"Available tools:\n{tools}\n\n"
+            f"{TOOL_USAGE_INSTRUCTIONS}"
+        )
 
     def resume(self, prior: list[Step]) -> None:
         """Seeds the transcript with steps from an earlier, interrupted run.
