@@ -270,10 +270,14 @@ def test_loop_mx2_3_8() -> None:
     assert result.steps[0].thought == "think"
 
 
-def test_loop_case_case_sensitive_final() -> None:
-    """Verifies loop behavior: FINAL is case sensitive."""
+def test_loop_case_final_marker_is_case_insensitive() -> None:
+    """Verifies a lowercased marker still ends the run.
+
+    Models write "Final:" as often as "FINAL:", and treating the odd one as
+    ordinary text let it be captured as a tool argument and written into a file.
+    """
     result = AgentLoop(ScriptedLLM(["final: lower", "FINAL: upper"]), make_config()).run()
-    assert result.final_answer == "upper"
+    assert result.final_answer == "lower"
 
 
 def test_empty_task_still_runs() -> None:
@@ -887,3 +891,41 @@ def test_system_prompt_lists_every_registered_tool() -> None:
     prompt = loop._build_system_prompt()
     for tool in ("read_file", "write_file", "run_shell", "run_tests", "apply_patch"):
         assert tool in prompt
+
+
+def test_markdown_emphasis_around_the_action_marker_is_ignored() -> None:
+    """Verifies '**Action:** write_file' names the tool, not the asterisks."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("**Action:** write_file\npath=a.py; content=x = 1")
+    assert step.tool_name == "write_file"
+    assert step.tool_args["content"] == "x = 1"
+
+
+def test_a_tool_name_below_the_action_marker_is_found() -> None:
+    """Verifies a marker alone on its line still yields the tool beneath it."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("**Action:**\nwrite_file\npath=a.py")
+    assert step.tool_name == "write_file"
+    assert step.tool_args == {"path": "a.py"}
+
+
+def test_a_code_fence_is_not_mistaken_for_a_tool_name() -> None:
+    """Verifies a fenced block below the marker is not dispatched as a tool."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("**Action:**\n```python\nclass C:\n    pass\n```")
+    assert step.tool_name == ""
+
+
+def test_a_lowercase_final_terminates_an_argument_value() -> None:
+    """Verifies a closing 'Final:' line is not swallowed into file content."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("Action: write_file\npath=a.py; content=x = 1\nFinal: wrote it")
+    assert step.tool_args["content"] == "x = 1"
+
+
+def test_a_heading_marked_final_still_ends_the_run() -> None:
+    """Verifies '### Final:' reads as an answer rather than ordinary prose."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("### Final: all set")
+    assert step.tool_name == ""
+    assert loop._extract_final(step) == "all set"

@@ -20,6 +20,7 @@ Contains:
 """
 
 import logging
+import re
 import time
 import uuid
 from collections.abc import Callable
@@ -40,6 +41,14 @@ CHARS_PER_TOKEN_ESTIMATE = 4
 STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
 ACTION_PREFIX = "Action:"
+# Models wrap the markers in markdown ("**Action:**", "### FINAL:") and vary the
+# case, so the markers are matched through the decoration rather than literally.
+_MARKER_DECORATION = r"[ \t>*_`#-]*"
+_MARKER_TRAILER = r"[ \t]*[*_`]*[ \t]*"
+ACTION_PATTERN = re.compile(_MARKER_DECORATION + r"action[ \t]*:" + _MARKER_TRAILER, re.IGNORECASE)
+FINAL_PATTERN = re.compile(_MARKER_DECORATION + r"final[ \t]*:" + _MARKER_TRAILER, re.IGNORECASE)
+MARKUP_CHARS = "*_` "
+TOOL_NAME_PATTERN = re.compile(r"^[a-z_][a-z0-9_]*$")
 # Arguments whose value may run past the end of the line.
 MULTILINE_ARGS = frozenset({"content", "patch"})
 TOOL_USAGE_INSTRUCTIONS = (
@@ -65,6 +74,33 @@ PARSE_RETRY_HINT = (
     "Your last reply had no Action: and no FINAL:. "
     "Respond with exactly one Action: or one FINAL: and nothing else."
 )
+
+
+def _name_from_next_line(text: str) -> tuple[str, str]:
+    """Recovers a tool name that the model put below its Action marker.
+
+    Only a bare identifier is accepted, so a code fence or a sentence is left
+    alone rather than being dispatched as a tool.
+
+    Args:
+        text: Everything following the Action line.
+
+    Returns:
+        name: Tool name, empty when the next line does not hold one.
+        remainder: The text left to parse as arguments.
+    """
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped == "":
+            continue
+        if stripped.startswith("```"):
+            return "", text
+        candidate = stripped.strip(MARKUP_CHARS)
+        if TOOL_NAME_PATTERN.match(candidate) is None:
+            return "", text
+        return candidate, "\n".join(lines[index + 1 :])
+    return "", text
 
 
 @dataclass
@@ -213,7 +249,7 @@ class AgentLoop:
         )
         self._record_cost(completion)
         step = self._parse_step(completion.text)
-        if not step.tool_name and FINAL_ANSWER_PREFIX not in completion.text:
+        if not step.tool_name and FINAL_PATTERN.search(completion.text) is None:
             messages.append(Message(role="user", content=PARSE_RETRY_HINT))
             completion = self._client.complete(
                 messages, self._build_system_prompt(), STEP_BUDGET_TOKENS
@@ -247,25 +283,28 @@ class AgentLoop:
         """
         index = len(self._transcript)
         cleaned = text.replace("<think>", "").replace("</think>", "").strip()
-        action_at = cleaned.find(ACTION_PREFIX)
-        final_at = cleaned.find(FINAL_ANSWER_PREFIX)
+        action = ACTION_PATTERN.search(cleaned)
+        final = FINAL_PATTERN.search(cleaned)
         # A reply carrying both markers has not seen the tool result yet, so the
         # answer is premature: run the action and let the next turn conclude.
-        if action_at < 0 or (0 <= final_at < action_at):
+        if action is None or (final is not None and final.start() < action.start()):
             return Step(index=index, thought=cleaned)
-        thought, _, rest = cleaned.partition(ACTION_PREFIX)
-        head, _, following = rest.partition("\n")
+        thought = cleaned[: action.start()]
+        head, _, following = cleaned[action.end() :].partition("\n")
         # Models routinely put the arguments on the Action line itself, so the
         # tool name is the first token and everything after it is arguments.
         first_token, separator, inline = head.strip().partition(" ")
-        tool_name = first_token.strip().strip(";")
+        tool_name = first_token.strip().strip(";").strip(MARKUP_CHARS)
         arg_text = f"{inline}\n{following}" if separator else following
+        if not tool_name:
+            # "**Action:**" alone on its line puts the name on the next one.
+            tool_name, arg_text = _name_from_next_line(following)
         args: dict[str, str] = {}
         # Only the first action in a reply is executed, so arguments stop at the
         # next marker rather than swallowing a second call into a value.
         arg_lines: list[str] = []
         for line in arg_text.splitlines():
-            if line.startswith((ACTION_PREFIX, FINAL_ANSWER_PREFIX)):
+            if ACTION_PATTERN.match(line) or FINAL_PATTERN.match(line):
                 break
             arg_lines.append(line)
         pending = ""
@@ -317,8 +356,8 @@ class AgentLoop:
         Returns:
             answer: Answer text without the marker prefix.
         """
-        _, _, answer = step.thought.partition(FINAL_ANSWER_PREFIX)
-        answer = answer.strip()
+        match = FINAL_PATTERN.search(step.thought)
+        answer = step.thought[match.end() :].strip() if match else ""
         if not answer:
             return step.thought.strip()
         return answer
