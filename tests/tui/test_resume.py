@@ -8,10 +8,13 @@ Contains:
     test_failed_step_is_flagged(): an error observation marks the row failed
     test_router_dispatches_resume(): /resume reaches its handler
     test_plain_text_is_not_a_command(): an ordinary task is left alone
+    test_missing_transcript_raises(): a path that does not exist fails loudly
 """
 
 import json
 from pathlib import Path
+
+import pytest
 
 from tui.commands import CommandRouter
 from tui.transcript import describe_resume, load_prior_rows
@@ -71,3 +74,9 @@ def test_router_dispatches_resume(tmp_path: Path) -> None:
 def test_plain_text_is_not_a_command() -> None:
     """Asserts an ordinary task line is not treated as a command."""
     assert CommandRouter().dispatch("add a health endpoint") is None
+
+
+def test_missing_transcript_raises(tmp_path: Path) -> None:
+    """Asserts pointing resume at a missing file fails rather than silently passing."""
+    with pytest.raises(FileNotFoundError):
+        load_prior_rows(tmp_path / "absent.json")
