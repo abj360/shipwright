@@ -11,6 +11,7 @@ dependencies = [
   "httpx>=0.28.1",
   "pyyaml>=6.0.2",
   "docker>=7.2",
+  "textual>=8.2.8,<9.0",
 ]
 
 [project.optional-dependencies]
@@ -23,7 +24,7 @@ shipwright = "agent.cli:main"
 version = { attr = "agent.__version__" }
 
 [tool.setuptools.packages.find]
-include = ["agent*", "sandbox*", "security*"]
+include = ["agent*", "sandbox*", "security*", "tui*"]
 
 [tool.ruff]
 line-length = 100
@@ -35,11 +36,16 @@ select = ["E", "F", "I", "UP", "B", "SIM", "W"]
 [tool.mypy]
 strict = true
 python_version = "3.12"
+files = ["agent", "sandbox", "security", "tui"]
 
 [[tool.mypy.overrides]]
 module = ["docker", "docker.*"]
 ignore_missing_imports = true
 follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = ["textual.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "security"]
