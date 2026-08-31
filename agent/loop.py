@@ -20,6 +20,7 @@ Contains:
     AgentLoop.resume(): seeds steps from an interrupted run
 """
 
+import difflib
 import logging
 import re
 import time
@@ -54,6 +55,7 @@ MARKUP_CHARS = "*_` "
 TOOL_NAME_PATTERN = re.compile(r"^[a-z_][a-z0-9_]*$")
 # Arguments whose value may run past the end of the line.
 MULTILINE_ARGS = frozenset({"content", "patch"})
+MUTATING_TOOLS = frozenset({"write_file", "edit_file", "apply_patch"})
 # A lone closing tag on its own line is tool-protocol residue, never file
 # content, and a multi-line argument would otherwise swallow it.
 CLOSING_TAG_PATTERN = re.compile(r"^\s*</[A-Za-z_][\w.-]*>\s*$")
@@ -183,6 +185,9 @@ class Step:
         tool_name: Name of the tool the model chose, empty when the run ended.
         tool_args: Arguments passed to the tool.
         observation: Output the tool returned, possibly truncated.
+        diff: Working-tree diff this step produced, empty when it changed
+            nothing. Kept off the observation so it reaches the viewer
+            without spending the model's context on it.
     """
 
     index: int
@@ -190,6 +195,7 @@ class Step:
     tool_name: str = ""
     tool_args: dict[str, str] = field(default_factory=dict)
     observation: str = ""
+    diff: str = ""
 
 
 @dataclass
@@ -337,10 +343,13 @@ class AgentLoop:
                     input_tokens=self._input_tokens,
                     output_tokens=self._output_tokens,
                 )
+            before = self._snapshot_for(step)
             output = self._act(step)
             self._tool_calls += 1
             self._observe(step, output)
             failed = output.startswith(TOOL_ERROR_PREFIX)
+            if not failed:
+                step.diff = self._diff_for(step, before)
             self._consecutive_failures = self._consecutive_failures + 1 if failed else 0
             logger.info("run %s step %d tool=%s", self._run_id, step.index, step.tool_name)
             if on_step is not None:
@@ -486,6 +495,58 @@ class AgentLoop:
         self._failed_calls.add(signature)
         error = f"{TOOL_ERROR_PREFIX}{result.error}"
         return f"{error}\n{REPEATED_CALL_NOTE}" if repeated else error
+
+    def _snapshot_for(self, step: Step) -> str | None:
+        """Reads the file a mutating step is about to change.
+
+        Args:
+            step: Step about to run its tool.
+
+        Returns:
+            before: File text before the change, "" when it does not exist yet,
+                or None when the step names no single file.
+        """
+        if step.tool_name not in MUTATING_TOOLS:
+            return None
+        path = step.tool_args.get("path", "")
+        if not path:
+            return None
+        target = Path(self.config.repo_path) / path
+        return target.read_text(errors="replace") if target.is_file() else ""
+
+    def _diff_for(self, step: Step, before: str | None) -> str:
+        """Builds the diff for what this step alone changed.
+
+        Waiting until the run ends to show one accumulated patch hides which
+        step changed what, and diffing against the commit would replay every
+        earlier edit to the same file on every later row. This diffs the file
+        against how it looked a moment ago, so each row shows its own change.
+
+        Args:
+            step: Step that has just run its tool.
+            before: File text captured before the tool ran.
+
+        Returns:
+            diff: Unified diff for the step, empty when it changed nothing.
+        """
+        if step.tool_name not in MUTATING_TOOLS:
+            return ""
+        path = step.tool_args.get("path", "")
+        if before is None or not path:
+            result = self._dispatcher.dispatch("git_diff", {})
+            clean = not result.ok or result.output.strip() == "working tree clean"
+            return "" if clean else result.output[:MAX_TOOL_OUTPUT_CHARS]
+        target = Path(self.config.repo_path) / path
+        after = target.read_text(errors="replace") if target.is_file() else ""
+        if after == before:
+            return ""
+        body = difflib.unified_diff(
+            before.splitlines(keepends=True),
+            after.splitlines(keepends=True),
+            fromfile=f"a/{path}",
+            tofile=f"b/{path}",
+        )
+        return f"diff --git a/{path} b/{path}\n{''.join(body)}"[:MAX_TOOL_OUTPUT_CHARS]
 
     def _observe(self, step: Step, output: str) -> None:
         """Attaches a tool result to its step so the model sees it next turn.
