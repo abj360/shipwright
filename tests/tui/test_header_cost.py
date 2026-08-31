@@ -9,6 +9,8 @@ Contains:
     test_pricing_is_per_model(): two models are priced by their own rates
     test_header_line_carries_the_cost(): the rendered bar includes the spend
     test_over_budget_spend_is_marked(): passing the warn threshold is visible
+    test_zero_tokens_are_omitted(): a run with no tokens shows spend alone
+    test_reset_tracker_reads_zero(): resetting the run clears the readout
 """
 
 from pathlib import Path
@@ -64,3 +66,19 @@ def test_over_budget_spend_is_marked() -> None:
     tracker.record("claude-opus-4-1", 1_000_000, 0)
 
     assert OVER_BUDGET_MARKER in format_cost(tracker)
+
+
+def test_zero_tokens_are_omitted() -> None:
+    """Asserts a run with no tokens yet shows the spend without a token count."""
+    tracker = CostTracker(budget_usd=5.0)
+
+    assert "tok" not in format_cost(tracker, 0)
+
+
+def test_reset_tracker_reads_zero() -> None:
+    """Asserts clearing the tracker takes the header readout back to zero."""
+    tracker = CostTracker(budget_usd=5.0)
+    tracker.record("claude-haiku-4-5", 5_000, 500)
+    tracker.reset()
+
+    assert format_cost(tracker) == NO_SPEND_LABEL
