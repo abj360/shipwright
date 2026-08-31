@@ -113,7 +113,9 @@ def format_cost(tracker: CostTracker | None, tokens: int = 0) -> str:
     spend = f"${total:.4f}"
     if _is_over_budget(tracker):
         spend += OVER_BUDGET_MARKER
-    return f"{spend}  {tokens} tok" if tokens else spend
+    if not tokens:
+        return spend
+    return f"{spend}  {tokens} tok"
 
 
 class HeaderBar(Static):
