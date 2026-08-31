@@ -3,10 +3,8 @@
  * rate_limiter.test.ts --- unit tests for the Retry-After-aware request queue
  */
 
-import { backoffMs, isRateLimitError, parseRetryAfter } from "./rate_limiter";
+import { backoffMs, isRateLimitError, parseRetryAfter } from "../src/rate_limiter";
 import { describe, expect, it } from "vitest";
-
-import { backoffMs, isRateLimitError, parseRetryAfter } from "./rate_limiter";
 
 describe("parseRetryAfter", () => {
   it("parses seconds into milliseconds", () => {

@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { TaskQueue } from "./task_queue";
+import { TaskQueue } from "../src/task_queue";
 
 describe("TaskQueue metrics", () => {
   it("handles metrics shape with concurrency 1 (case 1)", () => {

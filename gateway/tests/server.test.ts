@@ -3,7 +3,7 @@
  * server.test.ts --- route-level tests for the Express gateway
  */
 
-import "./server";
+import { prRequestSchema, runRequestSchema } from "../src/server";
 import { describe, expect, it } from "vitest";
 
 describe("run request schema", () => {

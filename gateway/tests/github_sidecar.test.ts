@@ -3,10 +3,14 @@
  * github_sidecar.test.ts --- integration tests for the draft PR creation flow
  */
 
-import { closesIssueLine, mapWithLimit, markPrReady, renderPrBody } from "./github_sidecar";
+import {
+  closesIssueLine,
+  mapWithLimit,
+  markPrReady,
+  renderPrBody,
+  renderRunStats,
+} from "../src/github_sidecar";
 import { describe, expect, it, vi } from "vitest";
-
-import { closesIssueLine, renderPrBody, renderRunStats } from "./github_sidecar";
 
 describe("renderPrBody", () => {
   it("includes the summary and test list", () => {
@@ -102,7 +106,7 @@ vi.mock("@octokit/rest", () => ({
 
 describe("findOpenPr", () => {
   it("returns the url of an open PR", async () => {
-    const { findOpenPr } = await import("./github_sidecar");
+    const { findOpenPr } = await import("../src/github_sidecar");
     const url = await findOpenPr(
       { repoUrl: "https://github.com/o/r", workDir: "/tmp", githubToken: "t", baseBranch: "main" },
       "shipwright/x",
@@ -460,7 +464,7 @@ describe("sidecar rendering", () => {
 
 describe("batchGetFileContents", () => {
   it("builds one aliased field per path", async () => {
-    const { batchGetFileContents } = await import("./github_sidecar");
+    const { batchGetFileContents } = await import("../src/github_sidecar");
     expect(typeof batchGetFileContents).toBe("function");
   });
 });
@@ -515,7 +519,7 @@ describe("sidecar rendering cases", () => {
 
 describe("getRefSha", () => {
   it("is exported as a function", async () => {
-    const { getRefSha } = await import("./github_sidecar");
+    const { getRefSha } = await import("../src/github_sidecar");
     expect(typeof getRefSha).toBe("function");
   });
 });
@@ -552,7 +556,7 @@ describe("sidecar rendering", () => {
 
 describe("createPrFromRun", () => {
   it("is exported as a function", async () => {
-    const { createPrFromRun } = await import("./github_sidecar");
+    const { createPrFromRun } = await import("../src/github_sidecar");
     expect(typeof createPrFromRun).toBe("function");
   });
 });

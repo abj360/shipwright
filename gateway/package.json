@@ -9,8 +9,8 @@
     "start": "node dist/server.js",
     "dev": "ts-node src/server.ts",
     "test": "vitest run",
-    "lint": "eslint src --max-warnings 0",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint src tests --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "@octokit/rest": "^20.1.2",
