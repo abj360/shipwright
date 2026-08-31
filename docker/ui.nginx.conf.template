@@ -12,12 +12,13 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # Same-origin mirror of the vite dev proxy, so the browser never makes a
-    # cross-origin call to the gateway and needs no CORS headers either side.
+    # Same-origin mirror of the vite dev proxy. The bearer token is attached
+    # here rather than in the bundle, so the browser never holds it.
     location /runs {
         proxy_pass http://gateway:4000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
+        proxy_set_header Authorization "Bearer ${GATEWAY_TOKEN}";
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
         proxy_read_timeout 1h;
