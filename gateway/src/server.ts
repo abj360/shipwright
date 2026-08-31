@@ -16,7 +16,7 @@
 import { randomUUID } from "node:crypto";
 
 import { loadConfig } from "./config";
-import { createPrFromRun } from "./github_sidecar";
+import { createPrFromRun, type SidecarConfig } from "./github_sidecar";
 import { TaskQueue } from "./task_queue";
 import express from "express";
 import pino from "pino";
@@ -54,6 +54,13 @@ interface RunRecord {
 }
 
 const runs = new Map<string, RunRecord>();
+
+const sidecarConfig: SidecarConfig = {
+  repoUrl: config.REPO_URL,
+  workDir: config.WORK_DIR,
+  githubToken: config.GITHUB_TOKEN,
+  baseBranch: config.BASE_BRANCH,
+};
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });

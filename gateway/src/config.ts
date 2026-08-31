@@ -17,6 +17,7 @@ const envSchema = z.object({
   WORK_DIR: z.string().default("/tmp/shipwright-work"),
   AGENT_URL: z.string().url().default("http://agent:8000"),
   GATEWAY_TOKEN: z.string().min(1).default("dev-token"),
+  BASE_BRANCH: z.string().min(1).default("main"),
 });
 
 export type GatewayConfig = z.infer<typeof envSchema>;
