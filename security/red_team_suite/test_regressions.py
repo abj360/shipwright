@@ -6,6 +6,9 @@ Contains:
     test_reg_*: one regression per prior red-team finding
 """
 
+from pathlib import Path
+from typing import cast
+
 import pytest
 
 from sandbox.policies.cgroup_limits import CgroupLimits
@@ -27,7 +30,7 @@ def test_reg_002_only_workdir_is_writable() -> None:
     assert writable[0].target == "/work"
 
 
-def test_reg_114_egress_malware_test(tmp_path) -> None:
+def test_reg_114_egress_malware_test(tmp_path: Path) -> None:
     """REG-114: egress treats malware.test as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -45,20 +48,20 @@ def test_reg_114_egress_malware_test(tmp_path) -> None:
     assert policy.allows("malware.test") is False
 
 
-def test_reg_051_sandbox_config_defaults_hardened(tmp_path) -> None:
+def test_reg_051_sandbox_config_defaults_hardened(tmp_path: Path) -> None:
     """REG-051: sandbox config defaults hardened."""
     from sandbox.docker_runtime import SandboxConfig
 
     assert SandboxConfig().workdir == "/work"
 
 
-def test_reg_139_cgroup_pids_max_1(tmp_path) -> None:
+def test_reg_139_cgroup_pids_max_1(tmp_path: Path) -> None:
     """REG-139: cgroup pids_max=1 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(pids_max=1)
 
 
-def test_reg_096_egress_github_com(tmp_path) -> None:
+def test_reg_096_egress_github_com(tmp_path: Path) -> None:
     """REG-096: egress treats github.com as allowed."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -76,34 +79,35 @@ def test_reg_096_egress_github_com(tmp_path) -> None:
     assert policy.allows("github.com") is True
 
 
-def test_reg_034_docker_kwargs_include_cpu_ceiling(tmp_path) -> None:
+def test_reg_034_docker_kwargs_include_cpu_ceiling(tmp_path: Path) -> None:
     """REG-034: docker kwargs include cpu ceiling."""
     kwargs = CgroupLimits().to_docker_kwargs()
     assert kwargs["nano_cpus"] > 0
 
 
-def test_reg_022_mount_render_round_trip(tmp_path) -> None:
+def test_reg_022_mount_render_round_trip(tmp_path: Path) -> None:
     """REG-022: mount render round trip."""
     spec = build_mounts("/tmp/shipwright-work/t")[0]
     assert spec.render().endswith(":rw")
 
 
-def test_reg_040_workdir_mount_is_the_only_rw_mount(tmp_path) -> None:
+def test_reg_040_workdir_mount_is_the_only_rw_mount(tmp_path: Path) -> None:
     """REG-040: workdir mount is the only rw mount."""
     mounts = build_mounts("/tmp/shipwright-work/t")
     assert sum(1 for m in mounts if not m.read_only) == 1
 
 
-def test_reg_141_audit_chain_survives_50_records(tmp_path) -> None:
+def test_reg_141_audit_chain_survives_50_records(tmp_path: Path) -> None:
     """REG-141: audit chain survives 50 records."""
     from sandbox.audit_log import AuditLog, verify_chain
 
     log = AuditLog(tmp_path / "m.jsonl")
-    [log.record("exec", str(i)) for i in range(50)]
+    for i in range(50):
+        log.record("exec", str(i))
     assert verify_chain(tmp_path / "m.jsonl")
 
 
-def test_reg_111_egress_requestbin_net(tmp_path) -> None:
+def test_reg_111_egress_requestbin_net(tmp_path: Path) -> None:
     """REG-111: egress treats requestbin.net as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -121,12 +125,12 @@ def test_reg_111_egress_requestbin_net(tmp_path) -> None:
     assert policy.allows("requestbin.net") is False
 
 
-def test_reg_042_rootfs_kwargs_read_only(tmp_path) -> None:
+def test_reg_042_rootfs_kwargs_read_only(tmp_path: Path) -> None:
     """REG-042: rootfs kwargs read only."""
     assert rootfs_kwargs()["read_only"] is True
 
 
-def test_reg_137_cgroup_pids_max_64(tmp_path) -> None:
+def test_reg_137_cgroup_pids_max_64(tmp_path: Path) -> None:
     """REG-137: cgroup pids_max=64 passes."""
     limits = CgroupLimits(pids_max=64)
     assert limits.cpu_quota_micros > 0
@@ -147,7 +151,7 @@ def test_reg_004_unlisted_host_is_denied() -> None:
     assert policy.allows("github.com")
 
 
-def test_reg_159_env_limits_reads_memory(tmp_path) -> None:
+def test_reg_159_env_limits_reads_memory(tmp_path: Path) -> None:
     """REG-159: env limits reads memory."""
     import os
 
@@ -157,48 +161,48 @@ def test_reg_159_env_limits_reads_memory(tmp_path) -> None:
     assert limits_from_env().mem_bytes == 123456789
 
 
-def test_reg_071_cgroup_cpu_quota_micros_neg9(tmp_path) -> None:
+def test_reg_071_cgroup_cpu_quota_micros_neg9(tmp_path: Path) -> None:
     """REG-071: cgroup cpu_quota_micros=-9 fails validation."""
     with pytest.raises(ValueError):
         CgroupLimits(cpu_quota_micros=-9)
 
 
-def test_reg_064_mount_boot(tmp_path) -> None:
+def test_reg_064_mount_boot(tmp_path: Path) -> None:
     """REG-064: mount /boot is rejected."""
     with pytest.raises(MountError):
         build_mounts("/boot")
 
 
-def test_reg_045_scaled_limits_double_cpu(tmp_path) -> None:
+def test_reg_045_scaled_limits_double_cpu(tmp_path: Path) -> None:
     """REG-045: scaled limits double cpu."""
     scaled = CgroupLimits(cpu_quota_micros=100_000).scaled(2.0)
     assert scaled.cpu_quota_micros == 200_000
 
 
-def test_reg_147_validate_flags_empty_list(tmp_path) -> None:
+def test_reg_147_validate_flags_empty_list(tmp_path: Path) -> None:
     """REG-147: validate flags empty list."""
     assert EgressPolicy(allowed_hosts=()).validate() != []
 
 
-def test_reg_018_limits_scaled_preserves_pids(tmp_path) -> None:
+def test_reg_018_limits_scaled_preserves_pids(tmp_path: Path) -> None:
     """REG-018: limits scaled preserves pids."""
     scaled = CgroupLimits(pids_max=99).scaled(2.0)
     assert scaled.pids_max == 99
 
 
-def test_reg_117_mount_tmp_shipwright_work_r2_deep(tmp_path) -> None:
+def test_reg_117_mount_tmp_shipwright_work_r2_deep(tmp_path: Path) -> None:
     """REG-117: mount /tmp/shipwright-work/r2/deep is accepted."""
     mounts = build_mounts("/tmp/shipwright-work/r2/deep")
     assert mounts[0].target == "/work"
 
 
-def test_reg_031_egress_policy_immutable(tmp_path) -> None:
+def test_reg_031_egress_policy_immutable(tmp_path: Path) -> None:
     """REG-031: egress policy immutable."""
     policy = EgressPolicy(allowed_hosts=("a.com",))
     assert isinstance(policy.allowed_hosts, tuple)
 
 
-def test_reg_143_audit_for_task_creates_parent_dirs(tmp_path) -> None:
+def test_reg_143_audit_for_task_creates_parent_dirs(tmp_path: Path) -> None:
     """REG-143: audit for_task creates parent dirs."""
     from sandbox.audit_log import AuditLog
 
@@ -207,25 +211,25 @@ def test_reg_143_audit_for_task_creates_parent_dirs(tmp_path) -> None:
     assert (tmp_path / "deep" / "dir" / "t1.jsonl").exists()
 
 
-def test_reg_062_mount_tmp_shipwright_work_alpha(tmp_path) -> None:
+def test_reg_062_mount_tmp_shipwright_work_alpha(tmp_path: Path) -> None:
     """REG-062: mount /tmp/shipwright-work/alpha is accepted."""
     mounts = build_mounts("/tmp/shipwright-work/alpha")
     assert mounts[0].read_only is False
 
 
-def test_reg_120_mount_bin(tmp_path) -> None:
+def test_reg_120_mount_bin(tmp_path: Path) -> None:
     """REG-120: mount /bin is rejected."""
     with pytest.raises(MountError):
         build_mounts("/bin")
 
 
-def test_reg_041_volume_binding_targets_work(tmp_path) -> None:
+def test_reg_041_volume_binding_targets_work(tmp_path: Path) -> None:
     """REG-041: volume binding targets work."""
     vols = to_docker_volumes(build_mounts("/tmp/shipwright-work/t"))
     assert list(vols.values())[0]["bind"] == "/work"
 
 
-def test_reg_110_egress_ngrok_io(tmp_path) -> None:
+def test_reg_110_egress_ngrok_io(tmp_path: Path) -> None:
     """REG-110: egress treats ngrok.io as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -243,26 +247,26 @@ def test_reg_110_egress_ngrok_io(tmp_path) -> None:
     assert policy.allows("ngrok.io") is False
 
 
-def test_reg_052_exec_result_carries_exit_code(tmp_path) -> None:
+def test_reg_052_exec_result_carries_exit_code(tmp_path: Path) -> None:
     """REG-052: exec result carries exit code."""
     from sandbox.docker_runtime import ExecResult
 
     assert ExecResult(exit_code=1, output="x").exit_code == 1
 
 
-def test_reg_060_egress_raw_githubusercontent_com(tmp_path) -> None:
+def test_reg_060_egress_raw_githubusercontent_com(tmp_path: Path) -> None:
     """REG-060: egress host raw.githubusercontent.com is denied."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert policy.allows("raw.githubusercontent.com") is False
 
 
-def test_reg_027_scoped_policy_dedupes(tmp_path) -> None:
+def test_reg_027_scoped_policy_dedupes(tmp_path: Path) -> None:
     """REG-027: scoped policy dedupes."""
     scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("a.com",))
     assert len(scoped.allowed_hosts) == 1
 
 
-def test_reg_005_audit_chain_detects_tampering(tmp_path) -> None:
+def test_reg_005_audit_chain_detects_tampering(tmp_path: Path) -> None:
     """REG-005: rewriting one audit line breaks the hash chain."""
     from sandbox.audit_log import AuditLog, verify_chain
 
@@ -276,26 +280,26 @@ def test_reg_005_audit_chain_detects_tampering(tmp_path) -> None:
     assert not verify_chain(log_path)
 
 
-def test_reg_075_nft_rules_open_a_table(tmp_path) -> None:
+def test_reg_075_nft_rules_open_a_table(tmp_path: Path) -> None:
     """REG-075: nft rules open a table."""
     rules = EgressPolicy(allowed_hosts=()).render_nft_rules()
     assert rules.startswith("table inet shipwright")
 
 
-def test_reg_089_audit_retention_window_positive(tmp_path) -> None:
+def test_reg_089_audit_retention_window_positive(tmp_path: Path) -> None:
     """REG-089: audit retention window positive."""
     from sandbox.audit_log import RETENTION_DAYS
 
     assert RETENTION_DAYS > 0
 
 
-def test_reg_085_scoped_policy_keeps_base_hosts(tmp_path) -> None:
+def test_reg_085_scoped_policy_keeps_base_hosts(tmp_path: Path) -> None:
     """REG-085: scoped policy keeps base hosts."""
     scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("b.com",))
     assert scoped.allows("a.com")
 
 
-def test_reg_100_egress_files_pythonhosted_org(tmp_path) -> None:
+def test_reg_100_egress_files_pythonhosted_org(tmp_path: Path) -> None:
     """REG-100: egress treats files.pythonhosted.org as allowed."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -313,13 +317,13 @@ def test_reg_100_egress_files_pythonhosted_org(tmp_path) -> None:
     assert policy.allows("files.pythonhosted.org") is True
 
 
-def test_reg_021_heavy_preset_validates(tmp_path) -> None:
+def test_reg_021_heavy_preset_validates(tmp_path: Path) -> None:
     """REG-021: heavy preset validates."""
     heavy = CgroupLimits(cpu_quota_micros=400_000)
     assert heavy.mem_bytes > 0
 
 
-def test_reg_105_egress_bad_example(tmp_path) -> None:
+def test_reg_105_egress_bad_example(tmp_path: Path) -> None:
     """REG-105: egress treats bad.example as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -337,25 +341,25 @@ def test_reg_105_egress_bad_example(tmp_path) -> None:
     assert policy.allows("bad.example") is False
 
 
-def test_reg_134_cgroup_mem_bytes_67108864(tmp_path) -> None:
+def test_reg_134_cgroup_mem_bytes_67108864(tmp_path: Path) -> None:
     """REG-134: cgroup mem_bytes=67108864 passes."""
     limits = CgroupLimits(mem_bytes=67108864)
     assert limits.cpu_quota_micros > 0
 
 
-def test_reg_035_docker_kwargs_include_pids_ceiling(tmp_path) -> None:
+def test_reg_035_docker_kwargs_include_pids_ceiling(tmp_path: Path) -> None:
     """REG-035: docker kwargs include pids ceiling."""
     kwargs = CgroupLimits().to_docker_kwargs()
     assert kwargs["pids_limit"] > 0
 
 
-def test_reg_135_cgroup_mem_bytes_134217728(tmp_path) -> None:
+def test_reg_135_cgroup_mem_bytes_134217728(tmp_path: Path) -> None:
     """REG-135: cgroup mem_bytes=134217728 passes."""
     limits = CgroupLimits(mem_bytes=134217728)
     assert limits.cpu_quota_micros > 0
 
 
-def test_reg_108_egress_darkweb_onion(tmp_path) -> None:
+def test_reg_108_egress_darkweb_onion(tmp_path: Path) -> None:
     """REG-108: egress treats darkweb.onion as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -373,17 +377,17 @@ def test_reg_108_egress_darkweb_onion(tmp_path) -> None:
     assert policy.allows("darkweb.onion") is False
 
 
-def test_reg_046_describe_mentions_memory(tmp_path) -> None:
+def test_reg_046_describe_mentions_memory(tmp_path: Path) -> None:
     """REG-046: describe mentions memory."""
     assert "MiB" in CgroupLimits().describe()
 
 
-def test_reg_152_rootfs_tmpfs_is_writable(tmp_path) -> None:
+def test_reg_152_rootfs_tmpfs_is_writable(tmp_path: Path) -> None:
     """REG-152: rootfs tmpfs is writable."""
     assert "rw" in rootfs_kwargs()["tmpfs"]["/tmp"]
 
 
-def test_reg_091_mount_cleanup_validates_containment(tmp_path) -> None:
+def test_reg_091_mount_cleanup_validates_containment(tmp_path: Path) -> None:
     """REG-091: mount cleanup validates containment."""
     from sandbox.policies.mounts import cleanup_workspace
 
@@ -391,7 +395,7 @@ def test_reg_091_mount_cleanup_validates_containment(tmp_path) -> None:
         cleanup_workspace("/var/tmp/outside")
 
 
-def test_reg_026_scoped_policy_merges_hosts(tmp_path) -> None:
+def test_reg_026_scoped_policy_merges_hosts(tmp_path: Path) -> None:
     """REG-026: scoped policy merges hosts."""
     scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("b.com",))
     assert scoped.allows("b.com")
@@ -404,31 +408,31 @@ def test_reg_006_memswap_matches_memory_ceiling() -> None:
     assert kwargs["memswap_limit"] == kwargs["mem_limit"]
 
 
-def test_reg_119_mount_tmp_shipwright_work__hidden(tmp_path) -> None:
+def test_reg_119_mount_tmp_shipwright_work__hidden(tmp_path: Path) -> None:
     """REG-119: mount /tmp/shipwright-work/.hidden is accepted."""
     mounts = build_mounts("/tmp/shipwright-work/.hidden")
     assert mounts[0].target == "/work"
 
 
-def test_reg_116_mount_tmp_shipwright_work_r1(tmp_path) -> None:
+def test_reg_116_mount_tmp_shipwright_work_r1(tmp_path: Path) -> None:
     """REG-116: mount /tmp/shipwright-work/r1 is accepted."""
     mounts = build_mounts("/tmp/shipwright-work/r1")
     assert mounts[0].target == "/work"
 
 
-def test_reg_016_empty_allowlist_is_flagged(tmp_path) -> None:
+def test_reg_016_empty_allowlist_is_flagged(tmp_path: Path) -> None:
     """REG-016: empty allowlist is flagged."""
     problems = EgressPolicy(allowed_hosts=()).validate()
     assert problems
 
 
-def test_reg_122_mount_lib64(tmp_path) -> None:
+def test_reg_122_mount_lib64(tmp_path: Path) -> None:
     """REG-122: mount /lib64 is rejected."""
     with pytest.raises(MountError):
         build_mounts("/lib64")
 
 
-def test_reg_038_verify_passes_on_untampered_log(tmp_path) -> None:
+def test_reg_038_verify_passes_on_untampered_log(tmp_path: Path) -> None:
     """REG-038: verify passes on untampered log."""
     from sandbox.audit_log import AuditLog, verify_chain
 
@@ -437,48 +441,48 @@ def test_reg_038_verify_passes_on_untampered_log(tmp_path) -> None:
     assert verify_chain(tmp_path / "b.jsonl")
 
 
-def test_reg_059_egress_exfil_io(tmp_path) -> None:
+def test_reg_059_egress_exfil_io(tmp_path: Path) -> None:
     """REG-059: egress host exfil.io is denied."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert policy.allows("exfil.io") is False
 
 
-def test_reg_030_pids_preset_for_red_team_is_tight(tmp_path) -> None:
+def test_reg_030_pids_preset_for_red_team_is_tight(tmp_path: Path) -> None:
     """REG-030: pids preset for red team is tight."""
     assert CgroupLimits(pids_max=64).pids_max == 64
 
 
-def test_reg_044_nft_rules_accept_only_443(tmp_path) -> None:
+def test_reg_044_nft_rules_accept_only_443(tmp_path: Path) -> None:
     """REG-044: nft rules accept only 443."""
     rules = EgressPolicy(allowed_hosts=("github.com",)).render_nft_rules()
     assert "443" in rules
 
 
-def test_reg_048_mount_error_on_missing_root_parent(tmp_path) -> None:
+def test_reg_048_mount_error_on_missing_root_parent(tmp_path: Path) -> None:
     """REG-048: mount error on missing root parent."""
     with pytest.raises(MountError):
         build_mounts("/opt/elsewhere")
 
 
-def test_reg_017_whitespace_host_is_flagged(tmp_path) -> None:
+def test_reg_017_whitespace_host_is_flagged(tmp_path: Path) -> None:
     """REG-017: whitespace host is flagged."""
     problems = EgressPolicy(allowed_hosts=("bad host",)).validate()
     assert any("whitespace" in p for p in problems)
 
 
-def test_reg_157_limits_scaled_by_one_is_identity(tmp_path) -> None:
+def test_reg_157_limits_scaled_by_one_is_identity(tmp_path: Path) -> None:
     """REG-157: limits scaled by one is identity."""
     limits = CgroupLimits()
     assert limits.scaled(1.0) == limits
 
 
-def test_reg_146_empty_policy_renders_drop_only(tmp_path) -> None:
+def test_reg_146_empty_policy_renders_drop_only(tmp_path: Path) -> None:
     """REG-146: empty policy renders drop only."""
     rules = EgressPolicy(allowed_hosts=()).render_nft_rules()
     assert "accept;" not in rules
 
 
-def test_reg_160_describe_covers_all_three_ceilings(tmp_path) -> None:
+def test_reg_160_describe_covers_all_three_ceilings(tmp_path: Path) -> None:
     """REG-160: describe covers all three ceilings."""
     text = CgroupLimits().describe()
     assert "cpu" in text and "mem" in text and "pids" in text
@@ -498,20 +502,20 @@ def test_reg_010_policy_validation_catches_duplicates() -> None:
     assert any("duplicate" in p for p in problems)
 
 
-def test_reg_161_sandbox_config_workdir_default(tmp_path) -> None:
+def test_reg_161_sandbox_config_workdir_default(tmp_path: Path) -> None:
     """REG-161: sandbox config workdir default."""
     from sandbox.docker_runtime import SandboxConfig
 
     assert SandboxConfig().workdir.startswith("/")
 
 
-def test_reg_131_cgroup_cpu_quota_micros_50_000(tmp_path) -> None:
+def test_reg_131_cgroup_cpu_quota_micros_50_000(tmp_path: Path) -> None:
     """REG-131: cgroup cpu_quota_micros=50_000 passes."""
     limits = CgroupLimits(cpu_quota_micros=50_000)
     assert limits.cpu_quota_micros > 0
 
 
-def test_reg_144_audit_mirror_flag_defaults_off(tmp_path) -> None:
+def test_reg_144_audit_mirror_flag_defaults_off(tmp_path: Path) -> None:
     """REG-144: audit mirror flag defaults off."""
     from sandbox.audit_log import AuditLog
 
@@ -519,67 +523,67 @@ def test_reg_144_audit_mirror_flag_defaults_off(tmp_path) -> None:
     assert log._mirror is False
 
 
-def test_reg_043_nft_rules_list_allowed_hosts(tmp_path) -> None:
+def test_reg_043_nft_rules_list_allowed_hosts(tmp_path: Path) -> None:
     """REG-043: nft rules list allowed hosts."""
     rules = EgressPolicy(allowed_hosts=("github.com",)).render_nft_rules()
     assert "github.com" in rules
 
 
-def test_reg_050_policy_validate_passes_clean_list(tmp_path) -> None:
+def test_reg_050_policy_validate_passes_clean_list(tmp_path: Path) -> None:
     """REG-050: policy validate passes clean list."""
     assert EgressPolicy(allowed_hosts=("github.com",)).validate() == []
 
 
-def test_reg_133_cgroup_cpu_quota_micros_0(tmp_path) -> None:
+def test_reg_133_cgroup_cpu_quota_micros_0(tmp_path: Path) -> None:
     """REG-133: cgroup cpu_quota_micros=0 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(cpu_quota_micros=0)
 
 
-def test_reg_028_suffix_match_blocks_similar_names(tmp_path) -> None:
+def test_reg_028_suffix_match_blocks_similar_names(tmp_path: Path) -> None:
     """REG-028: suffix match blocks similar names."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert not policy.allows("notgithub.com")
 
 
-def test_reg_127_mount_tmp____etc(tmp_path) -> None:
+def test_reg_127_mount_tmp____etc(tmp_path: Path) -> None:
     """REG-127: mount /tmp/../etc is rejected."""
     with pytest.raises(MountError):
         build_mounts("/tmp/../etc")
 
 
-def test_reg_023_volumes_mapping_mode(tmp_path) -> None:
+def test_reg_023_volumes_mapping_mode(tmp_path: Path) -> None:
     """REG-023: volumes mapping mode."""
     vols = to_docker_volumes(build_mounts("/tmp/shipwright-work/t"))
     assert list(vols.values())[0]["mode"] == "rw"
 
 
-def test_reg_061_egress_pypi_org(tmp_path) -> None:
+def test_reg_061_egress_pypi_org(tmp_path: Path) -> None:
     """REG-061: egress host pypi.org is denied."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert policy.allows("pypi.org") is False
 
 
-def test_reg_068_cgroup_pids_max_2(tmp_path) -> None:
+def test_reg_068_cgroup_pids_max_2(tmp_path: Path) -> None:
     """REG-068: cgroup pids_max=2 fails validation."""
     with pytest.raises(ValueError):
         CgroupLimits(pids_max=2)
 
 
-def test_reg_077_policy_load_empty_yaml(tmp_path) -> None:
+def test_reg_077_policy_load_empty_yaml(tmp_path: Path) -> None:
     """REG-077: policy load empty yaml."""
     (tmp_path / "e.yml").write_text("allowed: []\n")
     policy = EgressPolicy.load(tmp_path / "e.yml")
     assert policy.allowed_hosts == ()
 
 
-def test_reg_121_mount_sbin(tmp_path) -> None:
+def test_reg_121_mount_sbin(tmp_path: Path) -> None:
     """REG-121: mount /sbin is rejected."""
     with pytest.raises(MountError):
         build_mounts("/sbin")
 
 
-def test_reg_112_egress_unknown_org(tmp_path) -> None:
+def test_reg_112_egress_unknown_org(tmp_path: Path) -> None:
     """REG-112: egress treats unknown.org as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -597,7 +601,7 @@ def test_reg_112_egress_unknown_org(tmp_path) -> None:
     assert policy.allows("unknown.org") is False
 
 
-def test_reg_039_per_task_audit_logs_separate(tmp_path) -> None:
+def test_reg_039_per_task_audit_logs_separate(tmp_path: Path) -> None:
     """REG-039: per-task audit logs separate."""
     from sandbox.audit_log import AuditLog
 
@@ -606,13 +610,13 @@ def test_reg_039_per_task_audit_logs_separate(tmp_path) -> None:
     assert (tmp_path / "task-9.jsonl").exists()
 
 
-def test_reg_130_mount_dev_null(tmp_path) -> None:
+def test_reg_130_mount_dev_null(tmp_path: Path) -> None:
     """REG-130: mount /dev/null is rejected."""
     with pytest.raises(MountError):
         build_mounts("/dev/null")
 
 
-def test_reg_072_audit_chain_head_changes_per_record(tmp_path) -> None:
+def test_reg_072_audit_chain_head_changes_per_record(tmp_path: Path) -> None:
     """REG-072: audit chain head changes per record."""
     from sandbox.audit_log import AuditLog
 
@@ -623,13 +627,13 @@ def test_reg_072_audit_chain_head_changes_per_record(tmp_path) -> None:
     assert (tmp_path / "x.jsonl").read_text() != first
 
 
-def test_reg_056_egress_github_com(tmp_path) -> None:
+def test_reg_056_egress_github_com(tmp_path: Path) -> None:
     """REG-056: egress host github.com is allowed."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert policy.allows("github.com") is True
 
 
-def test_reg_053_audit_rotate_skips_small_logs(tmp_path) -> None:
+def test_reg_053_audit_rotate_skips_small_logs(tmp_path: Path) -> None:
     """REG-053: audit rotate skips small logs."""
     from sandbox.audit_log import rotate_if_needed
 
@@ -639,38 +643,38 @@ def test_reg_053_audit_rotate_skips_small_logs(tmp_path) -> None:
     assert path.exists()
 
 
-def test_reg_079_volume_map_includes_mode(tmp_path) -> None:
+def test_reg_079_volume_map_includes_mode(tmp_path: Path) -> None:
     """REG-079: volume map includes mode."""
     vols = to_docker_volumes(build_mounts("/tmp/shipwright-work/t"))
     assert "mode" in list(vols.values())[0]
 
 
-def test_reg_162_sandbox_config_env_default_empty(tmp_path) -> None:
+def test_reg_162_sandbox_config_env_default_empty(tmp_path: Path) -> None:
     """REG-162: sandbox config env default empty."""
     from sandbox.docker_runtime import SandboxConfig
 
     assert SandboxConfig().env == {}
 
 
-def test_reg_138_cgroup_pids_max_256(tmp_path) -> None:
+def test_reg_138_cgroup_pids_max_256(tmp_path: Path) -> None:
     """REG-138: cgroup pids_max=256 passes."""
     limits = CgroupLimits(pids_max=256)
     assert limits.cpu_quota_micros > 0
 
 
-def test_reg_067_cgroup_pids_max_256(tmp_path) -> None:
+def test_reg_067_cgroup_pids_max_256(tmp_path: Path) -> None:
     """REG-067: cgroup pids_max=256 passes validation."""
     limits = CgroupLimits(pids_max=256)
     assert limits.pids_max >= 16
 
 
-def test_reg_024_rootfs_tmpfs_present(tmp_path) -> None:
+def test_reg_024_rootfs_tmpfs_present(tmp_path: Path) -> None:
     """REG-024: rootfs tmpfs present."""
     kwargs = rootfs_kwargs()
     assert "/tmp" in kwargs["tmpfs"]
 
 
-def test_reg_078_mount_extra_mounts_stay_read_only(tmp_path) -> None:
+def test_reg_078_mount_extra_mounts_stay_read_only(tmp_path: Path) -> None:
     """REG-078: mount extra mounts stay read only."""
     from sandbox.policies.mounts import MountSpec
 
@@ -678,18 +682,19 @@ def test_reg_078_mount_extra_mounts_stay_read_only(tmp_path) -> None:
     assert mounts[-1].read_only is True
 
 
-def test_reg_165_policy_hosts_stored_as_tuple(tmp_path) -> None:
+def test_reg_165_policy_hosts_stored_as_tuple(tmp_path: Path) -> None:
     """REG-165: policy hosts stored as tuple."""
-    assert isinstance(EgressPolicy(allowed_hosts=["a.com"]).allowed_hosts, tuple)
+    policy = EgressPolicy(allowed_hosts=cast(tuple[str, ...], ["a.com"]))
+    assert isinstance(policy.allowed_hosts, tuple)
 
 
-def test_reg_033_docker_kwargs_include_memory_ceiling(tmp_path) -> None:
+def test_reg_033_docker_kwargs_include_memory_ceiling(tmp_path: Path) -> None:
     """REG-033: docker kwargs include memory ceiling."""
     kwargs = CgroupLimits().to_docker_kwargs()
     assert kwargs["mem_limit"] > 0
 
 
-def test_reg_155_cleanup_deletes_nested_workdir(tmp_path) -> None:
+def test_reg_155_cleanup_deletes_nested_workdir(tmp_path: Path) -> None:
     """REG-155: cleanup deletes nested workdir."""
     from sandbox.policies.mounts import WORKSPACE_ROOT, cleanup_workspace
 
@@ -709,14 +714,14 @@ def test_reg_011_tmp_tmpfs_is_noexec() -> None:
     assert "noexec" in kwargs["tmpfs"]["/tmp"]
 
 
-def test_reg_076_policy_load_from_yaml_round_trip(tmp_path) -> None:
+def test_reg_076_policy_load_from_yaml_round_trip(tmp_path: Path) -> None:
     """REG-076: policy load from yaml round trip."""
     (tmp_path / "p.yml").write_text("allowed:\n  - github.com\n")
     policy = EgressPolicy.load(tmp_path / "p.yml")
     assert policy.allows("github.com")
 
 
-def test_reg_097_egress_api_github_com(tmp_path) -> None:
+def test_reg_097_egress_api_github_com(tmp_path: Path) -> None:
     """REG-097: egress treats api.github.com as allowed."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -734,27 +739,27 @@ def test_reg_097_egress_api_github_com(tmp_path) -> None:
     assert policy.allows("api.github.com") is True
 
 
-def test_reg_090_audit_max_log_bytes_positive(tmp_path) -> None:
+def test_reg_090_audit_max_log_bytes_positive(tmp_path: Path) -> None:
     """REG-090: audit max log bytes positive."""
     from sandbox.audit_log import MAX_LOG_BYTES
 
     assert MAX_LOG_BYTES > 0
 
 
-def test_reg_086_exec_result_default_error_empty(tmp_path) -> None:
+def test_reg_086_exec_result_default_error_empty(tmp_path: Path) -> None:
     """REG-086: exec result default error empty."""
     from sandbox.docker_runtime import ExecResult
 
     assert ExecResult(exit_code=0, output="x").error == ""
 
 
-def test_reg_019_describe_renders_one_line(tmp_path) -> None:
+def test_reg_019_describe_renders_one_line(tmp_path: Path) -> None:
     """REG-019: describe renders one line."""
     text = CgroupLimits().describe()
     assert "pids=" in text
 
 
-def test_reg_080_describe_lists_one_line_per_mount(tmp_path) -> None:
+def test_reg_080_describe_lists_one_line_per_mount(tmp_path: Path) -> None:
     """REG-080: describe lists one line per mount."""
     from sandbox.policies.mounts import describe_mounts
 
@@ -762,7 +767,7 @@ def test_reg_080_describe_lists_one_line_per_mount(tmp_path) -> None:
     assert len(text.splitlines()) == 1
 
 
-def test_reg_103_egress_proxy_golang_org(tmp_path) -> None:
+def test_reg_103_egress_proxy_golang_org(tmp_path: Path) -> None:
     """REG-103: egress treats proxy.golang.org as allowed."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -780,70 +785,72 @@ def test_reg_103_egress_proxy_golang_org(tmp_path) -> None:
     assert policy.allows("proxy.golang.org") is True
 
 
-def test_reg_073_audit_log_verifies_after_many_records(tmp_path) -> None:
+def test_reg_073_audit_log_verifies_after_many_records(tmp_path: Path) -> None:
     """REG-073: audit log verifies after many records."""
     from sandbox.audit_log import AuditLog, verify_chain
 
     log = AuditLog(tmp_path / "y.jsonl")
-    [log.record("exec", str(i)) for i in range(10)]
+    for i in range(10):
+        log.record("exec", str(i))
     assert verify_chain(tmp_path / "y.jsonl")
 
 
-def test_reg_140_cgroup_pids_max_neg1(tmp_path) -> None:
+def test_reg_140_cgroup_pids_max_neg1(tmp_path: Path) -> None:
     """REG-140: cgroup pids_max=-1 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(pids_max=-1)
 
 
-def test_reg_125_mount_run(tmp_path) -> None:
+def test_reg_125_mount_run(tmp_path: Path) -> None:
     """REG-125: mount /run is rejected."""
     with pytest.raises(MountError):
         build_mounts("/run")
 
 
-def test_reg_055_cgroup_describe_mentions_pids(tmp_path) -> None:
+def test_reg_055_cgroup_describe_mentions_pids(tmp_path: Path) -> None:
     """REG-055: cgroup describe mentions pids."""
     assert "pids=" in CgroupLimits().describe()
 
 
-def test_reg_142_tampered_middle_record_breaks_chain(tmp_path) -> None:
+def test_reg_142_tampered_middle_record_breaks_chain(tmp_path: Path) -> None:
     """REG-142: tampered middle record breaks chain."""
     from sandbox.audit_log import AuditLog, verify_chain
 
     log = AuditLog(tmp_path / "t.jsonl")
-    [log.record("exec", str(i)) for i in range(5)]
+    for i in range(5):
+        log.record("exec", str(i))
     lines = (tmp_path / "t.jsonl").read_text().splitlines()
     lines[2] = lines[2].replace("2", "9", 1)
     (tmp_path / "t.jsonl").write_text(chr(10).join(lines) + chr(10))
     assert not verify_chain(tmp_path / "t.jsonl")
 
 
-def test_reg_025_egress_network_name_stable(tmp_path) -> None:
+def test_reg_025_egress_network_name_stable(tmp_path: Path) -> None:
     """REG-025: egress network name stable."""
     assert EgressPolicy(allowed_hosts=()).network_name() == "shipwright-egress"
 
 
-def test_reg_156_volume_map_keyed_by_source(tmp_path) -> None:
+def test_reg_156_volume_map_keyed_by_source(tmp_path: Path) -> None:
     """REG-156: volume map keyed by source."""
     mounts = build_mounts("/tmp/shipwright-work/t")
     vols = to_docker_volumes(mounts)
     assert list(vols.keys())[0] == mounts[0].source
 
 
-def test_reg_087_sandbox_config_image_default(tmp_path) -> None:
+def test_reg_087_sandbox_config_image_default(tmp_path: Path) -> None:
     """REG-087: sandbox config image default."""
     from sandbox.docker_runtime import SandboxConfig
 
     assert "shipwright-sandbox" in SandboxConfig().image
 
 
-def test_reg_083_tmpfs_size_override(tmp_path) -> None:
+def test_reg_083_tmpfs_size_override(tmp_path: Path) -> None:
     """REG-083: tmpfs size override."""
     kwargs = rootfs_kwargs(tmp_size="512m")
     assert "512m" in kwargs["tmpfs"]["/tmp"]
 
 
-def test_reg_118_mount_tmp_shipwright_work_a_b(tmp_path) -> None:
+def test_reg_118_mount_tmp_shipwright_work_a_b(tmp_path: Path) -> None:
     """REG-118: mount /tmp/shipwright-work/a b is accepted."""
     mounts = build_mounts("/tmp/shipwright-work/a b")
     assert mounts[0].target == "/work"
@@ -855,25 +862,25 @@ def test_reg_012_zero_cpu_quota_is_rejected() -> None:
         CgroupLimits(cpu_quota_micros=0)
 
 
-def test_reg_074_nft_rules_end_with_closing_braces(tmp_path) -> None:
+def test_reg_074_nft_rules_end_with_closing_braces(tmp_path: Path) -> None:
     """REG-074: nft rules end with closing braces."""
     rules = EgressPolicy(allowed_hosts=("github.com",)).render_nft_rules()
     assert rules.rstrip().endswith("}")
 
 
-def test_reg_084_egress_describe_counts_hosts(tmp_path) -> None:
+def test_reg_084_egress_describe_counts_hosts(tmp_path: Path) -> None:
     """REG-084: egress describe counts hosts."""
     text = EgressPolicy(allowed_hosts=("a.com", "b.com")).describe()
     assert "2 hosts" in text
 
 
-def test_reg_058_egress_bad_host(tmp_path) -> None:
+def test_reg_058_egress_bad_host(tmp_path: Path) -> None:
     """REG-058: egress host bad.host is denied."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert policy.allows("bad.host") is False
 
 
-def test_reg_098_egress_objects_githubusercontent_com(tmp_path) -> None:
+def test_reg_098_egress_objects_githubusercontent_com(tmp_path: Path) -> None:
     """REG-098: egress treats objects.githubusercontent.com as allowed."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -891,7 +898,7 @@ def test_reg_098_egress_objects_githubusercontent_com(tmp_path) -> None:
     assert policy.allows("objects.githubusercontent.com") is True
 
 
-def test_reg_109_egress_pastebin_com(tmp_path) -> None:
+def test_reg_109_egress_pastebin_com(tmp_path: Path) -> None:
     """REG-109: egress treats pastebin.com as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -909,25 +916,25 @@ def test_reg_109_egress_pastebin_com(tmp_path) -> None:
     assert policy.allows("pastebin.com") is False
 
 
-def test_reg_070_cgroup_cpu_quota_micros_999_999(tmp_path) -> None:
+def test_reg_070_cgroup_cpu_quota_micros_999_999(tmp_path: Path) -> None:
     """REG-070: cgroup cpu_quota_micros=999_999 passes validation."""
     limits = CgroupLimits(cpu_quota_micros=999_999)
     assert limits.pids_max >= 16
 
 
-def test_reg_123_mount_media(tmp_path) -> None:
+def test_reg_123_mount_media(tmp_path: Path) -> None:
     """REG-123: mount /media is rejected."""
     with pytest.raises(MountError):
         build_mounts("/media")
 
 
-def test_reg_145_nft_rules_have_one_accept_per_host(tmp_path) -> None:
+def test_reg_145_nft_rules_have_one_accept_per_host(tmp_path: Path) -> None:
     """REG-145: nft rules have one accept per host."""
     rules = EgressPolicy(allowed_hosts=("a.com", "b.com")).render_nft_rules()
     assert rules.count("accept;") == 2
 
 
-def test_reg_115_egress_c2_example(tmp_path) -> None:
+def test_reg_115_egress_c2_example(tmp_path: Path) -> None:
     """REG-115: egress treats c2.example as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -945,20 +952,20 @@ def test_reg_115_egress_c2_example(tmp_path) -> None:
     assert policy.allows("c2.example") is False
 
 
-def test_reg_163_exec_result_output_preserved(tmp_path) -> None:
+def test_reg_163_exec_result_output_preserved(tmp_path: Path) -> None:
     """REG-163: exec result output preserved."""
     from sandbox.docker_runtime import ExecResult
 
     assert ExecResult(exit_code=0, output="abc").output == "abc"
 
 
-def test_reg_081_scaled_limits_keep_pids_ceiling(tmp_path) -> None:
+def test_reg_081_scaled_limits_keep_pids_ceiling(tmp_path: Path) -> None:
     """REG-081: scaled limits keep pids ceiling."""
     scaled = CgroupLimits(pids_max=77).scaled(3.0)
     assert scaled.pids_max == 77
 
 
-def test_reg_099_egress_pypi_org(tmp_path) -> None:
+def test_reg_099_egress_pypi_org(tmp_path: Path) -> None:
     """REG-099: egress treats pypi.org as allowed."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -976,13 +983,13 @@ def test_reg_099_egress_pypi_org(tmp_path) -> None:
     assert policy.allows("pypi.org") is True
 
 
-def test_reg_149_suffix_match_needs_dot_boundary(tmp_path) -> None:
+def test_reg_149_suffix_match_needs_dot_boundary(tmp_path: Path) -> None:
     """REG-149: suffix match needs dot boundary."""
     policy = EgressPolicy(allowed_hosts=("example.com",))
     assert not policy.allows("notexample.com")
 
 
-def test_reg_136_cgroup_mem_bytes_1(tmp_path) -> None:
+def test_reg_136_cgroup_mem_bytes_1(tmp_path: Path) -> None:
     """REG-136: cgroup mem_bytes=1 fails."""
     with pytest.raises(ValueError):
         CgroupLimits(mem_bytes=1)
@@ -996,7 +1003,7 @@ def test_reg_013_cleanup_refuses_paths_outside_workspace() -> None:
         cleanup_workspace("/etc")
 
 
-def test_reg_037_audit_log_appends_jsonl(tmp_path) -> None:
+def test_reg_037_audit_log_appends_jsonl(tmp_path: Path) -> None:
     """REG-037: audit log appends jsonl."""
     from sandbox.audit_log import AuditLog
 
@@ -1005,13 +1012,13 @@ def test_reg_037_audit_log_appends_jsonl(tmp_path) -> None:
     assert (tmp_path / "a.jsonl").read_text().count(chr(10)) == 1
 
 
-def test_reg_129_mount_private_tmp(tmp_path) -> None:
+def test_reg_129_mount_private_tmp(tmp_path: Path) -> None:
     """REG-129: mount /private/tmp is rejected."""
     with pytest.raises(MountError):
         build_mounts("/private/tmp")
 
 
-def test_reg_107_egress_exfil_net(tmp_path) -> None:
+def test_reg_107_egress_exfil_net(tmp_path: Path) -> None:
     """REG-107: egress treats exfil.net as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -1029,7 +1036,7 @@ def test_reg_107_egress_exfil_net(tmp_path) -> None:
     assert policy.allows("exfil.net") is False
 
 
-def test_reg_113_egress_untrusted_dev(tmp_path) -> None:
+def test_reg_113_egress_untrusted_dev(tmp_path: Path) -> None:
     """REG-113: egress treats untrusted.dev as denied."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -1047,25 +1054,25 @@ def test_reg_113_egress_untrusted_dev(tmp_path) -> None:
     assert policy.allows("untrusted.dev") is False
 
 
-def test_reg_148_validate_passes_single_host(tmp_path) -> None:
+def test_reg_148_validate_passes_single_host(tmp_path: Path) -> None:
     """REG-148: validate passes single host."""
     assert EgressPolicy(allowed_hosts=("a.com",)).validate() == []
 
 
-def test_reg_065_mount_dev(tmp_path) -> None:
+def test_reg_065_mount_dev(tmp_path: Path) -> None:
     """REG-065: mount /dev is rejected."""
     with pytest.raises(MountError):
         build_mounts("/dev")
 
 
-def test_reg_164_egress_network_constant(tmp_path) -> None:
+def test_reg_164_egress_network_constant(tmp_path: Path) -> None:
     """REG-164: egress network constant."""
     from sandbox.policies.egress import EGRESS_NETWORK
 
     assert EGRESS_NETWORK.startswith("shipwright")
 
 
-def test_reg_082_limits_from_env_reads_cpu(tmp_path) -> None:
+def test_reg_082_limits_from_env_reads_cpu(tmp_path: Path) -> None:
     """REG-082: limits from env reads cpu."""
     import os
 
@@ -1075,37 +1082,37 @@ def test_reg_082_limits_from_env_reads_cpu(tmp_path) -> None:
     assert limits_from_env().cpu_quota_micros == 222222
 
 
-def test_reg_158_limits_scaled_by_half(tmp_path) -> None:
+def test_reg_158_limits_scaled_by_half(tmp_path: Path) -> None:
     """REG-158: limits scaled by half."""
     scaled = CgroupLimits(cpu_quota_micros=100_000).scaled(0.5)
     assert scaled.cpu_quota_micros == 50_000
 
 
-def test_reg_151_rootfs_tmpfs_is_nosuid(tmp_path) -> None:
+def test_reg_151_rootfs_tmpfs_is_nosuid(tmp_path: Path) -> None:
     """REG-151: rootfs tmpfs is nosuid."""
     assert "nosuid" in rootfs_kwargs()["tmpfs"]["/tmp"]
 
 
-def test_reg_088_workspace_root_constant(tmp_path) -> None:
+def test_reg_088_workspace_root_constant(tmp_path: Path) -> None:
     """REG-088: workspace root constant."""
     from sandbox.policies.mounts import WORKSPACE_ROOT
 
     assert str(WORKSPACE_ROOT).startswith("/tmp")
 
 
-def test_reg_150_scoped_merge_preserves_order(tmp_path) -> None:
+def test_reg_150_scoped_merge_preserves_order(tmp_path: Path) -> None:
     """REG-150: scoped merge preserves order."""
     scoped = EgressPolicy(allowed_hosts=("a.com",)).scoped_for_task(("b.com", "a.com"))
     assert scoped.allowed_hosts == ("a.com", "b.com")
 
 
-def test_reg_029_suffix_match_allows_subdomains(tmp_path) -> None:
+def test_reg_029_suffix_match_allows_subdomains(tmp_path: Path) -> None:
     """REG-029: suffix match allows subdomains."""
     policy = EgressPolicy(allowed_hosts=("github.com",))
     assert policy.allows("api.github.com")
 
 
-def test_reg_104_egress_codeload_github_com(tmp_path) -> None:
+def test_reg_104_egress_codeload_github_com(tmp_path: Path) -> None:
     """REG-104: egress treats codeload.github.com as allowed."""
     policy = EgressPolicy(
         allowed_hosts=(
@@ -1123,20 +1130,20 @@ def test_reg_104_egress_codeload_github_com(tmp_path) -> None:
     assert policy.allows("codeload.github.com") is True
 
 
-def test_reg_128_mount_tmp_shipwright_other_x(tmp_path) -> None:
+def test_reg_128_mount_tmp_shipwright_other_x(tmp_path: Path) -> None:
     """REG-128: mount /tmp/shipwright-other/x is rejected."""
     with pytest.raises(MountError):
         build_mounts("/tmp/shipwright-other/x")
 
 
-def test_reg_153_mount_spec_render_ro(tmp_path) -> None:
+def test_reg_153_mount_spec_render_ro(tmp_path: Path) -> None:
     """REG-153: mount spec render ro."""
     from sandbox.policies.mounts import MountSpec
 
     assert MountSpec(source="/a", target="/b").render().endswith(":ro")
 
 
-def test_reg_124_mount_mnt(tmp_path) -> None:
+def test_reg_124_mount_mnt(tmp_path: Path) -> None:
     """REG-124: mount /mnt is rejected."""
     with pytest.raises(MountError):
         build_mounts("/mnt")
