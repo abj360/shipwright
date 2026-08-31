@@ -163,8 +163,9 @@ file for the exact layout.
 
 ## Releasing
 
-Releases are tagged by the lead (`v1.0` 2026-08-29, `v1.1.1` 2026-08-25;
-`v1.1` was cut before CI was green and is superseded). The
+Releases are tagged by the lead. `v0.0.1` marks the state the project was in
+before the agent ran end to end; `v1.0` is the first release where it does, on
+a green build. The
 version lives in `agent/__version__` and nowhere else; pyproject reads it and
 the CLI reports it, so the two cannot drift. Tags are
 annotated, dated, and cut only when the full CI suite and the red-team
