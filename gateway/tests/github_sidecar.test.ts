@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * github_sidecar.test.ts --- integration tests for the draft PR creation flow
  */

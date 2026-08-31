@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 /**
  * rate_limiter.test.ts --- unit tests for the Retry-After-aware request queue
  */
