@@ -11,7 +11,7 @@ Contains:
     AnthropicLLMClient: calls the Anthropic messages API over HTTP
     OpenAILLMClient: calls the OpenAI chat completions API over HTTP
     ScriptedLLM: plays back a fixed queue of completions for tests
-    DEFAULT_MODELS / CREDENTIAL_ENV_VARS: per-provider defaults
+    DEFAULT_MODELS / CREDENTIAL_ENV_VARS / BASE_URL_ENV_VARS: per-provider defaults
     build_client(): builds the client for one provider, failing closed
 """
 
@@ -263,6 +263,14 @@ CREDENTIAL_ENV_VARS: dict[Provider, str] = {
     Provider.ANTHROPIC: "ANTHROPIC_API_KEY",
     Provider.OPENAI: "OPENAI_API_KEY",
 }
+BASE_URL_ENV_VARS: dict[Provider, str] = {
+    Provider.ANTHROPIC: "ANTHROPIC_BASE_URL",
+    Provider.OPENAI: "OPENAI_BASE_URL",
+}
+DEFAULT_BASE_URLS: dict[Provider, str] = {
+    Provider.ANTHROPIC: ANTHROPIC_API_URL,
+    Provider.OPENAI: OPENAI_API_URL,
+}
 
 
 def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> dict[str, Any]:
@@ -285,6 +293,10 @@ def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> di
 def build_client(provider: Provider, model: str | None = None) -> LLMClient:
     """Builds the client for one provider, reading its credential from the environment.
 
+    The endpoint is overridable per provider (ANTHROPIC_BASE_URL /
+    OPENAI_BASE_URL) so a run can be pointed at a gateway, a proxy, or a
+    local stub without changing code.
+
     Args:
         provider: Model provider to talk to.
         model: Model identifier; defaults to the provider's default model.
@@ -300,6 +312,7 @@ def build_client(provider: Provider, model: str | None = None) -> LLMClient:
     if not api_key:
         raise MissingCredentialError(f"{env_var} is not set")
     chosen = model or DEFAULT_MODELS[provider]
+    base_url = os.environ.get(BASE_URL_ENV_VARS[provider], "") or DEFAULT_BASE_URLS[provider]
     if provider is Provider.OPENAI:
-        return OpenAILLMClient(api_key=api_key, model=chosen)
-    return AnthropicLLMClient(api_key=api_key, model=chosen)
+        return OpenAILLMClient(api_key=api_key, model=chosen, base_url=base_url)
+    return AnthropicLLMClient(api_key=api_key, model=chosen, base_url=base_url)

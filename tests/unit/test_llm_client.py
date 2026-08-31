@@ -14,7 +14,9 @@ import pytest
 
 from agent.cost_tracker import PRICE_PER_MTOK, CostTracker
 from agent.llm_client import (
+    BASE_URL_ENV_VARS,
     CREDENTIAL_ENV_VARS,
+    DEFAULT_BASE_URLS,
     DEFAULT_MODELS,
     AnthropicLLMClient,
     Message,
@@ -188,3 +190,27 @@ def test_openai_usage_is_priced_at_its_own_rate() -> None:
     """Verifies OpenAI usage is costed from the OpenAI row, not the fallback."""
     tracker = CostTracker()
     assert tracker.record("gpt-4o-mini", 1_000_000, 0) == pytest.approx(0.15)
+
+
+@pytest.mark.parametrize("provider", list(Provider))
+def test_build_client_defaults_to_the_provider_endpoint(
+    monkeypatch: pytest.MonkeyPatch, provider: Provider
+) -> None:
+    """Verifies an unset base URL leaves the client on the real endpoint."""
+    monkeypatch.setenv(CREDENTIAL_ENV_VARS[provider], "k")
+    monkeypatch.delenv(BASE_URL_ENV_VARS[provider], raising=False)
+    seen = capture_post(monkeypatch, ANTHROPIC_BODY | OPENAI_BODY)
+    build_client(provider).complete([Message("user", "hi")], "sys")
+    assert seen["url"] == DEFAULT_BASE_URLS[provider]
+
+
+@pytest.mark.parametrize("provider", list(Provider))
+def test_build_client_honours_a_base_url_override(
+    monkeypatch: pytest.MonkeyPatch, provider: Provider
+) -> None:
+    """Verifies a proxy or local stub can take the provider's place."""
+    monkeypatch.setenv(CREDENTIAL_ENV_VARS[provider], "k")
+    monkeypatch.setenv(BASE_URL_ENV_VARS[provider], "http://127.0.0.1:9/v1")
+    seen = capture_post(monkeypatch, ANTHROPIC_BODY | OPENAI_BODY)
+    build_client(provider).complete([Message("user", "hi")], "sys")
+    assert seen["url"] == "http://127.0.0.1:9/v1"
