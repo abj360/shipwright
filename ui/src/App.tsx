@@ -25,6 +25,7 @@ export function App() {
    * Renders the conversation and the composer that adds to it.
    */
   const [turns, setTurns] = useState<ConversationTurn[]>([]);
+  const [queued, setQueued] = useState<string[]>([]);
   const [task, setTask] = useState("");
   const [runningId, setRunningId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -32,7 +33,29 @@ export function App() {
 
   useEffect(() => {
     foot.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [turns.length, runningId]);
+  }, [turns.length, queued.length, runningId]);
+
+  const launch = useCallback(async (text: string) => {
+    try {
+      const record = await startRun(GATEWAY_URL, text);
+      setTurns((current) => [...current, { runId: record.id, task: record.task }]);
+      setRunningId(record.id);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "could not start the run");
+    }
+  }, []);
+
+  // Whatever was typed during a run starts as soon as the agent is free.
+  useEffect(() => {
+    if (runningId !== null || queued.length === 0) {
+      return;
+    }
+    const [next, ...rest] = queued;
+    setQueued(rest);
+    if (next !== undefined) {
+      void launch(next);
+    }
+  }, [runningId, queued, launch]);
 
   const handleEnded = useCallback((runId: string) => {
     setRunningId((current) => (current === runId ? null : current));
@@ -40,18 +63,18 @@ export function App() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (runningId !== null) {
+    const text = task.trim();
+    if (text === "") {
+      setError("describe what the agent should do");
       return;
     }
     setError("");
-    try {
-      const record = await startRun(GATEWAY_URL, task);
-      setTurns((current) => [...current, { runId: record.id, task: record.task }]);
-      setRunningId(record.id);
-      setTask("");
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "could not start the run");
+    setTask("");
+    if (runningId !== null || queued.length > 0) {
+      setQueued((current) => [...current, text]);
+      return;
     }
+    await launch(text);
   };
 
   return (
@@ -70,6 +93,11 @@ export function App() {
             onEnded={handleEnded}
           />
         ))}
+        {queued.map((text, index) => (
+          <article className="turn" key={`queued-${index}`}>
+            <p className="turn-request turn-queued">{text}</p>
+          </article>
+        ))}
         <div ref={foot} />
       </section>
 
@@ -84,9 +112,8 @@ export function App() {
         />
         <button
           type="submit"
-          disabled={runningId !== null}
-          aria-label={runningId !== null ? "run in progress" : "send"}
-          title={runningId !== null ? "run in progress" : "send"}
+          aria-label={runningId !== null ? "queue" : "send"}
+          title={runningId !== null ? "queued until the current run finishes" : "send"}
         >
           <SendIcon running={runningId !== null} />
         </button>

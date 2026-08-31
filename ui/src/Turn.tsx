@@ -1,16 +1,18 @@
 /**
- * Turn.tsx --- one request in the conversation, with its output and diff
+ * Turn.tsx --- one request in the conversation, with its activity and diff
  *
  * Contains:
  *   TurnProps: the run this turn follows
- *   Turn: renders the request, the agent's output, and the resulting diff
+ *   Turn: renders the request, what the agent did, and the resulting diff
+ *   ToolRow: one tool activity line with its collapsible output
  *   useRunOutput(): collects a run's output lines as they stream in
  */
 
 import { DiffViewer } from "./DiffViewer";
+import { parseTranscript, type ToolEvent } from "./transcript";
 import { useRunPatch } from "./useRunPatch";
 import { useSandboxSocket } from "./useSandboxSocket";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface TurnProps {
   runId: string;
@@ -21,12 +23,13 @@ export interface TurnProps {
 
 export function Turn({ runId, task, gatewayUrl, onEnded }: TurnProps) {
   /**
-   * Renders one request, whatever the agent has printed, and its diff.
+   * Renders one request, the steps the agent took, and the diff they produced.
    */
   const { lines, append } = useRunOutput();
   const status = useSandboxSocket(gatewayUrl, runId, append);
   const ended = status === "ended";
   const patch = useRunPatch(gatewayUrl, runId, !ended);
+  const events = useMemo(() => parseTranscript(lines), [lines]);
 
   useEffect(() => {
     if (ended) {
@@ -37,10 +40,50 @@ export function Turn({ runId, task, gatewayUrl, onEnded }: TurnProps) {
   return (
     <article className="turn">
       <p className="turn-request">{task}</p>
-      {lines.length > 0 && <pre className="turn-output">{lines.join("\n")}</pre>}
-      {!ended && lines.length === 0 && <p className="turn-waiting">working…</p>}
-      {patch !== "" && <DiffViewer patch={patch} />}
+      <div className="turn-reply">
+        {events.map((event, index) => {
+          if (event.kind === "tool") {
+            return <ToolRow key={index} event={event} />;
+          }
+          if (event.kind === "answer") {
+            return (
+              <p key={index} className="turn-answer">
+                {event.text}
+              </p>
+            );
+          }
+          return (
+            <p key={index} className="turn-note">
+              {event.text}
+            </p>
+          );
+        })}
+        {!ended && <p className="turn-waiting">working…</p>}
+        {patch !== "" && <DiffViewer patch={patch} />}
+      </div>
     </article>
+  );
+}
+
+export function ToolRow({ event }: { event: ToolEvent }) {
+  /**
+   * Renders one tool call as an activity line that opens to show its output.
+   */
+  const [open, setOpen] = useState(false);
+  const summary = event.detail.length === 1 ? event.detail[0] : `${event.detail.length} lines`;
+
+  return (
+    <div className={`tool-row ${event.failed ? "tool-failed" : ""}`}>
+      <button type="button" className="tool-head" onClick={() => setOpen(!open)}>
+        <span className="tool-bullet" aria-hidden="true">
+          {event.detail.length > 0 ? (open ? "▾" : "▸") : "·"}
+        </span>
+        <span className="tool-label">{event.label}</span>
+        {event.target !== "" && <span className="tool-target">{event.target}</span>}
+        {event.detail.length > 0 && !open && <span className="tool-summary">{summary}</span>}
+      </button>
+      {open && event.detail.length > 0 && <pre className="tool-detail">{event.detail.join("\n")}</pre>}
+    </div>
   );
 }
 
