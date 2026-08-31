@@ -5,6 +5,7 @@ footer.py --- keybinding hint bar generated from the app's own bindings
 Contains:
     MAX_HINTS: how many hints fit on one line before the rest are dropped
     HINT_SEPARATOR: text placed between two rendered hints
+    EMPTY_BAR: what an app with nothing bound renders
     format_hints(): renders a binding list as one hint line
     FooterBar: hint bar that regenerates itself from the active bindings
     FooterBar.on_mount(): draws the hints once the bar is attached
@@ -18,6 +19,7 @@ from textual.widgets import Static
 
 MAX_HINTS = 6
 HINT_SEPARATOR = "   "
+EMPTY_BAR = ""
 
 
 def format_hints(bindings: Sequence[Binding], max_hints: int = MAX_HINTS) -> str:
@@ -34,6 +36,8 @@ def format_hints(bindings: Sequence[Binding], max_hints: int = MAX_HINTS) -> str
         line: Rendered hint line, empty when nothing is bound.
     """
     shown = [binding for binding in bindings if binding.show and binding.description]
+    if not shown:
+        return EMPTY_BAR
     return HINT_SEPARATOR.join(
         f"{binding.key} {binding.description}" for binding in shown[:max_hints]
     )
