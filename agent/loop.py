@@ -13,6 +13,7 @@ Contains:
     AgentLoop._render_step(): replays a past step as the model's own turn
     AgentLoop._act(): runs the chosen tool and captures output
     AgentLoop._record_cost(): accumulates one completion's spend
+    AgentLoop._plan_approved(): asks the gate whether a plan may execute
     AgentLoop._run_plan_mode(): executes planner steps directly
     AgentLoop.transcript(): read-only view of steps taken
     AgentLoop._trim_transcript(): drops oldest observations over budget
@@ -32,7 +33,7 @@ from pathlib import Path
 from agent.circuit_breaker import CircuitBreaker
 from agent.cost_tracker import CostTracker
 from agent.llm_client import Completion, LLMClient, Message
-from agent.planner import RepoPlanner
+from agent.planner import Plan, RepoPlanner
 from agent.tool_dispatcher import ToolDispatcher
 
 logger = logging.getLogger(__name__)
@@ -257,6 +258,7 @@ class AgentConfig:
         system_prompt: Steering prompt prepended to every completion.
         mode: Execution mode: "react" for free-form, "plan_execute" for planned runs.
         planner: Planner used when mode is "plan_execute".
+        plan_gate: Asked to approve a plan before any of its steps run.
         breaker: Iteration and spend ceilings that halt a runaway run.
         cost_tracker: Optional tracker accumulating the run's model spend.
         require_tool_before_final: Refuse a final answer from a run that has
@@ -269,6 +271,7 @@ class AgentConfig:
     system_prompt: str = ""
     mode: str = "react"
     planner: RepoPlanner | None = None
+    plan_gate: Callable[[Plan], bool] | None = None
     breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
     cost_tracker: CostTracker | None = None
     require_tool_before_final: bool = True
@@ -586,6 +589,23 @@ class AgentLoop:
         self._input_tokens += completion.input_tokens
         self._output_tokens += completion.output_tokens
 
+    def _plan_approved(self, plan: Plan) -> bool:
+        """Asks the configured gate whether a plan may execute.
+
+        A run with no gate configured keeps the original behaviour and runs
+        unattended; an interactive front end installs a gate so nothing is
+        executed until the operator has actually read the plan.
+
+        Args:
+            plan: Plan the planner produced for this run.
+
+        Returns:
+            is_approved: True when execution may begin.
+        """
+        if self.config.plan_gate is None:
+            return True
+        return self.config.plan_gate(plan)
+
     def _run_plan_mode(self) -> RunResult:
         """Executes the planner's steps directly instead of free-form ReAct.
 
@@ -602,6 +622,15 @@ class AgentLoop:
             logger.warning("planner returned no steps; falling back to react")
             self.config.mode = "react"
             return self.run()
+        if not self._plan_approved(plan):
+            logger.info("run %s plan declined before execution", self._run_id)
+            return RunResult(
+                final_answer=None,
+                steps=self._transcript,
+                started_at=started,
+                ended_at=time.time(),
+                total_cost_usd=self._cost_usd,
+            )
         logger.info("run %s executing plan of %d steps", self._run_id, len(plan.steps))
         for plan_step in plan.steps:
             step = Step(
