@@ -31,7 +31,7 @@ DETACHED_LABEL = "detached"
 NO_BRANCH_LABEL = "no branch"
 HEAD_REF_PREFIX = "ref: refs/heads/"
 NO_SPEND_LABEL = "$0.0000"
-OVER_BUDGET_MARKER = "!"
+OVER_BUDGET_MARKER = " (over budget)"
 
 
 def _read_head(repo_path: Path) -> str:
