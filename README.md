@@ -3,6 +3,10 @@
 An autonomous coding agent: read the repo, plan, edit, run tests, iterate, and
 open a draft PR — executing entirely inside a hardened, isolated sandbox.
 
+<p align="center">
+  <img src="docs/media/live-viewer.gif" alt="A run in the live viewer, from typing the request to the diff" width="720">
+</p>
+
 Every command the agent runs executes in a short-lived, gVisor-isolated
 container with hard resource limits and a default-deny network egress policy.
 The agent host is outside the trust boundary; the sandbox is the product.
@@ -165,8 +169,6 @@ open to reveal that step's output, followed by the agent's answer, the token
 count, and the diff for that turn alone. The composer stays live while a run is
 in flight: anything typed meanwhile is queued and starts when the agent frees
 up, and the send arrow becomes a square for the duration.
-
-![A run from typing to diff](docs/media/live-viewer.gif)
 
 ### Using it
 
