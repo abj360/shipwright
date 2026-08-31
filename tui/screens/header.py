@@ -109,7 +109,7 @@ def format_cost(tracker: CostTracker | None, tokens: int = 0) -> str:
     """
     if tracker is None:
         return NO_SPEND_LABEL
-    total = tracker.total_usd()
+    total: float = tracker.total_usd()
     spend = f"${total:.4f}"
     if _is_over_budget(tracker):
         spend += OVER_BUDGET_MARKER
