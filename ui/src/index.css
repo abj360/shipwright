@@ -4,7 +4,7 @@
  * Contains:
  *   :root: the dark palette tokens mirrored from theme.ts
  *   .app-shell: page layout
- *   .terminal-viewer: live terminal panel and its status badge
+ *   .terminal-viewer: live terminal panel, its toolbar, and status badge
  *   .diff-viewer: diff panel, file tree, and per-line styling
  */
 
@@ -80,6 +80,12 @@ body {
   min-height: 0;
 }
 
+.terminal-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
 .terminal-viewer > [role="log"] {
   flex: 1;
   min-height: 0;
@@ -87,6 +93,7 @@ body {
 
 .status-badge {
   border-radius: 999px;
+  flex: none;
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   margin-right: 0.5rem;
