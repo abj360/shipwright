@@ -11,6 +11,7 @@ Contains:
     current_branch(): reads the checked-out branch without shelling out
     format_repo(): renders the checkout path for the bar
     NO_SPEND_LABEL: cost field shown before anything has been spent
+    OVER_BUDGET_MARKER: appended once spend passes the tracker's warn threshold
     format_cost(): renders spend and token counts for the bar
     HeaderBar: status bar across the top of the interface
     HeaderBar.compose(): builds the single status line
@@ -22,13 +23,14 @@ from pathlib import Path
 from textual.app import ComposeResult
 from textual.widgets import Label, Static
 
-from agent.cost_tracker import CostTracker
+from agent.cost_tracker import WARN_THRESHOLD, CostTracker
 
 SEPARATOR = "  •  "
 DETACHED_LABEL = "detached"
 NO_BRANCH_LABEL = "no branch"
 HEAD_REF_PREFIX = "ref: refs/heads/"
 NO_SPEND_LABEL = "$0.0000"
+OVER_BUDGET_MARKER = "!"
 
 
 def _read_head(repo_path: Path) -> str:
@@ -94,7 +96,10 @@ def format_cost(tracker: CostTracker | None, tokens: int = 0) -> str:
     """
     if tracker is None:
         return NO_SPEND_LABEL
-    spend = f"${tracker.total_usd():.4f}"
+    total = tracker.total_usd()
+    spend = f"${total:.4f}"
+    if total > tracker.budget_usd * WARN_THRESHOLD:
+        spend += OVER_BUDGET_MARKER
     return f"{spend}  {tokens} tok" if tokens else spend
 
 

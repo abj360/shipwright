@@ -8,12 +8,13 @@ Contains:
     test_tokens_are_shown_when_present(): the token count appears beside spend
     test_pricing_is_per_model(): two models are priced by their own rates
     test_header_line_carries_the_cost(): the rendered bar includes the spend
+    test_over_budget_spend_is_marked(): passing the warn threshold is visible
 """
 
 from pathlib import Path
 
 from agent.cost_tracker import CostTracker
-from tui.screens.header import NO_SPEND_LABEL, HeaderBar, format_cost
+from tui.screens.header import NO_SPEND_LABEL, OVER_BUDGET_MARKER, HeaderBar, format_cost
 
 
 def test_no_tracker_shows_zero() -> None:
@@ -55,3 +56,11 @@ def test_header_line_carries_the_cost(tmp_path: Path) -> None:
     bar = HeaderBar(tmp_path, "anthropic", tracker)
 
     assert f"${tracker.total_usd():.4f}" in bar.render_line_text()
+
+
+def test_over_budget_spend_is_marked() -> None:
+    """Asserts spend past the tracker's warn threshold is flagged on the bar."""
+    tracker = CostTracker(budget_usd=0.01)
+    tracker.record("claude-opus-4-1", 1_000_000, 0)
+
+    assert OVER_BUDGET_MARKER in format_cost(tracker)
