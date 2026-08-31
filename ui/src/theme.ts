@@ -1,6 +1,9 @@
 /**
  * theme.ts --- color tokens and xterm theme for the live view
  *
+ * The same palette is mirrored as CSS custom properties in index.css; xterm
+ * paints on a canvas and cannot read those, so it is handed xtermTheme here.
+ *
  * Contains:
  *   Theme: color tokens
  *   darkTheme: default palette

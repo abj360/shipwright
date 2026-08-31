@@ -1,0 +1,193 @@
+/**
+ * index.css --- layout and palette for the live run view
+ *
+ * Contains:
+ *   :root: the dark palette tokens mirrored from theme.ts
+ *   .app-shell: page layout
+ *   .terminal-viewer: live terminal panel and its status badge
+ *   .diff-viewer: diff panel, file tree, and per-line styling
+ */
+
+:root {
+  --background: #0d1117;
+  --foreground: #c9d1d9;
+  --accent: #6cb6ff;
+  --add: #2ea043;
+  --del: #f85149;
+  --hunk: #8b949e;
+  --status-ok: #3fb950;
+  --status-err: #f85149;
+  --status-warn: #d29922;
+  --panel-bg: #161b22;
+  --panel-border: #21262d;
+  --border-subtle: #30363d;
+  --font-ui: -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+  height: 100vh;
+  padding: 1rem 1.25rem;
+  box-sizing: border-box;
+}
+
+.app-shell header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 0.75rem;
+}
+
+.app-shell h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.app-shell header input {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  padding: 0.35rem 0.6rem;
+}
+
+.terminal-viewer,
+.diff-viewer {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 0.6rem;
+}
+
+.terminal-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+}
+
+.terminal-viewer > [role="log"] {
+  flex: 1;
+  min-height: 0;
+}
+
+.status-badge {
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  margin-right: 0.5rem;
+  padding: 0.15rem 0.6rem;
+  text-transform: uppercase;
+}
+
+.status-open {
+  background: #1a7f3733;
+  color: var(--status-ok);
+}
+
+.status-connecting {
+  background: #9a670033;
+  color: var(--status-warn);
+}
+
+.status-closed {
+  background: #d1242f33;
+  color: var(--status-err);
+}
+
+.terminal-viewer button,
+.diff-viewer button {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--foreground);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0.2rem 0.7rem;
+}
+
+.diff-viewer {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  max-height: 40vh;
+  overflow: auto;
+}
+
+.diff-empty {
+  color: var(--hunk);
+  font-family: var(--font-ui);
+}
+
+.diff-stats {
+  color: var(--hunk);
+  margin: 0 0.75rem;
+}
+
+.diff-tree {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.diff-tree a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.diff-viewer h3 {
+  border-bottom: 1px solid var(--panel-border);
+  cursor: pointer;
+  font-size: 0.8rem;
+  margin: 0.75rem 0 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.diff-viewer pre {
+  margin: 0;
+}
+
+.diff-line {
+  display: block;
+  white-space: pre;
+}
+
+.diff-wrap .diff-line {
+  white-space: pre-wrap;
+}
+
+.diff-add {
+  background: #2ea04326;
+  color: var(--add);
+}
+
+.diff-del {
+  background: #f8514926;
+  color: var(--del);
+}
+
+.diff-hunk {
+  color: var(--hunk);
+}
+
+.line-no {
+  color: var(--hunk);
+  display: inline-block;
+  text-align: right;
+  user-select: none;
+  width: 3.5ch;
+}

@@ -8,6 +8,7 @@
  */
 
 import { useSandboxSocket } from "./useSandboxSocket";
+import { fonts, xtermTheme } from "./theme";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
@@ -56,7 +57,12 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
   });
 
   useEffect(() => {
-    const term = new Terminal({ convertEol: true, scrollback: TERMINAL_SCROLLBACK });
+    const term = new Terminal({
+      convertEol: true,
+      scrollback: TERMINAL_SCROLLBACK,
+      theme: xtermTheme,
+      fontFamily: fonts.mono,
+    });
     termRef.current = term;
     term.options.linkHandler = {
       activate(_event: MouseEvent, text: string): void {
