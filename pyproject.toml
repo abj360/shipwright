@@ -11,6 +11,7 @@ dependencies = [
   "httpx>=0.28.1",
   "pyyaml>=6.0.2",
   "docker>=7.2",
+  "textual>=8.2.8,<9.0",
 ]
 
 [project.optional-dependencies]
@@ -23,7 +24,7 @@ shipwright = "agent.cli:main"
 version = { attr = "agent.__version__" }
 
 [tool.setuptools.packages.find]
-include = ["agent*", "sandbox*", "security*"]
+include = ["agent*", "sandbox*", "security*", "tui*"]
 
 [tool.ruff]
 line-length = 100
