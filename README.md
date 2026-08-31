@@ -3,8 +3,8 @@
 </h1>
 
 <p align="center">
-  Read the repo, plan, edit, run tests, iterate, and open a draft PR —<br>
-  executing entirely inside a hardened, isolated sandbox.
+  Read the repo, plan, edit, run tests, iterate, and open a draft PR<br>
+  all inside a hardened, isolated sandbox.
 </p>
 
 <p align="center">
