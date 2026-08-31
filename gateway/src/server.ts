@@ -13,7 +13,7 @@
  *   404 handler: catches unmatched routes
  */
 
-import "node:crypto";
+import { randomUUID } from "node:crypto";
 
 import { loadConfig } from "./config";
 import { createPrFromRun } from "./github_sidecar";
@@ -27,7 +27,7 @@ const config = loadConfig();
 const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
-  req.headers["x-request-id"] = req.headers["x-request-id"] ?? crypto.randomUUID();
+  req.headers["x-request-id"] = req.headers["x-request-id"] ?? randomUUID();
   res.setHeader("x-request-id", String(req.headers["x-request-id"]));
   next();
 });
@@ -78,7 +78,7 @@ app.post("/runs", async (req, res) => {
     res.status(400).json({ error: parsed.error.issues });
     return;
   }
-  const id = crypto.randomUUID();
+  const id = randomUUID();
   const runRecord: RunRecord = {
     id,
     task: parsed.data.task,

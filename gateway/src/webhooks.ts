@@ -7,7 +7,7 @@
  *   createWebhookRouter(): builds the GitHub webhook router
  */
 
-import "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { TaskQueue } from "./task_queue";
 import express from "express";
@@ -26,11 +26,12 @@ export function verifySignature(secret: string, payload: string, signature: stri
    * @param signature - Value of the x-hub-signature-256 header.
    * @returns valid - True when the signature matches.
    */
-  const expected = `sha256=${crypto.createHmac("sha256", secret).update(payload).digest("hex")}`;
+  const digest = createHmac("sha256", secret).update(payload).digest("hex");
+  const expected = `sha256=${digest}`;
   if (expected.length !== signature.length) {
     return false;
   }
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
 }
 
 export function createWebhookRouter(secret: string, queue: TaskQueue): express.Router {
