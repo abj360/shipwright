@@ -15,7 +15,9 @@ from sandbox.policies.cgroup_limits import CgroupLimits
 from sandbox.policies.egress import EgressPolicy
 from sandbox.policies.mounts import MountError, build_mounts, rootfs_kwargs
 
-pytestmark = pytest.mark.skipif(
+# Only the cases that launch a container need the integration environment. The
+# rest assert on policy objects and must keep running on every PR.
+requires_sandbox = pytest.mark.skipif(
     os.environ.get("SHIPWRIGHT_INTEGRATION") != "1",
     reason="integration environment not enabled",
 )
@@ -37,6 +39,7 @@ def make_config(**overrides: object) -> SandboxConfig:
     return SandboxConfig(**base)
 
 
+@requires_sandbox
 def test_ro_root_fs_rejects_writes() -> None:
     """Verifies writes outside /work fail on the read-only root."""
     handle = DockerRuntime().launch(make_config())
@@ -47,6 +50,7 @@ def test_ro_root_fs_rejects_writes() -> None:
         handle.stop()
 
 
+@requires_sandbox
 def test_workdir_is_writable() -> None:
     """Verifies the mounted workdir accepts writes."""
     handle = DockerRuntime().launch(make_config())
@@ -168,6 +172,7 @@ def test_sbox_mx_m4() -> None:
         build_mounts("/usr/local/x")
 
 
+@requires_sandbox
 def test_egress_denies_unlisted_host() -> None:
     """Verifies outbound traffic to unlisted hosts is blocked."""
     handle = DockerRuntime().launch(make_config())
@@ -267,6 +272,7 @@ def test_cgroup_case_cpu_quota_micros_0() -> None:
             CgroupLimits(**kwargs)
 
 
+@requires_sandbox
 def test_pids_limit_absorbs_fork_bomb() -> None:
     """Verifies a fork bomb cannot destabilize the sandbox."""
     handle = DockerRuntime().launch(make_config())
@@ -416,6 +422,7 @@ def test_sbox_mx2_e10_0() -> None:
     assert policy.allows("evil.io") is False
 
 
+@requires_sandbox
 def test_memory_limit_kills_allocator() -> None:
     """Verifies allocations past the memory ceiling get killed."""
     handle = DockerRuntime().launch(make_config())
@@ -507,6 +514,7 @@ def test_sbox_mx_e2() -> None:
     assert policy.allows("pypi.org") is True
 
 
+@requires_sandbox
 def test_sandbox_uses_runsc_runtime() -> None:
     """Verifies sandboxes launch under gVisor, not runc."""
     runtime = DockerRuntime()
@@ -596,6 +604,7 @@ def test_sbox_mx_c8() -> None:
         CgroupLimits(mem_bytes=-1)
 
 
+@requires_sandbox
 def test_audit_log_records_lifecycle(tmp_path) -> None:
     """Verifies launches write audit events when a log is attached."""
     from sandbox.audit_log import AuditLog
@@ -740,6 +749,7 @@ def test_sbox_mx_e6() -> None:
     assert policy.allows("codeload.github.com") is True
 
 
+@requires_sandbox
 def test_teardown_removes_container() -> None:
     """Verifies stop() removes the container from the daemon."""
     runtime = DockerRuntime()
@@ -885,10 +895,11 @@ def test_sbox_case_config_limits_default() -> None:
 
 def test_sbox_case_cgroup_scaled_mem() -> None:
     """Verifies sandbox policy behavior: scaled limits scale memory."""
-    scaled = CgroupLimits(mem_bytes=100).scaled(2.0)
-    assert scaled.mem_bytes == 200
+    scaled = CgroupLimits(mem_bytes=128 * 1024 * 1024).scaled(2.0)
+    assert scaled.mem_bytes == 256 * 1024 * 1024
 
 
+@requires_sandbox
 def test_exec_stream_yields_chunks() -> None:
     """Verifies exec_stream streams output incrementally."""
     handle = DockerRuntime().launch(make_config())
@@ -1039,6 +1050,7 @@ def test_sbox_mx2_e5_0() -> None:
     assert policy.allows("crates.io") is True
 
 
+@requires_sandbox
 def test_tmp_is_mounted_noexec() -> None:
     """Verifies binaries dropped in /tmp cannot execute."""
     handle = DockerRuntime().launch(make_config())
@@ -1261,6 +1273,7 @@ def test_egress_case_github_com() -> None:
     assert policy.allows("github.com") is True
 
 
+@requires_sandbox
 def test_egress_allows_allowlisted_host() -> None:
     """Verifies allowlisted hosts remain reachable."""
     handle = DockerRuntime().launch(make_config())
