@@ -8,7 +8,7 @@ Contains:
 
 import pytest
 
-from agent.circuit_breaker import CircuitBreaker, RunawayRunError
+from agent.circuit_breaker import CircuitBreaker, RunawayRunError, TripReason
 from agent.cost_tracker import CostTracker
 from agent.llm_client import ScriptedLLM
 from agent.loop import TRUNCATED_OBSERVATION_NOTE, AgentConfig, AgentLoop, Step
@@ -929,3 +929,35 @@ def test_a_heading_marked_final_still_ends_the_run() -> None:
     step = loop._parse_step("### Final: all set")
     assert step.tool_name == ""
     assert loop._extract_final(step) == "all set"
+
+
+def test_a_run_whose_calls_all_fail_is_halted() -> None:
+    """Verifies a stuck run stops instead of spending its whole budget."""
+    responses = ["t\nAction: read_file\npath=missing.txt"] * 8
+    config = make_config()
+    config.breaker = CircuitBreaker(max_iterations=50, max_consecutive_failures=3)
+    with pytest.raises(RunawayRunError) as excinfo:
+        AgentLoop(ScriptedLLM(responses), config).run()
+    assert excinfo.value.reason is TripReason.NO_PROGRESS
+
+
+def test_a_successful_step_clears_the_failure_run() -> None:
+    """Verifies scattered failures do not accumulate into a false halt."""
+    responses = [
+        "t\nAction: read_file\npath=missing.txt",
+        "t\nAction: list_dir\npath=.",
+        "t\nAction: read_file\npath=missing.txt",
+        "t\nAction: list_dir\npath=.",
+        "FINAL: done",
+    ]
+    config = make_config()
+    config.breaker = CircuitBreaker(max_iterations=50, max_consecutive_failures=2)
+    assert AgentLoop(ScriptedLLM(responses), config).run().final_answer == "done"
+
+
+def test_the_halt_names_why_it_stopped() -> None:
+    """Verifies the message says the calls failed, not that steps ran out."""
+    config = make_config()
+    config.breaker = CircuitBreaker(max_consecutive_failures=2)
+    with pytest.raises(RunawayRunError, match="failed"):
+        AgentLoop(ScriptedLLM(["t\nAction: read_file\npath=missing.txt"] * 5), config).run()

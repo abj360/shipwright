@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 MAX_TOOL_OUTPUT_CHARS = 6000
 MAX_ECHOED_ARG_CHARS = 200
+TOOL_ERROR_PREFIX = "error: "
 TRANSCRIPT_TOKEN_BUDGET = 28000
 CHARS_PER_TOKEN_ESTIMATE = 4
 STEP_BUDGET_TOKENS = 6000
@@ -244,6 +245,7 @@ class AgentLoop:
         self._output_tokens = 0
         self._dispatcher = ToolDispatcher(Path(config.repo_path))
         self._failed_calls: set[tuple[str, str]] = set()
+        self._consecutive_failures = 0
         logger.debug("agent loop initialised for %s", config.repo_path)
 
     def run(self, on_step: Callable[[Step], None] | None = None) -> RunResult:
@@ -261,6 +263,7 @@ class AgentLoop:
         logger.info("run %s started: %s", self._run_id, self.config.task[:80])
         while True:
             self.config.breaker.check(len(self._transcript), self._cost_usd)
+            self.config.breaker.check_progress(self._consecutive_failures)
             step = self._think()
             self._transcript.append(step)
             if not step.tool_name:
@@ -277,6 +280,8 @@ class AgentLoop:
                 )
             output = self._act(step)
             self._observe(step, output)
+            failed = output.startswith(TOOL_ERROR_PREFIX)
+            self._consecutive_failures = self._consecutive_failures + 1 if failed else 0
             logger.info("run %s step %d tool=%s", self._run_id, step.index, step.tool_name)
             if on_step is not None:
                 on_step(step)
@@ -408,7 +413,7 @@ class AgentLoop:
             return result.output[:MAX_TOOL_OUTPUT_CHARS]
         repeated = signature in self._failed_calls
         self._failed_calls.add(signature)
-        error = f"error: {result.error}"
+        error = f"{TOOL_ERROR_PREFIX}{result.error}"
         return f"{error}\n{REPEATED_CALL_NOTE}" if repeated else error
 
     def _observe(self, step: Step, output: str) -> None:
@@ -474,7 +479,7 @@ class AgentLoop:
             self._transcript.append(step)
             output = self._act(step)
             self._observe(step, output)
-            plan_step.status = "done" if not output.startswith("error:") else "failed"
+            plan_step.status = "failed" if output.startswith(TOOL_ERROR_PREFIX) else "done"
         final = Step(index=len(self._transcript), thought=f"{FINAL_ANSWER_PREFIX} plan complete")
         self._transcript.append(final)
         return RunResult(

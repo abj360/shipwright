@@ -7,6 +7,7 @@ Contains:
     RunawayRunError: run exceeded its iteration or cost ceiling
     CircuitBreaker: halts runs past iteration or cost ceilings
     CircuitBreaker.check(): raises when a ceiling is exceeded
+    CircuitBreaker.check_progress(): raises when a run stops getting anywhere
 """
 
 import logging
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_ITERATIONS = 75
 DEFAULT_MAX_COST_USD = 3.0
+DEFAULT_MAX_CONSECUTIVE_FAILURES = 4
 
 
 class TripReason(StrEnum):
@@ -24,6 +26,7 @@ class TripReason(StrEnum):
 
     ITERATIONS = "iterations"
     COST = "cost"
+    NO_PROGRESS = "no_progress"
 
 
 class RunawayRunError(Exception):
@@ -51,10 +54,12 @@ class CircuitBreaker:
     Attributes:
         max_iterations: Maximum think-act-observe cycles allowed per run.
         max_cost_usd: Maximum model spend allowed per run in USD.
+        max_consecutive_failures: Failing steps in a row before a run is stuck.
     """
 
     max_iterations: int = DEFAULT_MAX_ITERATIONS
     max_cost_usd: float = DEFAULT_MAX_COST_USD
+    max_consecutive_failures: int = DEFAULT_MAX_CONSECUTIVE_FAILURES
 
     def check(self, iteration: int, cost_usd: float) -> None:
         """Raises RunawayRunError when either ceiling is exceeded.
@@ -72,4 +77,20 @@ class CircuitBreaker:
             raise RunawayRunError(
                 TripReason.COST,
                 f"halted at ${cost_usd:.2f} spend (ceiling ${self.max_cost_usd:.2f})",
+            )
+
+    def check_progress(self, consecutive_failures: int) -> None:
+        """Raises RunawayRunError when a run stops making progress.
+
+        A run whose every tool call fails is not working towards anything; it
+        will spend the whole iteration budget finding that out. Stopping early
+        turns a slow non-answer into a fast one that says why.
+
+        Args:
+            consecutive_failures: Steps in a row whose tool call failed.
+        """
+        if consecutive_failures >= self.max_consecutive_failures:
+            raise RunawayRunError(
+                TripReason.NO_PROGRESS,
+                f"halted after {consecutive_failures} tool calls in a row that all failed",
             )
