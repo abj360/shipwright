@@ -19,6 +19,8 @@
  *   TreeEntry: one file to commit
  *   commitFiles(): commits many files as one tree
  *   octokitFor(): memoized Octokit client per token
+ *   PrCoordinates: owner, repo, and number of a pull request
+ *   prCoordinates(): splits a PR URL into its API fields
  *   markPrReady(): flips a draft PR to ready-for-review
  *   getDefaultBranch(): resolves the default branch, cached
  *   deleteBranch(): deletes a remote branch on cleanup
@@ -357,6 +359,27 @@ function octokitFor(token: string): Octokit {
   return client;
 }
 
+export interface PrCoordinates {
+  owner: string;
+  repo: string;
+  pullNumber: number;
+}
+
+export function prCoordinates(prUrl: string): PrCoordinates {
+  /**
+   * Splits a pull request URL into the fields the API calls need.
+   *
+   * @param prUrl - HTML URL of the pull request.
+   * @returns coordinates - Owner, repo name, and pull request number.
+   */
+  const match = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+  const [, owner, repo, pullNumber] = match ?? [];
+  if (owner === undefined || repo === undefined || pullNumber === undefined) {
+    throw new Error(`unparseable PR url: ${prUrl}`);
+  }
+  return { owner, repo, pullNumber: Number(pullNumber) };
+}
+
 export async function markPrReady(config: SidecarConfig, prUrl: string): Promise<void> {
   /**
    * Flips a draft PR to ready-for-review after quality gates pass.
@@ -365,16 +388,8 @@ export async function markPrReady(config: SidecarConfig, prUrl: string): Promise
    * @param prUrl - HTML URL of the draft PR.
    */
   const octokit = octokitFor(config.githubToken);
-  const match = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
-  if (match === null) {
-    throw new Error(`unparseable PR url: ${prUrl}`);
-  }
-  await octokit.pulls.update({
-    owner: match[1]!,
-    repo: match[2]!,
-    pull_number: Number(match[3]),
-    draft: false,
-  });
+  const { owner, repo, pullNumber } = prCoordinates(prUrl);
+  await octokit.pulls.update({ owner, repo, pull_number: pullNumber, draft: false });
 }
 
 let defaultBranchCache: string | null = null;
@@ -426,13 +441,11 @@ export async function mapWithLimit<T, R>(
    * @returns results - Mapped results in input order.
    */
   const results: R[] = new Array(items.length);
+  const queued = items.map((item, index) => ({ item, index }));
   let cursor = 0;
   async function worker(): Promise<void> {
-    while (cursor < items.length) {
-      const index = cursor;
-      cursor += 1;
-      // index < items.length by the loop guard; items[index] is defined
-      results[index] = await fn(items[index]!);
+    for (let entry = queued[cursor++]; entry !== undefined; entry = queued[cursor++]) {
+      results[entry.index] = await fn(entry.item);
     }
   }
   await Promise.all(Array.from({ length: limit }, worker));
@@ -459,8 +472,7 @@ export async function findOpenPr(config: SidecarConfig, branch: string): Promise
     head: `${owner}:${branch}`,
     state: "open",
   });
-  // length checked above: data[0] exists whenever the list is non-empty
-  const url = response.data.length > 0 ? response.data[0]!.html_url : null;
+  const url = response.data[0]?.html_url ?? null;
   if (url !== null) {
     prUrlCache.set(`${owner}:${branch}`, { url, fetchedAt: Date.now() });
   }
@@ -507,16 +519,8 @@ export async function requestReviews(
     return;
   }
   const octokit = octokitFor(config.githubToken);
-  const match = prUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
-  if (match === null) {
-    throw new Error(`unparseable PR url: ${prUrl}`);
-  }
-  await octokit.pulls.requestReviewers({
-    owner: match[1]!,
-    repo: match[2]!,
-    pull_number: Number(match[3]),
-    reviewers,
-  });
+  const { owner, repo, pullNumber } = prCoordinates(prUrl);
+  await octokit.pulls.requestReviewers({ owner, repo, pull_number: pullNumber, reviewers });
 }
 
 const apiCalls = new Map<string, number>();

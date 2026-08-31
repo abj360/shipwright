@@ -98,9 +98,11 @@ export class TaskQueue {
   }
 
   private kick(): void {
-    while (this.running < this.concurrency && this.pending.length > 0) {
-      // length checked by the loop guard; shift() returns a task
-      const task = this.pending.shift()!;
+    while (this.running < this.concurrency) {
+      const task = this.pending.shift();
+      if (task === undefined) {
+        return;
+      }
       this.running += 1;
       void this.execute(task);
     }
