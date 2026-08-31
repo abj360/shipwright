@@ -7,6 +7,7 @@ Contains:
     test_accepting_releases_the_waiting_run(): accept unblocks and approves
     test_discarding_releases_the_waiting_run(): discard unblocks and refuses
     test_timeout_is_treated_as_a_refusal(): silence never approves a plan
+    test_hint_line_names_both_keys(): the footer hint lists accept and discard
 """
 
 from agent.planner import Plan, PlanStep
@@ -51,3 +52,11 @@ def test_timeout_is_treated_as_a_refusal() -> None:
     panel = PlanPanel(_sample_plan())
 
     assert panel.wait_for_decision(timeout_s=0.01) is False
+
+
+def test_hint_line_names_both_keys() -> None:
+    """Asserts the hint line tells the operator both keys they can press."""
+    hint = PlanPanel(_sample_plan()).hint_line()
+
+    assert "accept" in hint
+    assert "discard" in hint
