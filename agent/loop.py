@@ -10,6 +10,7 @@ Contains:
     AgentLoop.run(): executes the loop until a final answer
     AgentLoop._think(): asks the model for the next step
     AgentLoop._parse_step(): splits model output into a step
+    AgentLoop._render_step(): replays a past step as the model's own turn
     AgentLoop._act(): runs the chosen tool and captures output
     AgentLoop._record_cost(): accumulates one completion's spend
     AgentLoop._run_plan_mode(): executes planner steps directly
@@ -36,6 +37,7 @@ from agent.tool_dispatcher import ToolDispatcher
 logger = logging.getLogger(__name__)
 
 MAX_TOOL_OUTPUT_CHARS = 6000
+MAX_ECHOED_ARG_CHARS = 200
 TRANSCRIPT_TOKEN_BUDGET = 28000
 CHARS_PER_TOKEN_ESTIMATE = 4
 STEP_BUDGET_TOKENS = 6000
@@ -70,10 +72,28 @@ TOOL_USAGE_INSTRUCTIONS = (
     "Only the tool names listed above exist; anything else is rejected."
 )
 TRUNCATED_OBSERVATION_NOTE = "[older observation trimmed to fit the context budget]"
+REPEATED_CALL_NOTE = (
+    "This exact call already failed the same way. Repeating it will not help: "
+    "use a different tool or different arguments."
+)
 PARSE_RETRY_HINT = (
     "Your last reply had no Action: and no FINAL:. "
     "Respond with exactly one Action: or one FINAL: and nothing else."
 )
+
+
+def _elide(value: str) -> str:
+    """Shortens an argument value that is too long to repeat every turn.
+
+    Args:
+        value: Argument value as it was dispatched.
+
+    Returns:
+        text: The value, or its head with a note of what was cut.
+    """
+    if len(value) <= MAX_ECHOED_ARG_CHARS:
+        return value
+    return f"{value[:MAX_ECHOED_ARG_CHARS]}... [{len(value)} chars]"
 
 
 def _name_from_next_line(text: str) -> tuple[str, str]:
@@ -201,6 +221,7 @@ class AgentLoop:
         self._run_id = uuid.uuid4().hex[:8]
         self._cost_usd = 0.0
         self._dispatcher = ToolDispatcher(Path(config.repo_path))
+        self._failed_calls: set[tuple[str, str]] = set()
         logger.debug("agent loop initialised for %s", config.repo_path)
 
     def run(self, on_step: Callable[[Step], None] | None = None) -> RunResult:
@@ -267,10 +288,33 @@ class AgentLoop:
         """
         messages = [Message(role="user", content=self.config.task)]
         for step in self._transcript:
-            messages.append(Message(role="assistant", content=step.thought))
+            messages.append(Message(role="assistant", content=self._render_step(step)))
             if step.observation:
                 messages.append(Message(role="user", content=f"Observation: {step.observation}"))
         return messages
+
+    def _render_step(self, step: Step) -> str:
+        """Replays one past step as the model's own turn.
+
+        The thought alone is usually empty, which left the model with an
+        observation and no record of having asked for it, so it would call the
+        same tool again. Long values are elided: the model needs to see that it
+        wrote a file, not the whole body echoed back every turn.
+
+        Args:
+            step: Step to render.
+
+        Returns:
+            turn: The assistant message for that step.
+        """
+        if not step.tool_name:
+            return step.thought
+        lines = [step.thought] if step.thought else []
+        lines.append(f"{ACTION_PREFIX} {step.tool_name}")
+        rendered = [f"{key}={_elide(value)}" for key, value in step.tool_args.items()]
+        if rendered:
+            lines.append("; ".join(rendered))
+        return "\n".join(lines)
 
     def _parse_step(self, text: str) -> Step:
         """Splits raw model output into thought, tool call, or final answer.
@@ -334,9 +378,14 @@ class AgentLoop:
             output: Tool output, truncated to the per-step budget.
         """
         result = self._dispatcher.dispatch(step.tool_name, step.tool_args)
-        if not result.ok:
-            return f"error: {result.error}"
-        return result.output[:MAX_TOOL_OUTPUT_CHARS]
+        signature = (step.tool_name, str(sorted(step.tool_args.items())))
+        if result.ok:
+            self._failed_calls.discard(signature)
+            return result.output[:MAX_TOOL_OUTPUT_CHARS]
+        repeated = signature in self._failed_calls
+        self._failed_calls.add(signature)
+        error = f"error: {result.error}"
+        return f"{error}\n{REPEATED_CALL_NOTE}" if repeated else error
 
     def _observe(self, step: Step, output: str) -> None:
         """Attaches a tool result to its step so the model sees it next turn.
