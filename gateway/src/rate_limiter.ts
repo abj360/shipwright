@@ -35,8 +35,11 @@ export function isRateLimitError(error: unknown): boolean {
   /**
    * Decides whether an error is a GitHub rate-limit response.
    *
+   * GitHub answers secondary rate limits with 403 and often no
+   * Retry-After header, so every 403 is treated as retryable.
+   *
    * @param error - Thrown error to classify.
-   * @returns isRateLimit - True for 429 and 403-with-retry-after responses.
+   * @returns isRateLimit - True for 429 and 403 responses.
    */
   const status = (error as { status?: number }).status;
   return status === 429 || status === 403;
