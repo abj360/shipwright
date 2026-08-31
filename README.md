@@ -1,7 +1,11 @@
-# shipwright
+<h1 align="center">
+  <img src="docs/media/wordmark.png" alt="shipwright" width="440">
+</h1>
 
-An autonomous coding agent: read the repo, plan, edit, run tests, iterate, and
-open a draft PR — executing entirely inside a hardened, isolated sandbox.
+<p align="center">
+  Read the repo, plan, edit, run tests, iterate, and open a draft PR —<br>
+  executing entirely inside a hardened, isolated sandbox.
+</p>
 
 <p align="center">
   <img src="docs/media/live-viewer.gif" alt="A run in the live viewer, from typing the request to the diff" width="720">
@@ -162,13 +166,17 @@ are explicitly ignored so runs can never trigger themselves in a loop.
 The React viewer (`ui/`) is a conversation: each request you send becomes a
 turn showing what the agent did and the diff it produced.
 
-![The live viewer running a task](docs/media/live-viewer.png)
-
 Each turn collapses the run into activity rows — `Read`, `Edited`, `Ran` — that
 open to reveal that step's output, followed by the agent's answer, the token
 count, and the diff for that turn alone. The composer stays live while a run is
 in flight: anything typed meanwhile is queued and starts when the agent frees
 up, and the send arrow becomes a square for the duration.
+
+![Two turns of a conversation, one activity row expanded](docs/media/conversation.png)
+
+Above: two requests against the same checkout, the first turn's `Read` row
+opened to show what the agent saw. The second turn is an honest one — two edits
+missed before it fell back to rewriting the file.
 
 ### Using it
 
