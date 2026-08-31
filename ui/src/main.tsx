@@ -4,10 +4,10 @@
  */
 
 import { App } from "./App";
-import React from "react";
 import { createRoot } from "react-dom/client";
 
 const host = document.getElementById("root");
-if (host !== null) {
-  createRoot(host).render(<App />);
+if (host === null) {
+  throw new Error("missing #root element; index.html and main.tsx disagree");
 }
+createRoot(host).render(<App />);
