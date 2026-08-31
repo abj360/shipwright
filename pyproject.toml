@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shipwright"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Autonomous coding agent with a hardened sandboxed execution environment"
 requires-python = ">=3.12"
 dependencies = [
@@ -18,6 +18,9 @@ dev = ["pytest>=8.4", "ruff>=0.7", "mypy>=1.12", "types-PyYAML>=6.0"]
 
 [project.scripts]
 shipwright = "agent.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "agent.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["agent*", "sandbox*", "security*"]

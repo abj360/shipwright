@@ -21,6 +21,7 @@ import os
 import sys
 from pathlib import Path
 
+from agent import __version__
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
 from agent.llm_client import LLMClient, MissingCredentialError, Provider, build_client
@@ -41,7 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
         parser: Configured parser for the agent CLI.
     """
     parser = argparse.ArgumentParser(prog="shipwright", description="Autonomous coding agent")
-    parser.add_argument("--version", action="version", version="%(prog)s 1.0.0")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--task", help="natural-language task to execute")
     parser.add_argument("--issue-url", help="GitHub issue URL to work on")
     parser.add_argument("--repo", default=".", help="path to the checkout to modify")

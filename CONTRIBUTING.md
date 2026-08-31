@@ -163,6 +163,8 @@ file for the exact layout.
 
 ## Releasing
 
-Releases are tagged by the lead (`v1.0` was tagged 2026-08-29). Tags are
+Releases are tagged by the lead (`v1.0` 2026-08-29, `v1.1` 2026-08-25). The
+version lives in `agent/__version__` and nowhere else; pyproject reads it and
+the CLI reports it, so the two cannot drift. Tags are
 annotated, dated, and cut only when the full CI suite and the red-team
 regression suite are green on `main`.
