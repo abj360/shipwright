@@ -293,4 +293,5 @@ fail-open vs. fail-closed gates) that shaped them.
 
 ## Maintainers
 
-Maintained by abj360. See `CONTRIBUTING.md` for how to get involved.
+Maintained by [abj360](https://github.com/abj360). See `CONTRIBUTING.md` for how
+to get involved.
