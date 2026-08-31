@@ -6,4 +6,4 @@ Contains:
     __version__: the single source of the project version
 """
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
