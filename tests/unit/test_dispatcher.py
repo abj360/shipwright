@@ -451,3 +451,64 @@ def test_describe_tools_names_required_arguments(tmp_path: Path) -> None:
     assert "write_file" in described
     assert "path=..." in described
     assert "content=..." in described
+
+
+def test_edit_file_replaces_only_the_matching_line(tmp_path: Path) -> None:
+    """Verifies an edit leaves every other line of the file untouched."""
+    (tmp_path / "calc.py").write_text(
+        "def add(a, b):\n    return a - b\n\n\ndef mul(a, b):\n    return a * b\n"
+    )
+    dispatcher = ToolDispatcher(tmp_path)
+    result = dispatcher.dispatch(
+        "edit_file", {"path": "calc.py", "find": "return a - b", "replace": "return a + b"}
+    )
+    assert result.ok
+    assert (tmp_path / "calc.py").read_text() == (
+        "def add(a, b):\n    return a + b\n\n\ndef mul(a, b):\n    return a * b\n"
+    )
+
+
+def test_edit_file_keeps_the_original_indentation(tmp_path: Path) -> None:
+    """Verifies a model need not reproduce leading whitespace to edit a line."""
+    (tmp_path / "m.py").write_text("class C:\n        deeply = 1\n")
+    ToolDispatcher(tmp_path).dispatch(
+        "edit_file", {"path": "m.py", "find": "deeply = 1", "replace": "deeply = 2"}
+    )
+    assert (tmp_path / "m.py").read_text() == "class C:\n        deeply = 2\n"
+
+
+def test_edit_file_refuses_an_ambiguous_match(tmp_path: Path) -> None:
+    """Verifies a line appearing twice is refused rather than guessed at."""
+    (tmp_path / "m.py").write_text("x = 1\ny = 2\nx = 1\n")
+    result = ToolDispatcher(tmp_path).dispatch(
+        "edit_file", {"path": "m.py", "find": "x = 1", "replace": "x = 3"}
+    )
+    assert not result.ok
+    assert "2 lines match" in result.error
+    assert (tmp_path / "m.py").read_text() == "x = 1\ny = 2\nx = 1\n"
+
+
+def test_edit_file_reports_a_line_that_is_not_there(tmp_path: Path) -> None:
+    """Verifies a miss is an error the model can act on, not a silent no-op."""
+    (tmp_path / "m.py").write_text("x = 1\n")
+    result = ToolDispatcher(tmp_path).dispatch(
+        "edit_file", {"path": "m.py", "find": "nope", "replace": "y = 2"}
+    )
+    assert not result.ok
+    assert "no line matching" in result.error
+
+
+def test_edit_file_requires_something_to_find(tmp_path: Path) -> None:
+    """Verifies an empty find is rejected before touching the file."""
+    (tmp_path / "m.py").write_text("x = 1\n")
+    result = ToolDispatcher(tmp_path).dispatch(
+        "edit_file", {"path": "m.py", "find": "  ", "replace": "y = 2"}
+    )
+    assert not result.ok
+
+
+def test_edit_file_needs_all_three_arguments(tmp_path: Path) -> None:
+    """Verifies a partial call fails before the file is opened."""
+    result = ToolDispatcher(tmp_path).dispatch("edit_file", {"path": "m.py"})
+    assert not result.ok
+    assert "missing args" in result.error

@@ -12,6 +12,7 @@ Contains:
     ToolDispatcher._git_diff(): shows the working-tree diff
     ToolDispatcher._run_tests(): runs the repo's test suite
     ToolDispatcher._write_file(): writes one file in the checkout
+    ToolDispatcher._edit_file(): replaces one line in a file
 """
 
 import logging
@@ -26,6 +27,7 @@ DEFAULT_COMMAND_TIMEOUT_S = 120
 MAX_OUTPUT_CHARS = 6000
 TOOL_TIMEOUTS: dict[str, int] = {"run_tests": 300}
 TOOL_SUMMARIES: dict[str, str] = {
+    "edit_file": "replace one line in a file, leaving everything else untouched",
     "read_file": "read one file in the checkout",
     "list_dir": "list one directory, defaulting to the checkout root",
     "run_shell": "run a shell command in the checkout",
@@ -40,6 +42,7 @@ OPTIONAL_ARGS: dict[str, tuple[str, ...]] = {
     "git_diff": ("path",),
 }
 REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
+    "edit_file": ("path", "find", "replace"),
     "read_file": ("path",),
     "list_dir": (),
     "write_file": ("path", "content"),  # content may be empty
@@ -84,6 +87,7 @@ class ToolDispatcher:
         """
         self.repo_root = repo_root.resolve()
         self._tools: dict[str, Callable[[dict[str, str]], str]] = {
+            "edit_file": self._edit_file,
             "read_file": self._read_file,
             "list_dir": self._list_dir,
             "run_shell": self._run_shell,
@@ -140,6 +144,41 @@ class ToolDispatcher:
         except (OSError, subprocess.SubprocessError) as exc:
             return ToolResult(ok=False, output="", error=f"{type(exc).__name__}: {exc}")
         return ToolResult(ok=True, output=output[:MAX_OUTPUT_CHARS])
+
+    def _edit_file(self, args: dict[str, str]) -> str:
+        """Replaces the single line matching "find", keeping the rest of the file.
+
+        write_file replaces everything, which costs the rest of the file every
+        time a model reproduces it imperfectly. This changes one line and
+        leaves the file otherwise byte-identical.
+
+        The match ignores surrounding whitespace and the replacement inherits
+        the original line's indentation, so a model need not reproduce leading
+        spaces exactly. An ambiguous match is refused rather than guessed at.
+
+        Args:
+            args: Tool arguments; expects "path", "find", and "replace".
+
+        Returns:
+            confirmation: Which line of which file changed.
+        """
+        target = self._resolve(args["path"])
+        needle = args["find"].strip()
+        if not needle:
+            raise ToolError("edit_file requires a non-empty find")
+        lines = target.read_text(errors="replace").splitlines(keepends=True)
+        matches = [index for index, line in enumerate(lines) if line.strip() == needle]
+        if not matches:
+            raise ToolError(f"no line matching {needle!r} in {args['path']}")
+        if len(matches) > 1:
+            raise ToolError(f"{len(matches)} lines match {needle!r}; include more of the line")
+        index = matches[0]
+        original = lines[index]
+        indent = original[: len(original) - len(original.lstrip())]
+        ending = "\n" if original.endswith("\n") else ""
+        lines[index] = f"{indent}{args['replace'].strip()}{ending}"
+        target.write_text("".join(lines))
+        return f"replaced line {index + 1} of {args['path']}"
 
     def _read_file(self, args: dict[str, str]) -> str:
         """Reads one file from the checkout.
