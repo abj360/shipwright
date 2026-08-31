@@ -5,6 +5,7 @@ plan_panel.py --- dashed-border panel showing a proposed plan before it runs
 Contains:
     PlanPanel: renders a proposed plan and waits for an explicit decision
     PlanPanel.compose(): lists the proposed steps
+    PlanPanel.hint_line(): renders the accept and discard key hints
     PlanPanel.action_accept(): approves the plan and releases the run
     PlanPanel.action_reject(): discards the plan and releases the run
     PlanPanel.wait_for_decision(): blocks a worker until the operator answers
@@ -76,7 +77,15 @@ class PlanPanel(Static):
         yield Label(f"Proposed plan for: {self.plan.task}")
         for step in self.plan.steps:
             yield Label(f"{step.index + 1}. {step.description}")
-        yield Label(f"[{ACCEPT_KEY}] accept    [esc] discard")
+        yield Label(self.hint_line())
+
+    def hint_line(self) -> str:
+        """Renders the key hints shown under the proposed steps.
+
+        Returns:
+            hint: One line naming the accept and discard keys.
+        """
+        return f"[{ACCEPT_KEY}] accept    [esc] discard"
 
     def action_accept(self) -> None:
         """Approves the plan and lets the waiting run proceed."""
