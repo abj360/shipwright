@@ -14,6 +14,7 @@ Contains:
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 from tui.labels import label_for
 
@@ -56,7 +57,7 @@ class HistoricalStep:
         return True
 
 
-def _row_from_entry(index: int, entry: dict[str, object]) -> HistoricalStep:
+def _row_from_entry(index: int, entry: dict[str, Any]) -> HistoricalStep:
     """Builds one replayed row from a single transcript entry.
 
     Args:
@@ -85,7 +86,8 @@ def load_prior_rows(path: Path) -> list[HistoricalStep]:
     Returns:
         rows: Completed steps in the order they originally ran.
     """
-    raw = json.loads(path.read_text())
+    # A transcript is operator-supplied JSON, so its fields are genuinely untyped.
+    raw: list[dict[str, Any]] = json.loads(path.read_text())
     return [_row_from_entry(index, entry) for index, entry in enumerate(raw)]
 
 
