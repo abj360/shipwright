@@ -149,6 +149,8 @@ class RunResult:
     Attributes:
         final_answer: Answer the agent produced, or None when it stopped early.
         steps: Ordered steps taken during the run.
+        input_tokens: Prompt tokens consumed over the run.
+        output_tokens: Completion tokens produced over the run.
         started_at: Epoch seconds when the run started.
         ended_at: Epoch seconds when the run stopped.
         total_cost_usd: Model spend accumulated over the run.
@@ -157,8 +159,19 @@ class RunResult:
     final_answer: str | None
     steps: list[Step] = field(default_factory=list)
     total_cost_usd: float = 0.0
+    input_tokens: int = 0
+    output_tokens: int = 0
     started_at: float = 0.0
     ended_at: float = 0.0
+
+    @property
+    def total_tokens(self) -> int:
+        """Sums the tokens the run consumed and produced.
+
+        Returns:
+            tokens: Prompt plus completion tokens.
+        """
+        return self.input_tokens + self.output_tokens
 
     def summary(self) -> str:
         """Builds a one-line human-readable summary of the run.
@@ -220,6 +233,8 @@ class AgentLoop:
         self._transcript: list[Step] = []
         self._run_id = uuid.uuid4().hex[:8]
         self._cost_usd = 0.0
+        self._input_tokens = 0
+        self._output_tokens = 0
         self._dispatcher = ToolDispatcher(Path(config.repo_path))
         self._failed_calls: set[tuple[str, str]] = set()
         logger.debug("agent loop initialised for %s", config.repo_path)
@@ -250,6 +265,8 @@ class AgentLoop:
                     started_at=started,
                     ended_at=ended,
                     total_cost_usd=self._cost_usd,
+                    input_tokens=self._input_tokens,
+                    output_tokens=self._output_tokens,
                 )
             output = self._act(step)
             self._observe(step, output)
@@ -422,6 +439,8 @@ class AgentLoop:
         self._cost_usd = self.config.cost_tracker.record(
             completion.model, completion.input_tokens, completion.output_tokens
         )
+        self._input_tokens += completion.input_tokens
+        self._output_tokens += completion.output_tokens
 
     def _run_plan_mode(self) -> RunResult:
         """Executes the planner's steps directly instead of free-form ReAct.
@@ -457,6 +476,8 @@ class AgentLoop:
             started_at=started,
             ended_at=time.time(),
             total_cost_usd=self._cost_usd,
+            input_tokens=self._input_tokens,
+            output_tokens=self._output_tokens,
         )
 
     @property

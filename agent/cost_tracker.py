@@ -9,6 +9,7 @@ Contains:
     CostTracker.total_usd(): computes total spend in USD
     CostTracker.reset(): clears recorded usage
     CostTracker.format_summary(): one-line cost summary
+    CostTracker.token_totals(): sums prompt and completion tokens
     CostTracker.totals_by_model(): aggregates spend per model
     CostTracker.report(): renders a per-completion breakdown
     CostTracker.export_report(): writes the breakdown to JSON
@@ -111,6 +112,17 @@ class CostTracker:
             summary: Total spend and completion count in one line.
         """
         return f"${self.total_usd():.4f} across {len(self._entries)} completions"
+
+    def token_totals(self) -> tuple[int, int]:
+        """Sums the tokens consumed and produced across the run.
+
+        Returns:
+            totals: Prompt tokens and completion tokens.
+        """
+        return (
+            sum(e.input_tokens for e in self._entries),
+            sum(e.output_tokens for e in self._entries),
+        )
 
     def totals_by_model(self) -> dict[str, float]:
         """Aggregates spend per model.

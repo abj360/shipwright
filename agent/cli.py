@@ -88,7 +88,8 @@ def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
 
     result = loop.run(on_step=stream)
     sys.stdout.write(f"final: {result.final_answer}\n")
-    sys.stdout.write(f"took {result.duration_s:.1f}s, cost ${result.total_cost_usd:.4f}\n")
+    tokens = f"{result.input_tokens} in / {result.output_tokens} out"
+    sys.stdout.write(f"took {result.duration_s:.1f}s, {result.total_tokens} tokens ({tokens})\n")
     return EXIT_OK if result.final_answer else EXIT_FAILED
 
 
