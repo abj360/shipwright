@@ -36,6 +36,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "W"]
 [tool.mypy]
 strict = true
 python_version = "3.12"
+files = ["agent", "sandbox", "security", "tui"]
 
 [[tool.mypy.overrides]]
 module = ["docker", "docker.*"]
