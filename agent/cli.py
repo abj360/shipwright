@@ -22,7 +22,7 @@ from pathlib import Path
 
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
-from agent.llm_client import HttpLLMClient
+from agent.llm_client import LLMClient, MissingCredentialError, Provider, build_client
 from agent.loop import AgentConfig, AgentLoop, Step
 from agent.planner import RepoPlanner, RepoReader, build_outline
 from agent.repo_map import RepoMap
@@ -49,6 +49,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-cost", type=float, default=5.0, help="cost ceiling per run in USD")
     parser.add_argument("--resume", metavar="TRANSCRIPT", help="resume from a saved transcript")
     parser.add_argument("--plan-mode", action="store_true", help="plan first, then execute")
+    parser.add_argument(
+        "--provider",
+        choices=[p.value for p in Provider],
+        default=os.environ.get("SHIPWRIGHT_PROVIDER", Provider.ANTHROPIC.value),
+        help="model provider to run the loop with",
+    )
+    parser.add_argument("--model", help="model identifier; defaults to the provider's default")
     return parser
 
 
@@ -114,9 +121,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.plan_mode:
         config.mode = "plan_execute"
     try:
-        client = HttpLLMClient(api_key=os.environ["ANTHROPIC_API_KEY"])
-    except KeyError:
-        print("ANTHROPIC_API_KEY is not set", file=sys.stderr)
+        client = build_client(Provider(args.provider), args.model)
+    except MissingCredentialError as exc:
+        print(exc, file=sys.stderr)
         return EXIT_INFRA
     loop = AgentLoop(client, config)
     if args.resume:
@@ -175,7 +182,7 @@ def _load_transcript(path: str) -> list[Step]:
     return [Step(index=i, thought=s["thought"]) for i, s in enumerate(raw)]
 
 
-def _build_planner(client: HttpLLMClient, repo_path: str) -> RepoPlanner:
+def _build_planner(client: LLMClient, repo_path: str) -> RepoPlanner:
     """Builds a planner with an outline of the checkout.
 
     Args:
