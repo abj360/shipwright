@@ -35,7 +35,7 @@ def format_hints(bindings: Sequence[Binding], max_hints: int = MAX_HINTS) -> str
     """
     shown = [binding for binding in bindings if binding.show and binding.description]
     return HINT_SEPARATOR.join(
-        f"{binding.key} {binding.description}" for binding in shown[: max_hints - 1]
+        f"{binding.key} {binding.description}" for binding in shown[:max_hints]
     )
 
 
