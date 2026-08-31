@@ -14,6 +14,10 @@ import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef, useState } from "react";
 
+const MAX_PENDING_CHUNKS = 100;
+const TERMINAL_SCROLLBACK = 5_000;
+const TERMINAL_FONT_SIZE = 13;
+
 export interface TerminalViewerProps {
   runId: string;
   gatewayUrl: string;
@@ -53,24 +57,27 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
   });
 
   useEffect(() => {
-    const term = new Terminal({ convertEol: true, scrollback: 5_000 });
+    const term = new Terminal({ convertEol: true, scrollback: TERMINAL_SCROLLBACK });
     termRef.current = term;
     term.options.linkHandler = {
       activate(_event: MouseEvent, text: string): void {
         window.open(text, "_blank", "noopener");
       },
     };
-    term.options.fontSize = 13;
+    term.options.fontSize = TERMINAL_FONT_SIZE;
     term.options.cursorBlink = true;
     const fit = new FitAddon();
     term.loadAddon(fit);
+    let observer: ResizeObserver | null = null;
     if (hostRef.current !== null) {
       term.open(hostRef.current);
       fit.fit();
-      const observer = new ResizeObserver(() => fit.fit());
+      observer = new ResizeObserver(() => fit.fit());
       observer.observe(hostRef.current);
     }
     return () => {
+      observer?.disconnect();
+      termRef.current = null;
       term.dispose();
     };
   }, [runId, gatewayUrl]);
@@ -86,5 +93,3 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
     </div>
   );
 }
-
-const MAX_PENDING_CHUNKS = 100;
