@@ -12,7 +12,7 @@ Contains:
 
 from textual.binding import Binding
 
-from tui.screens.footer import MAX_HINTS, format_hints
+from tui.screens.footer import HINT_SEPARATOR, MAX_HINTS, format_hints
 
 
 def _binding(key: str, description: str, show: bool = True) -> Binding:
@@ -49,7 +49,7 @@ def test_hint_count_is_capped() -> None:
 
     line = format_hints(bindings)
 
-    assert line.count("Action") == MAX_HINTS
+    assert len(line.split(HINT_SEPARATOR)) == MAX_HINTS
 
 
 def test_no_bindings_render_empty() -> None:
