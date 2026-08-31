@@ -12,13 +12,10 @@ Contains:
 """
 
 import json
-import logging
 from pathlib import Path
 from typing import Any
 
 from tui.labels import label_for
-
-logger = logging.getLogger(__name__)
 
 MISSING_PATH_NOTICE = "usage: /resume <transcript path>"
 
@@ -113,7 +110,6 @@ def resume(argument: str) -> str:
         line: Summary of what was restored, or a usage hint.
     """
     if not argument.strip():
-        logger.debug("resume called with no path")
         return MISSING_PATH_NOTICE
     path = Path(argument.strip())
     if not path.exists():
