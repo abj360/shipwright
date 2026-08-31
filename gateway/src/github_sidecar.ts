@@ -5,6 +5,8 @@
  * Contains:
  *   SidecarConfig: repo coordinates and credentials
  *   cloneRepo(): shallow-clones the target repository
+ *   RepoCoordinates: owner and repo name of a repository
+ *   repoCoordinates(): splits a repo URL into owner and repo
  *   createBranch(): creates the agent working branch
  *   commitAndPush(): commits the tree and pushes the branch
  *   createDraftPr(): opens a draft pull request
@@ -50,6 +52,25 @@ export interface SidecarConfig {
   workDir: string;
   githubToken: string;
   baseBranch: string;
+}
+
+export interface RepoCoordinates {
+  owner: string;
+  repo: string;
+}
+
+export function repoCoordinates(repoUrl: string): RepoCoordinates {
+  /**
+   * Splits a repository URL into its owner and repo name.
+   *
+   * @param repoUrl - Clone or browse URL of the repository.
+   * @returns coordinates - Owner and repo name, without any .git suffix.
+   */
+  const [owner, repo] = repoUrl.split("/").slice(-2);
+  if (owner === undefined || repo === undefined) {
+    throw new Error(`unparseable repo url: ${repoUrl}`);
+  }
+  return { owner, repo: repo.replace(/\.git$/, "") };
 }
 
 export async function cloneRepo(config: SidecarConfig, taskId: string): Promise<string> {
@@ -118,10 +139,10 @@ export async function createDraftPr(
   }
   return mutationQueue.enqueue(async () => {
     const octokit = octokitFor(config.githubToken);
-    const [owner, repo] = config.repoUrl.split("/").slice(-2);
+    const { owner, repo } = repoCoordinates(config.repoUrl);
     const response = await octokit.pulls.create({
       owner,
-      repo: repo.replace(/\.git$/, ""),
+      repo,
       head: branch,
       base: config.baseBranch,
       title,
@@ -130,7 +151,7 @@ export async function createDraftPr(
     });
     await octokit.issues.addLabels({
       owner,
-      repo: repo.replace(/\.git$/, ""),
+      repo,
       issue_number: response.data.number,
       labels: ["shipwright"],
     });
@@ -181,7 +202,7 @@ export async function batchGetFileContents(
    * @returns contents - Mapping of path to file text.
    */
   const octokit = octokitFor(config.githubToken);
-  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const { owner, repo } = repoCoordinates(config.repoUrl);
   const entries = paths
     .map((path, i) => `f${i}: object(expression: "HEAD:${path}") { ... on Blob { text } }`)
     .join("\n");
@@ -233,10 +254,10 @@ export async function getRefSha(config: SidecarConfig, ref: string): Promise<str
     return cached.sha;
   }
   const octokit = octokitFor(config.githubToken);
-  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const { owner, repo } = repoCoordinates(config.repoUrl);
   const response = await octokit.git.getRef({
     owner,
-    repo: repo.replace(/\.git$/, ""),
+    repo,
     ref: `heads/${ref}`,
   });
   const sha = response.data.object.sha;
@@ -264,11 +285,11 @@ export async function commitFiles(
    * @param message - Commit message.
    */
   const octokit = octokitFor(config.githubToken);
-  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const { owner, repo } = repoCoordinates(config.repoUrl);
   const baseSha = await getRefSha(config, branch);
   const tree = await octokit.git.createTree({
     owner,
-    repo: repo.replace(/\.git$/, ""),
+    repo,
     base_tree: baseSha,
     tree: entries.map((entry) => ({
       path: entry.path,
@@ -279,14 +300,14 @@ export async function commitFiles(
   });
   const commit = await octokit.git.createCommit({
     owner,
-    repo: repo.replace(/\.git$/, ""),
+    repo,
     message,
     tree: tree.data.sha,
     parents: [baseSha],
   });
   await octokit.git.updateRef({
     owner,
-    repo: repo.replace(/\.git$/, ""),
+    repo,
     ref: `heads/${branch}`,
     sha: commit.data.sha,
   });
@@ -340,8 +361,8 @@ export async function getDefaultBranch(config: SidecarConfig): Promise<string> {
     return defaultBranchCache;
   }
   const octokit = octokitFor(config.githubToken);
-  const [owner, repo] = config.repoUrl.split("/").slice(-2);
-  const response = await octokit.repos.get({ owner, repo: repo.replace(/\.git$/, "") });
+  const { owner, repo } = repoCoordinates(config.repoUrl);
+  const response = await octokit.repos.get({ owner, repo });
   defaultBranchCache = response.data.default_branch;
   return defaultBranchCache;
 }
@@ -354,10 +375,10 @@ export async function deleteBranch(config: SidecarConfig, branch: string): Promi
    * @param branch - Branch to delete.
    */
   const octokit = octokitFor(config.githubToken);
-  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const { owner, repo } = repoCoordinates(config.repoUrl);
   await octokit.git.deleteRef({
     owner,
-    repo: repo.replace(/\.git$/, ""),
+    repo,
     ref: `heads/${branch}`,
   });
 }
@@ -398,14 +419,14 @@ export async function findOpenPr(config: SidecarConfig, branch: string): Promise
    * @returns url - HTML URL of the open PR, or null.
    */
   const octokit = octokitFor(config.githubToken);
-  const [owner, repo] = config.repoUrl.split("/").slice(-2);
+  const { owner, repo } = repoCoordinates(config.repoUrl);
   const cached = prUrlCache.get(`${owner}:${branch}`);
   if (cached !== undefined && Date.now() - cached.fetchedAt < REFS_TTL_MS) {
     return cached.url;
   }
   const response = await octokit.pulls.list({
     owner,
-    repo: repo.replace(/\.git$/, ""),
+    repo,
     head: `${owner}:${branch}`,
     state: "open",
   });
