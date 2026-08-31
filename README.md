@@ -32,7 +32,7 @@ The agent host is outside the trust boundary; the sandbox is the product.
      │                    │  │                ┌─────────────────┐
 ┌────────┐                │  └────────────────│ sandbox (runsc) │
 │   ui   │────────────────┘                   │ ro root, cgroup │
-│ xterm  │                                    │ egress allowlist│
+│ chat   │                                    │ egress allowlist│
 └────────┘                                    └─────────────────┘
 ```
 
@@ -41,7 +41,7 @@ The agent host is outside the trust boundary; the sandbox is the product.
 | `agent/`    | ReAct loop, planner, tool dispatcher, cli, cost tracking, judgeline |
 | `sandbox/`  | Docker runtime, gVisor config, cgroup/mount/egress policies, audit  |
 | `gateway/`  | Express API, GitHub sidecar (clone/branch/push/PR), webhooks, queue |
-| `ui/`       | React + xterm.js live terminal and live diff viewer                 |
+| `ui/`       | React conversation view: run activity and per-run diffs             |
 | `security/` | Red-team suite and regression tests for prior findings              |
 | `docker/`   | One Dockerfile per service plus the compose file for the full stack |
 
@@ -155,33 +155,65 @@ are explicitly ignored so runs can never trigger themselves in a loop.
 
 ## Live UI
 
-The React + xterm.js viewer (`ui/`) streams one run's output live over the
-gateway and renders the run's diff alongside it, with per-file collapsible
-sections, line numbers, add/remove stats, and a copy-patch button.
+The React viewer (`ui/`) is a conversation: each request you send becomes a
+turn showing what the agent did and the diff it produced.
+
+![The live viewer running a task](docs/media/live-viewer.png)
+
+Each turn collapses the run into activity rows — `Read`, `Edited`, `Ran` — that
+open to reveal that step's output, followed by the agent's answer, the token
+count, and the diff for that turn alone. The composer stays live while a run is
+in flight: anything typed meanwhile is queued and starts when the agent frees
+up, and the send arrow becomes a square for the duration.
+
+![A run from typing to diff](docs/media/live-viewer.gif)
 
 ### Using it
 
 1. Start the stack (`docker compose … up`, or `scripts/run_local.sh`).
-2. Kick off a run and keep its id:
+2. Open the UI on `:5173`, put the folder you want worked on in the header, and
+   type what the agent should do. Enter starts the run.
 
-   ```bash
-   curl -s -X POST localhost:4000/runs \
-     -H "Authorization: Bearer $GATEWAY_TOKEN" -H "content-type: application/json" \
-     -d '{"task": "fix the sign in add()"}'
-   ```
+Runs started elsewhere show up the same way — `POST /runs`, a GitHub issue
+labelled `shipwright`, or a `/shipwright` comment:
 
-   A GitHub issue labelled `shipwright`, or a `/shipwright` comment, starts one
-   the same way.
-3. Open the UI on `:5173` and paste that id into the box. The terminal replays
-   whatever the run has already printed and then follows it live; the diff panel
-   refreshes underneath. The badge turns green when the run ends.
+```bash
+curl -s -X POST localhost:4000/runs \
+  -H "Authorization: Bearer $GATEWAY_TOKEN" -H "content-type: application/json" \
+  -d '{"task": "fix the sign in add()", "repo": "/path/to/checkout"}'
+```
 
 The browser never holds `GATEWAY_TOKEN`: it calls the gateway same-origin and
 the proxy in front of the UI attaches the header — the vite dev server in
 development, nginx in the built image.
 
-Which checkout a run edits comes from `AGENT_REPO`, or per run via
-`{"repo": "/path/to/checkout"}` on `POST /runs`.
+Which checkout a run edits comes from the folder box in the header, remembered
+per browser and sent with each run. Leaving it empty falls back to `AGENT_REPO`,
+which `GET /workspace` reports. The gateway refuses a path that is not a
+directory before queueing anything.
+
+### What it handles, and what it does not
+
+Measured against `qwen2.5-coder:3b` served locally by ollama, five runs each:
+
+| Task | Result |
+| ---- | ------ |
+| Fix a one-line bug in a named file | 4/5 |
+| Add a docstring to a named function | 4/5 |
+| Create a new file with a named function | 5/5 |
+| Rename a function across its definition and call sites | 0/5 |
+
+The pattern is that one edit to one named file is reliable and anything needing
+several coordinated edits is not. A rename thrashes: `edit_file` on the
+definition, then `apply_patch` with a malformed diff, then the step budget runs
+out. That is a model limit rather than a harness one — the same prompts on a
+larger model are the intended remedy — but the loop should still notice it is
+going in circles instead of spending every step finding out. Tracked as an
+issue rather than papered over.
+
+Smaller things worth knowing: the model occasionally announces a change it
+never made, and occasionally writes a stray sentence of its own commentary into
+a file. Both are visible in the diff, which is why the diff sits in the turn.
 
 ## Quality gating
 
@@ -193,7 +225,8 @@ persistent 5xx is treated as *not ready*, never as a pass.
 
 ## Cost and safety controls
 
-- Per-run cost tracking with per-model pricing; soft budget warning at 80%.
+- Per-run token and cost tracking with per-model pricing; a run reports its
+  token count, and a soft budget warning fires at 90% of spend.
 - Hard circuit breaker on iterations (`--max-steps`) and spend (`--max-cost`);
   tripping either flags the run as runaway and halts it (see ADR-001 follow-up).
 - Bounded-concurrency task queue with retries, per-task timeouts, and a
@@ -218,7 +251,7 @@ regression suite runs without the integration flag and pins every prior finding
 agent/            ReAct loop, planner, dispatcher, cli, cost, judgeline, breaker
 sandbox/          docker runtime, gVisor config, cgroup/mount/egress, audit log
 gateway/          Express server, GitHub sidecar, webhooks, task queue, tests
-ui/               React + xterm.js live terminal and diff viewer
+ui/               React conversation view: run activity and per-run diffs
 security/         red-team payloads, runner, regression suite
 tests/            unit and integration suites mirroring the source tree
 docker/           per-service Dockerfiles + docker-compose.yml (whole stack)

@@ -31,6 +31,7 @@ export type TranscriptEvent = ToolEvent | AnswerEvent | NoteEvent;
 export const TOOL_LABELS: Record<string, string> = {
   read_file: "Read",
   write_file: "Wrote",
+  edit_file: "Edited",
   list_dir: "Listed",
   run_shell: "Ran",
   run_tests: "Tested",

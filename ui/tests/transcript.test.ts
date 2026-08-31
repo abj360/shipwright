@@ -85,4 +85,10 @@ describe("parseTranscript", () => {
   it("ignores output that arrives before any step line", () => {
     expect(parseTranscript(["stray line"])).toEqual([]);
   });
+
+  it("labels every tool the dispatcher offers", () => {
+    const named = ["read_file", "write_file", "edit_file", "list_dir", "run_shell"];
+    const labelled = tools(named.map((tool, i) => `[step ${i}] ${tool} path=x`));
+    expect(labelled.map((e) => e.label)).toEqual(["Read", "Wrote", "Edited", "Listed", "Ran"]);
+  });
 });
