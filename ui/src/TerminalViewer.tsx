@@ -73,14 +73,25 @@ export function TerminalViewer({ runId, gatewayUrl }: TerminalViewerProps) {
     term.options.cursorBlink = true;
     const fit = new FitAddon();
     term.loadAddon(fit);
+    let disposed = false;
+    // fit() reads the renderer's cell size and throws while the container is
+    // still zero-sized or the terminal has been disposed; proposeDimensions()
+    // returns undefined in exactly those cases, so it is the guard.
+    const refit = () => {
+      if (disposed || fit.proposeDimensions() === undefined) {
+        return;
+      }
+      fit.fit();
+    };
     let observer: ResizeObserver | null = null;
     if (hostRef.current !== null) {
       term.open(hostRef.current);
-      fit.fit();
-      observer = new ResizeObserver(() => fit.fit());
+      refit();
+      observer = new ResizeObserver(refit);
       observer.observe(hostRef.current);
     }
     return () => {
+      disposed = true;
       observer?.disconnect();
       termRef.current = null;
       term.dispose();

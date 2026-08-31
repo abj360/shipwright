@@ -9,10 +9,13 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export type SocketStatus = "connecting" | "open" | "closed";
+export type SocketStatus = "connecting" | "open" | "closed" | "ended";
 
 const MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_BASE_MS = 1_000;
+// A normal closure means the run finished. Reconnecting then would replay the
+// whole buffer into a terminal that already shows it.
+const NORMAL_CLOSURE = 1000;
 
 export function streamUrl(gatewayUrl: string, runId: string): string {
   /**
@@ -60,7 +63,11 @@ export function useSandboxSocket(
         attempt = 0;
         setStatus("open");
       };
-      socket.onclose = () => {
+      socket.onclose = (event) => {
+        if (event.code === NORMAL_CLOSURE) {
+          setStatus("ended");
+          return;
+        }
         setStatus("closed");
         if (!cancelled && attempt < MAX_RECONNECT_ATTEMPTS) {
           attempt += 1;
