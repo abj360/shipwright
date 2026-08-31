@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  Read the repo, plan, edit, run tests, iterate, and open a draft PR<br>
+  Reads the repo, plans, edits, runs tests, iterates, and opens a draft PR<br>
   all inside a hardened, isolated sandbox.
 </p>
 
