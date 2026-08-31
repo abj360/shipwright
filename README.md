@@ -13,7 +13,6 @@
 
 Every command the agent runs executes in a short-lived, gVisor-isolated
 container with hard resource limits and a default-deny network egress policy.
-The agent host is outside the trust boundary; the sandbox is the product.
 
 ## What it does
 
