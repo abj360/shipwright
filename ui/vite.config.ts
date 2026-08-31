@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/runs": "http://localhost:4000",
+      "/runs": { target: "http://localhost:4000", ws: true },
     },
   },
 });
