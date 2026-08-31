@@ -18,7 +18,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENV="$ROOT/.venv"
 TOOLS="$ROOT/.tools"
 NODE_VER="v20.17.0"
-NODE_DIR="$TOOLS/node-$NODE_VER-linux-x64"
+case "$(uname -s)-$(uname -m)" in
+    Darwin-arm64) NODE_PLATFORM="darwin-arm64" ;;
+    Darwin-x86_64) NODE_PLATFORM="darwin-x64" ;;
+    Linux-aarch64) NODE_PLATFORM="linux-arm64" ;;
+    *) NODE_PLATFORM="linux-x64" ;;
+esac
+NODE_DIR="$TOOLS/node-$NODE_VER-$NODE_PLATFORM"
 
 say() { printf '\n=== %s ===\n' "$*"; }
 
@@ -34,12 +40,14 @@ export WEBHOOK_SECRET="${WEBHOOK_SECRET:-dev-secret}"
 export REPO_URL="${REPO_URL:-https://github.com/abj360/shipwright}"
 export GITHUB_TOKEN="${GITHUB_TOKEN:-dev-token}"
 export WORK_DIR="${WORK_DIR:-/tmp/shipwright-work}"
+export BASE_BRANCH="${BASE_BRANCH:-main}"
 
 say "python venv"
 python3 -m venv "$VENV"
 "$VENV/bin/pip" install --quiet --upgrade pip
 "$VENV/bin/pip" install --quiet -r "$ROOT/requirements.txt"
-"$VENV/bin/python" -m agent.cli --version
+"$VENV/bin/pip" install --quiet -e "$ROOT"
+(cd "$ROOT" && "$VENV/bin/python" -m agent.cli --version)
 
 say "node runtime"
 if command -v node >/dev/null 2>&1; then
