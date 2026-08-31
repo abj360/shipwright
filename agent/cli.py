@@ -12,6 +12,7 @@ Contains:
     _emit_json_step(): prints one step as a JSON line
     _load_transcript(): loads prior steps from a transcript
     _build_planner(): builds a planner with a repo outline
+    DIFF_OPEN / DIFF_CLOSE: markers wrapping a step's diff on the stream
     EXIT_*: process exit statuses
 """
 
@@ -30,6 +31,8 @@ from agent.planner import RepoPlanner, RepoReader, build_outline
 from agent.repo_map import RepoMap
 
 MAX_ARG_CHARS = 60
+DIFF_OPEN = "[diff]"
+DIFF_CLOSE = "[/diff]"
 EXIT_OK = 0
 EXIT_FAILED = 1
 EXIT_INFRA = 2
@@ -85,6 +88,11 @@ def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
         sys.stdout.write(_format_step(step) + "\n")
         for line in step.observation.splitlines():
             sys.stdout.write(line + "\n")
+        if step.diff:
+            sys.stdout.write(DIFF_OPEN + "\n")
+            for line in step.diff.splitlines():
+                sys.stdout.write(line + "\n")
+            sys.stdout.write(DIFF_CLOSE + "\n")
         sys.stdout.flush()
 
     result = loop.run(on_step=stream)
@@ -190,6 +198,7 @@ def _emit_json_step(step: Step) -> None:
         "index": step.index,
         "tool": step.tool_name or "final",
         "ok": not step.observation.startswith("error:"),
+        "diff": step.diff,
     }
     sys.stdout.write(json.dumps(payload) + "\n")
 

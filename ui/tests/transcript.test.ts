@@ -24,7 +24,9 @@ function tools(lines: string[]): ToolEvent[] {
    * @param lines - Raw output lines.
    * @returns events - The tool activity in order.
    */
-  return parseTranscript(lines).filter((e): e is ToolEvent => e.kind === "tool");
+  return parseTranscript(lines).filter(
+    (e): e is ToolEvent => e.kind === "tool",
+  );
 }
 
 describe("parseTranscript", () => {
@@ -37,7 +39,10 @@ describe("parseTranscript", () => {
   });
 
   it("attaches each step's output to that step", () => {
-    expect(tools(OUTPUT)[0]?.detail).toEqual(["def add(a, b):", "    return a - b"]);
+    expect(tools(OUTPUT)[0]?.detail).toEqual([
+      "def add(a, b):",
+      "    return a - b",
+    ]);
     expect(tools(OUTPUT)[1]?.detail).toEqual(["wrote 32 bytes to calc.py"]);
   });
 
@@ -48,7 +53,9 @@ describe("parseTranscript", () => {
 
   it("reads the final answer as prose", () => {
     const answers = parseTranscript(OUTPUT).filter((e) => e.kind === "answer");
-    expect(answers).toEqual([{ kind: "answer", text: "corrected add() to return a + b" }]);
+    expect(answers).toEqual([
+      { kind: "answer", text: "corrected add() to return a + b" },
+    ]);
   });
 
   it("keeps the timing line as a note", () => {
@@ -69,13 +76,15 @@ describe("parseTranscript", () => {
   });
 
   it("shows the command for a shell step", () => {
-    expect(tools(["[step 0] run_shell command=git diff --stat"])[0]?.target).toBe(
-      "git diff --stat",
-    );
+    expect(
+      tools(["[step 0] run_shell command=git diff --stat"])[0]?.target,
+    ).toBe("git diff --stat");
   });
 
   it("falls back to the raw name for an unknown tool", () => {
-    expect(tools(["[step 0] something_new path=x"])[0]?.label).toBe("something_new");
+    expect(tools(["[step 0] something_new path=x"])[0]?.label).toBe(
+      "something_new",
+    );
   });
 
   it("returns nothing for empty output", () => {
@@ -87,8 +96,66 @@ describe("parseTranscript", () => {
   });
 
   it("labels every tool the dispatcher offers", () => {
-    const named = ["read_file", "write_file", "edit_file", "list_dir", "run_shell"];
-    const labelled = tools(named.map((tool, i) => `[step ${i}] ${tool} path=x`));
-    expect(labelled.map((e) => e.label)).toEqual(["Read", "Wrote", "Edited", "Listed", "Ran"]);
+    const named = [
+      "read_file",
+      "write_file",
+      "edit_file",
+      "list_dir",
+      "run_shell",
+    ];
+    const labelled = tools(
+      named.map((tool, i) => `[step ${i}] ${tool} path=x`),
+    );
+    expect(labelled.map((e) => e.label)).toEqual([
+      "Read",
+      "Wrote",
+      "Edited",
+      "Listed",
+      "Ran",
+    ]);
+  });
+});
+
+describe("parseTranscript diffs", () => {
+  const WITH_DIFF = [
+    "[step 0] edit_file path=calc.py; find=a; replace=b",
+    "replaced line 3 of calc.py",
+    "[diff]",
+    "--- a/calc.py",
+    "+++ b/calc.py",
+    "-    return a - b",
+    "+    return a + b",
+    "[/diff]",
+    "[step 1] run_tests",
+    "2 passed",
+  ];
+
+  it("attaches a diff to the step that produced it", () => {
+    expect(tools(WITH_DIFF)[0]?.diff).toBe(
+      [
+        "--- a/calc.py",
+        "+++ b/calc.py",
+        "-    return a - b",
+        "+    return a + b",
+      ].join("\n"),
+    );
+  });
+
+  it("leaves a step that changed nothing without a diff", () => {
+    expect(tools(WITH_DIFF)[1]?.diff).toBe("");
+  });
+
+  it("keeps the diff out of the step's output detail", () => {
+    expect(tools(WITH_DIFF)[0]?.detail).toEqual(["replaced line 3 of calc.py"]);
+  });
+
+  it("does not treat diff markers as output", () => {
+    const text = JSON.stringify(tools(WITH_DIFF)[0]?.detail);
+    expect(text).not.toContain("[diff]");
+    expect(text).not.toContain("[/diff]");
+  });
+
+  it("reports no diff when a run produced none", () => {
+    expect(tools(OUTPUT).every((event) => event.diff === "")).toBe(true);
   });
 });

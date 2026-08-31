@@ -6,6 +6,8 @@ Contains:
     make_config(): builds a minimal agent config
 """
 
+from pathlib import Path
+
 import pytest
 
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError, TripReason
@@ -1068,3 +1070,78 @@ def test_multiline_argument_drops_a_stray_closing_tag() -> None:
     reply = "Action: write_file\npath=a.py; content=x = 1\ny = 2\n</content>"
     step = AgentLoop(ScriptedLLM([reply]), guarded_config())._parse_step(reply)
     assert step.tool_args["content"] == "x = 1\ny = 2"
+
+
+def test_a_write_records_the_diff_it_made(tmp_path: Path) -> None:
+    """Verifies a mutating step carries its own diff, not the run's total."""
+    import subprocess
+
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / "a.py").write_text("value = 1\n")
+    subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+    subprocess.run(
+        ["git", "-c", "user.email=t@e", "-c", "user.name=t", "commit", "-qm", "init"],
+        cwd=tmp_path,
+        check=True,
+    )
+    reply = "Action: edit_file\npath=a.py; find=value = 1; replace=value = 2"
+    config = AgentConfig(repo_path=str(tmp_path), task="t")
+    result = AgentLoop(ScriptedLLM([reply, "FINAL: done"]), config).run()
+    assert "+value = 2" in result.steps[0].diff
+
+
+def test_a_read_records_no_diff(tmp_path: Path) -> None:
+    """Verifies a step that cannot change anything reports no diff."""
+    (tmp_path / "a.py").write_text("value = 1\n")
+    reply = "Action: read_file\npath=a.py"
+    config = AgentConfig(repo_path=str(tmp_path), task="t")
+    result = AgentLoop(ScriptedLLM([reply, "FINAL: done"]), config).run()
+    assert result.steps[0].diff == ""
+
+
+def _changed_lines(diff: str) -> list[str]:
+    """Pulls the added and removed lines out of a unified diff.
+
+    Args:
+        diff: Unified diff text.
+
+    Returns:
+        lines: Changed lines, without the file headers.
+    """
+    return [
+        line
+        for line in diff.splitlines()
+        if line[:1] in "+-" and not line.startswith(("+++", "---"))
+    ]
+
+
+def test_each_write_diffs_only_its_own_change(tmp_path: Path) -> None:
+    """Verifies a second edit shows its own change, not the first one again."""
+    (tmp_path / "a.py").write_text("one = 1\ntwo = 2\n")
+    replies = [
+        "Action: edit_file\npath=a.py; find=one = 1; replace=one = 11",
+        "Action: edit_file\npath=a.py; find=two = 2; replace=two = 22",
+        "FINAL: done",
+    ]
+    config = AgentConfig(repo_path=str(tmp_path), task="t")
+    result = AgentLoop(ScriptedLLM(replies), config).run()
+    assert _changed_lines(result.steps[0].diff) == ["-one = 1", "+one = 11"]
+    assert _changed_lines(result.steps[1].diff) == ["-two = 2", "+two = 22"]
+
+
+def test_a_write_creating_a_file_diffs_from_empty(tmp_path: Path) -> None:
+    """Verifies a new file shows as added rather than as no change."""
+    replies = ["Action: write_file\npath=new.py; content=value = 1", "FINAL: done"]
+    config = AgentConfig(repo_path=str(tmp_path), task="t")
+    result = AgentLoop(ScriptedLLM(replies), config).run()
+    assert "diff --git a/new.py b/new.py" in result.steps[0].diff
+    assert "+value = 1" in result.steps[0].diff
+
+
+def test_a_write_that_changes_nothing_reports_no_diff(tmp_path: Path) -> None:
+    """Verifies rewriting identical content does not produce an empty diff block."""
+    (tmp_path / "a.py").write_text("value = 1")
+    replies = ["Action: write_file\npath=a.py; content=value = 1", "FINAL: done"]
+    config = AgentConfig(repo_path=str(tmp_path), task="t")
+    result = AgentLoop(ScriptedLLM(replies), config).run()
+    assert result.steps[0].diff == ""

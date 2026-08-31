@@ -3,6 +3,7 @@
  *
  * Contains:
  *   ToolEvent / AnswerEvent / NoteEvent: what a run reports
+ *   DIFF_OPEN / DIFF_CLOSE: markers wrapping a step's diff
  *   TranscriptEvent: any one of them
  *   TOOL_LABELS: human wording for each tool name
  *   parseTranscript(): groups raw output lines into events
@@ -14,6 +15,7 @@ export interface ToolEvent {
   target: string;
   detail: string[];
   failed: boolean;
+  diff: string;
 }
 
 export interface AnswerEvent {
@@ -44,6 +46,8 @@ const PROGRESS_LINE = /^\[progress\] /;
 const ANSWER_LINE = /^final: ?/;
 const NOTE_LINE = /^took /;
 const PATH_ARG = /(?:^|; )(?:path|command|selector)=([^;]*)/;
+const DIFF_OPEN = "[diff]";
+const DIFF_CLOSE = "[/diff]";
 
 export function parseTranscript(lines: string[]): TranscriptEvent[] {
   /**
@@ -58,8 +62,24 @@ export function parseTranscript(lines: string[]): TranscriptEvent[] {
    */
   const events: TranscriptEvent[] = [];
   let current: ToolEvent | null = null;
+  let diffLines: string[] | null = null;
 
   for (const line of lines) {
+    if (diffLines !== null) {
+      if (line === DIFF_CLOSE) {
+        if (current !== null) {
+          current.diff = diffLines.join("\n");
+        }
+        diffLines = null;
+        continue;
+      }
+      diffLines.push(line);
+      continue;
+    }
+    if (line === DIFF_OPEN) {
+      diffLines = [];
+      continue;
+    }
     if (PROGRESS_LINE.test(line)) {
       continue;
     }
@@ -76,6 +96,7 @@ export function parseTranscript(lines: string[]): TranscriptEvent[] {
         target: targetOf(step[2] ?? ""),
         detail: [],
         failed: false,
+        diff: "",
       };
       events.push(current);
       continue;

@@ -3,14 +3,13 @@
  *
  * Contains:
  *   TurnProps: the run this turn follows
- *   Turn: renders the request, what the agent did, and the resulting diff
- *   ToolRow: one tool activity line with its collapsible output
+ *   Turn: renders the request and what the agent did
+ *   ToolRow: one tool activity line with its output and the diff it made
  *   useRunOutput(): collects a run's output lines as they stream in
  */
 
 import { DiffViewer } from "./DiffViewer";
 import { parseTranscript, type ToolEvent } from "./transcript";
-import { useRunPatch } from "./useRunPatch";
 import { useSandboxSocket } from "./useSandboxSocket";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -23,12 +22,12 @@ export interface TurnProps {
 
 export function Turn({ runId, task, gatewayUrl, onEnded }: TurnProps) {
   /**
-   * Renders one request, the steps the agent took, and the diff they produced.
+   * Renders one request and the steps the agent took, each write showing the
+   * diff it made at the point it made it.
    */
   const { lines, append } = useRunOutput();
   const status = useSandboxSocket(gatewayUrl, runId, append);
   const ended = status === "ended";
-  const patch = useRunPatch(gatewayUrl, runId, !ended);
   const events = useMemo(() => parseTranscript(lines), [lines]);
 
   useEffect(() => {
@@ -59,7 +58,6 @@ export function Turn({ runId, task, gatewayUrl, onEnded }: TurnProps) {
           );
         })}
         {!ended && <p className="turn-waiting">working…</p>}
-        {patch !== "" && <DiffViewer patch={patch} />}
       </div>
     </article>
   );
@@ -67,27 +65,45 @@ export function Turn({ runId, task, gatewayUrl, onEnded }: TurnProps) {
 
 export function ToolRow({ event }: { event: ToolEvent }) {
   /**
-   * Renders one tool call as an activity line that opens to show its output.
+   * Renders one tool call as an activity line that opens to show its output,
+   * followed by the diff that call produced.
    */
   const [open, setOpen] = useState(false);
-  const summary = event.detail.length === 1 ? event.detail[0] : `${event.detail.length} lines`;
+  const summary =
+    event.detail.length === 1
+      ? event.detail[0]
+      : `${event.detail.length} lines`;
 
   return (
     <div className={`tool-row ${event.failed ? "tool-failed" : ""}`}>
-      <button type="button" className="tool-head" onClick={() => setOpen(!open)}>
+      <button
+        type="button"
+        className="tool-head"
+        onClick={() => setOpen(!open)}
+      >
         <span className="tool-bullet" aria-hidden="true">
           {event.detail.length > 0 ? (open ? "▾" : "▸") : "·"}
         </span>
         <span className="tool-label">{event.label}</span>
-        {event.target !== "" && <span className="tool-target">{event.target}</span>}
-        {event.detail.length > 0 && !open && <span className="tool-summary">{summary}</span>}
+        {event.target !== "" && (
+          <span className="tool-target">{event.target}</span>
+        )}
+        {event.detail.length > 0 && !open && (
+          <span className="tool-summary">{summary}</span>
+        )}
       </button>
-      {open && event.detail.length > 0 && <pre className="tool-detail">{event.detail.join("\n")}</pre>}
+      {open && event.detail.length > 0 && (
+        <pre className="tool-detail">{event.detail.join("\n")}</pre>
+      )}
+      {event.diff !== "" && <DiffViewer patch={event.diff} />}
     </div>
   );
 }
 
-export function useRunOutput(): { lines: string[]; append: (chunk: string) => void } {
+export function useRunOutput(): {
+  lines: string[];
+  append: (chunk: string) => void;
+} {
   /**
    * Collects a run's output, splitting the stream back into whole lines.
    *
