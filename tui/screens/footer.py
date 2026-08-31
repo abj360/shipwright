@@ -38,9 +38,7 @@ def format_hints(bindings: Sequence[Binding], max_hints: int = MAX_HINTS) -> str
     shown = [binding for binding in bindings if binding.show and binding.description]
     if not shown:
         return EMPTY_BAR
-    return HINT_SEPARATOR.join(
-        f"{binding.key} {binding.description}" for binding in shown[:max_hints]
-    )
+    return HINT_SEPARATOR.join(f"{b.key} {b.description}" for b in shown[:max_hints])
 
 
 class FooterBar(Static):
