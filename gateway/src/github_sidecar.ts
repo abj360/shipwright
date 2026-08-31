@@ -313,19 +313,22 @@ export async function commitFiles(
   });
 }
 
-let octokitInstance: Octokit | null = null;
+const octokitByToken = new Map<string, Octokit>();
 
 function octokitFor(token: string): Octokit {
   /**
    * Returns a memoized Octokit client per token.
    *
    * @param token - GitHub credential.
-   * @returns client - Shared Octokit instance.
+   * @returns client - Octokit instance bound to that credential.
    */
-  if (octokitInstance === null) {
-    octokitInstance = new Octokit({ auth: token });
+  const cached = octokitByToken.get(token);
+  if (cached !== undefined) {
+    return cached;
   }
-  return octokitInstance;
+  const client = new Octokit({ auth: token });
+  octokitByToken.set(token, client);
+  return client;
 }
 
 export async function markPrReady(config: SidecarConfig, prUrl: string): Promise<void> {
