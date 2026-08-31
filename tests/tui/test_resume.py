@@ -9,6 +9,7 @@ Contains:
     test_router_dispatches_resume(): /resume reaches its handler
     test_plain_text_is_not_a_command(): an ordinary task is left alone
     test_missing_transcript_raises(): a path that does not exist fails loudly
+    test_bare_resume_shows_usage(): /resume with no path explains itself
 """
 
 import json
@@ -17,7 +18,7 @@ from pathlib import Path
 import pytest
 
 from tui.commands import CommandRouter
-from tui.transcript import describe_resume, load_prior_rows
+from tui.transcript import MISSING_PATH_NOTICE, describe_resume, load_prior_rows, resume
 
 
 def _write_transcript(tmp_path: Path) -> Path:
@@ -80,3 +81,9 @@ def test_missing_transcript_raises(tmp_path: Path) -> None:
     """Asserts pointing resume at a missing file fails rather than silently passing."""
     with pytest.raises(FileNotFoundError):
         load_prior_rows(tmp_path / "absent.json")
+
+
+def test_bare_resume_shows_usage() -> None:
+    """Asserts a bare /resume explains what it needs instead of failing."""
+    assert resume("") == MISSING_PATH_NOTICE
+    assert resume("   ") == MISSING_PATH_NOTICE

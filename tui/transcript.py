@@ -5,13 +5,20 @@ transcript.py --- reads a saved transcript back as completed timeline rows
 Contains:
     HistoricalStep: one step replayed from an earlier run
     load_prior_rows(): reads a saved transcript into dimmed completed rows
+    MISSING_PATH_NOTICE: usage line shown when /resume is typed bare
     describe_resume(): summarizes what a resume loaded, for the timeline
+    resume(): resolves a /resume argument into a line for the timeline
 """
 
 import json
+import logging
 from pathlib import Path
 
 from tui.labels import label_for
+
+logger = logging.getLogger(__name__)
+
+MISSING_PATH_NOTICE = "usage: /resume <transcript path>"
 
 
 class HistoricalStep:
@@ -82,3 +89,21 @@ def describe_resume(rows: list[HistoricalStep]) -> str:
         summary: One line naming how much history was restored.
     """
     return f"resumed {len(rows)} earlier steps"
+
+
+def resume(argument: str) -> str:
+    """Resolves a /resume argument into the line the timeline shows.
+
+    Args:
+        argument: Path the operator typed after the command, possibly empty.
+
+    Returns:
+        line: Summary of what was restored, or a usage hint.
+    """
+    if not argument.strip():
+        logger.debug("resume called with no path")
+        return MISSING_PATH_NOTICE
+    path = Path(argument.strip())
+    if not path.exists():
+        return f"no transcript at {path}"
+    return describe_resume(load_prior_rows(path))
