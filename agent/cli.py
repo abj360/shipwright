@@ -8,6 +8,7 @@ Contains:
     _run_interactive(): runs the loop with live output
     main(): runs one agent task from the command line
     _format_step(): renders one step as a single line
+    _shorten(): trims a long argument value for display
     _emit_json_step(): prints one step as a JSON line
     _load_transcript(): loads prior steps from a transcript
     _build_planner(): builds a planner with a repo outline
@@ -27,6 +28,7 @@ from agent.loop import AgentConfig, AgentLoop, Step
 from agent.planner import RepoPlanner, RepoReader, build_outline
 from agent.repo_map import RepoMap
 
+MAX_ARG_CHARS = 60
 EXIT_OK = 0
 EXIT_FAILED = 1
 EXIT_INFRA = 2
@@ -79,7 +81,7 @@ def _run_headless(loop: AgentLoop, as_json: bool = False) -> int:
             _emit_json_step(step)
             return
         print(f"[progress] step {step.index}", file=sys.stderr)
-        sys.stdout.write(f"[step {step.index}] {step.tool_name or 'final'}\n")
+        sys.stdout.write(_format_step(step) + "\n")
         for line in step.observation.splitlines():
             sys.stdout.write(line + "\n")
         sys.stdout.flush()
@@ -148,6 +150,10 @@ def main(argv: list[str] | None = None) -> int:
 def _format_step(step: Step) -> str:
     """Renders one step as a single output line.
 
+    The arguments follow the tool name so a reader, or the live viewer, can
+    tell which file a step touched. Long values are elided rather than
+    flooding the line with a file body.
+
     Args:
         step: Step to render.
 
@@ -155,7 +161,21 @@ def _format_step(step: Step) -> str:
         line: Single-line summary of the step.
     """
     tool = step.tool_name or "final"
-    return f"[step {step.index}] {tool}"
+    args = "; ".join(f"{key}={_shorten(value)}" for key, value in step.tool_args.items())
+    return f"[step {step.index}] {tool}" + (f" {args}" if args else "")
+
+
+def _shorten(value: str) -> str:
+    """Trims an argument value to keep a step line readable.
+
+    Args:
+        value: Argument value as dispatched.
+
+    Returns:
+        text: The value, or its first line truncated with an ellipsis.
+    """
+    head = value.splitlines()[0] if value else ""
+    return head if len(head) <= MAX_ARG_CHARS and head == value else f"{head[:MAX_ARG_CHARS]}…"
 
 
 def _emit_json_step(step: Step) -> None:
