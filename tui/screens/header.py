@@ -107,6 +107,8 @@ def format_cost(tracker: CostTracker | None, tokens: int = 0) -> str:
     Returns:
         label: Spend, and the token count when there is one.
     """
+    # A run with no tracker is priced at nothing rather than left blank: an empty
+    # cost field reads as 'unknown', which is the wrong thing to imply about spend.
     if tracker is None:
         return NO_SPEND_LABEL
     total: float = tracker.total_usd()
