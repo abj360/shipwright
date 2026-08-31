@@ -14,7 +14,7 @@ server {
 
     # Same-origin mirror of the vite dev proxy. The bearer token is attached
     # here rather than in the bundle, so the browser never holds it.
-    location /runs {
+    location ~ ^/(runs|workspace) {
         proxy_pass http://gateway:4000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

@@ -7,13 +7,14 @@
  *   SendIcon: arrow while idle, square while a run is in flight
  */
 
-import { startRun } from "./runs";
+import { defaultWorkspace, startRun } from "./runs";
 import { Turn } from "./Turn";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // Same-origin: the vite dev proxy and the nginx image both forward /runs to the
 // gateway, so the browser never makes a cross-origin request.
 const GATEWAY_URL = "";
+const REPO_KEY = "shipwright.repo";
 
 interface ConversationTurn {
   runId: string;
@@ -29,21 +30,37 @@ export function App() {
   const [task, setTask] = useState("");
   const [runningId, setRunningId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [repo, setRepo] = useState(() => localStorage.getItem(REPO_KEY) ?? "");
   const foot = useRef<HTMLDivElement>(null);
+
+  // Fall back to whatever folder the gateway was started against.
+  useEffect(() => {
+    if (repo !== "") {
+      return;
+    }
+    void defaultWorkspace(GATEWAY_URL).then((fallback) => setRepo(fallback));
+  }, [repo]);
+
+  useEffect(() => {
+    localStorage.setItem(REPO_KEY, repo);
+  }, [repo]);
 
   useEffect(() => {
     foot.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [turns.length, queued.length, runningId]);
 
-  const launch = useCallback(async (text: string) => {
+  const launch = useCallback(
+    async (text: string, folder: string) => {
     try {
-      const record = await startRun(GATEWAY_URL, text);
+      const record = await startRun(GATEWAY_URL, text, folder);
       setTurns((current) => [...current, { runId: record.id, task: record.task }]);
       setRunningId(record.id);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "could not start the run");
     }
-  }, []);
+    },
+    [],
+  );
 
   // Whatever was typed during a run starts as soon as the agent is free.
   useEffect(() => {
@@ -53,9 +70,9 @@ export function App() {
     const [next, ...rest] = queued;
     setQueued(rest);
     if (next !== undefined) {
-      void launch(next);
+      void launch(next, repo);
     }
-  }, [runningId, queued, launch]);
+  }, [runningId, queued, launch, repo]);
 
   const handleEnded = useCallback((runId: string) => {
     setRunningId((current) => (current === runId ? null : current));
@@ -74,13 +91,21 @@ export function App() {
       setQueued((current) => [...current, text]);
       return;
     }
-    await launch(text);
+    await launch(text, repo);
   };
 
   return (
     <main className="app-shell">
       <header>
         <h1>shipwright</h1>
+        <input
+          className="workspace"
+          value={repo}
+          onChange={(event) => setRepo(event.target.value)}
+          placeholder="/path/to/repo"
+          aria-label="working folder"
+          spellCheck={false}
+        />
       </header>
 
       <section className="conversation" aria-label="conversation">

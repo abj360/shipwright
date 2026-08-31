@@ -42,8 +42,29 @@ body {
 }
 
 .app-shell header {
+  align-items: center;
   border-bottom: 1px solid var(--panel-border);
+  display: flex;
+  gap: 1rem;
   padding-bottom: 0.75rem;
+}
+
+.workspace {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--hunk);
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  max-width: 26rem;
+  padding: 0.25rem 0.55rem;
+}
+
+.workspace:focus {
+  border-color: var(--accent);
+  color: var(--foreground);
+  outline: none;
 }
 
 .app-shell h1 {

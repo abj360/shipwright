@@ -15,14 +15,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    proxy: {
-      // The token is attached here, not in the bundle: anything the browser
-      // holds is readable by anyone who opens devtools.
-      "/runs": {
-        target: GATEWAY_TARGET,
-        ws: true,
-        headers: { Authorization: `Bearer ${GATEWAY_TOKEN}` },
-      },
-    },
+    // The token is attached here, not in the bundle: anything the browser
+    // holds is readable by anyone who opens devtools.
+    proxy: Object.fromEntries(
+      ["/runs", "/workspace"].map((path) => [
+        path,
+        { target: GATEWAY_TARGET, ws: true, headers: { Authorization: `Bearer ${GATEWAY_TOKEN}` } },
+      ]),
+    ),
   },
 });

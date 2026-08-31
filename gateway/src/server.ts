@@ -6,6 +6,8 @@
  *   prRequestSchema: validates POST /prs bodies
  *   app: the configured Express application
  *   GET /health: liveness probe
+ *   GET /workspace: the folder runs default to
+ *   isDirectory(): checks a requested folder exists on the agent host
  *   POST /webhooks/github: HMAC-verified issue and comment triggers
  *   POST /runs: enqueues one agent run
  *   GET /runs/:id: fetches one run record
@@ -19,6 +21,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { statSync } from "node:fs";
 import type { IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 
@@ -78,6 +81,20 @@ const STREAM_PATH = /^\/runs\/([^/]+)\/stream$/;
 // A normal closure tells the viewer the run ended, so it stops reconnecting
 // and replaying the buffer it has already shown.
 const STREAM_COMPLETE_CODE = 1000;
+
+function isDirectory(candidate: string): boolean {
+  /**
+   * Reports whether a path the caller named is a directory the agent can use.
+   *
+   * @param candidate - Path from the run request.
+   * @returns usable - True when the path exists and is a directory.
+   */
+  try {
+    return statSync(candidate).isDirectory();
+  } catch {
+    return false;
+  }
+}
 
 function isAuthorized(header: string | undefined): boolean {
   /**
@@ -164,6 +181,10 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/workspace", (_req, res) => {
+  res.json({ repo: config.AGENT_REPO });
+});
+
 app.use(createWebhookRouter(config.WEBHOOK_SECRET, queue));
 
 app.use((req, res, next) => {
@@ -184,11 +205,16 @@ app.post("/runs", (req, res) => {
     res.status(400).json({ error: parsed.error.issues });
     return;
   }
+  const repo = parsed.data.repo ?? config.AGENT_REPO;
+  if (!isDirectory(repo)) {
+    res.status(400).json({ error: `not a directory on the agent host: ${repo}` });
+    return;
+  }
   const id = randomUUID();
   const runRecord: RunRecord = {
     id,
     task: parsed.data.task,
-    repo: parsed.data.repo ?? config.AGENT_REPO,
+    repo,
     status: "queued",
     createdAt: new Date().toISOString(),
     diff: "",
