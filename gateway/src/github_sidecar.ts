@@ -37,7 +37,7 @@ import { Octokit } from "@octokit/rest";
 import pino from "pino";
 
 const run = promisify(exec);
-const logger = pino.default({ name: "github-sidecar" });
+const logger = pino({ name: "github-sidecar" });
 
 const BRANCH_PREFIX = "shipwright/";
 const mutationQueue = new RequestQueue();

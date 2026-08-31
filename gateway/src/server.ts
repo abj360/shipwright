@@ -22,9 +22,9 @@ import express from "express";
 import pino from "pino";
 import { z } from "zod";
 
-const logger = pino.default({ name: "gateway" });
+const logger = pino({ name: "gateway" });
 const config = loadConfig();
-const app = express.default();
+const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
   req.headers["x-request-id"] = req.headers["x-request-id"] ?? crypto.randomUUID();

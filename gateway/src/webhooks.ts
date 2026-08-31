@@ -13,7 +13,7 @@ import { TaskQueue } from "./task_queue";
 import express from "express";
 import pino from "pino";
 
-const logger = pino.default({ name: "webhooks" });
+const logger = pino({ name: "webhooks" });
 const seenDeliveries = new Set<string>();
 const MAX_SEEN_DELIVERIES = 2_000;
 

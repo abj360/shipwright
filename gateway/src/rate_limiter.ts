@@ -11,7 +11,7 @@
 
 import pino from "pino";
 
-const logger = pino.default({ name: "rate-limiter" });
+const logger = pino({ name: "rate-limiter" });
 const DEFAULT_MIN_INTERVAL_MS = 800;
 const DEFAULT_MAX_ATTEMPTS = 7;
 const JITTER_MS = 500;

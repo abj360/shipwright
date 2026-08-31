@@ -13,7 +13,7 @@ import { appendFileSync } from "node:fs";
 
 import pino from "pino";
 
-const logger = pino.default({ name: "task-queue" });
+const logger = pino({ name: "task-queue" });
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_TASK_TIMEOUT_MS = 5_400_000;
 
