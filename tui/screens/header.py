@@ -10,6 +10,8 @@ Contains:
     _read_head(): reads .git/HEAD, empty when the path is not a checkout
     current_branch(): reads the checked-out branch without shelling out
     format_repo(): renders the checkout path for the bar
+    NO_SPEND_LABEL: cost field shown before anything has been spent
+    format_cost(): renders spend and token counts for the bar
     HeaderBar: status bar across the top of the interface
     HeaderBar.compose(): builds the single status line
     HeaderBar.render_line_text(): renders the bar's current contents
@@ -20,10 +22,13 @@ from pathlib import Path
 from textual.app import ComposeResult
 from textual.widgets import Label, Static
 
+from agent.cost_tracker import CostTracker
+
 SEPARATOR = "  •  "
 DETACHED_LABEL = "detached"
 NO_BRANCH_LABEL = "no branch"
 HEAD_REF_PREFIX = "ref: refs/heads/"
+NO_SPEND_LABEL = "$0.0000"
 
 
 def _read_head(repo_path: Path) -> str:
@@ -74,24 +79,53 @@ def format_repo(repo_path: Path) -> str:
     return resolved.name or str(resolved)
 
 
+def format_cost(tracker: CostTracker | None, tokens: int = 0) -> str:
+    """Renders spend and token counts as the header shows them.
+
+    The figure comes straight from the run's own cost tracker, so the header
+    and the end-of-run summary are priced by the same per-model table.
+
+    Args:
+        tracker: Cost tracker accumulating the run's spend.
+        tokens: Tokens consumed so far, shown alongside the spend.
+
+    Returns:
+        label: Spend, and the token count when there is one.
+    """
+    if tracker is None:
+        return NO_SPEND_LABEL
+    spend = f"${tracker.total_usd():.4f}"
+    return f"{spend}  {tokens} tok" if tokens else spend
+
+
 class HeaderBar(Static):
     """Renders repo, branch, and provider across the top of the interface.
 
     Attributes:
         repo_path: Checkout the run is pointed at.
         provider: Provider name currently answering steps.
+        cost_tracker: Tracker the live cost readout is drawn from.
+        tokens: Tokens consumed so far in the run.
     """
 
-    def __init__(self, repo_path: Path, provider: str) -> None:
-        """Builds the bar for one checkout and provider.
+    def __init__(
+        self,
+        repo_path: Path,
+        provider: str,
+        cost_tracker: CostTracker | None = None,
+    ) -> None:
+        """Builds the bar for one checkout, provider, and cost tracker.
 
         Args:
             repo_path: Checkout the run is pointed at.
             provider: Provider name currently answering steps.
+            cost_tracker: Tracker the live cost readout is drawn from.
         """
         super().__init__()
         self.repo_path: Path = repo_path
         self.provider: str = provider
+        self.cost_tracker: CostTracker | None = cost_tracker
+        self.tokens: int = 0
 
     def render_line_text(self) -> str:
         """Renders the bar's current contents as one line.
@@ -99,7 +133,12 @@ class HeaderBar(Static):
         Returns:
             line: Repo, branch, and provider joined by the field separator.
         """
-        fields = [format_repo(self.repo_path), current_branch(self.repo_path), self.provider]
+        fields = [
+            format_repo(self.repo_path),
+            current_branch(self.repo_path),
+            self.provider,
+            format_cost(self.cost_tracker, self.tokens),
+        ]
         return SEPARATOR.join(fields)
 
     def compose(self) -> ComposeResult:
