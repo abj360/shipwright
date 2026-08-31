@@ -64,7 +64,7 @@ regression suite (`security/red_team_suite/test_regressions.py`).
 ## Quickstart (one command, fully dockerized)
 
 ```bash
-cp .env.example .env          # then fill in ANTHROPIC_API_KEY and GITHUB_TOKEN
+cp .env.example .env          # then fill in your provider key and GITHUB_TOKEN
 docker compose -f docker/docker-compose.yml up --build
 # ui on :5173, gateway on :4000
 ```
@@ -113,7 +113,26 @@ python -m agent.cli --task "migrate the settings module to pydantic v2" --plan-m
 | `--max-cost`   | `5.0`   | Cost ceiling per run in USD (circuit breaker)  |
 | `--resume`     | —       | Resume from a saved transcript JSON            |
 | `--plan-mode`  | off     | Plan first, then execute the plan              |
+| `--provider`   | `anthropic` | Model provider: `anthropic` or `openai`    |
+| `--model`      | —       | Model id; defaults to the provider's default   |
 | `--version`    | —       | Print version and exit                         |
+
+### Model providers
+
+The loop talks to either provider behind one `LLMClient` protocol, so nothing
+above the client changes when you switch:
+
+```bash
+python -m agent.cli --task "fix the flaky test"                      # claude-haiku-4-5
+python -m agent.cli --task "fix the flaky test" --provider openai    # gpt-4o-mini
+python -m agent.cli --task "..." --provider openai --model gpt-4o
+```
+
+`--provider` defaults to `$SHIPWRIGHT_PROVIDER`, then to `anthropic`. Each
+provider reads its own credential (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) and
+the run exits `2` when the selected one is unset, before any request is made.
+Per-model pricing covers both providers, so the cost breaker works the same
+either way.
 
 ## Gateway API
 
