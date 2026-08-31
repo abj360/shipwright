@@ -4,7 +4,7 @@
  * Contains:
  *   DiffLine: one classified diff line
  *   DiffFile: one file's classified lines
- *   FILE_HEADER_PREFIXES: per-file metadata lines that are not changes
+ *   METADATA_PREFIXES: git metadata lines that are not part of the change
  *   parseDiff(): parses a unified diff into per-file lines
  *   DiffViewer: renders a unified diff with per-line styling
  *   FileSection: collapsible per-file diff section
@@ -14,9 +14,17 @@
 
 import { useMemo, useState } from "react";
 
-// git puts these between the "diff --git" line and the first hunk. They start
-// with +/- but are metadata, not changed lines, so they are skipped entirely.
-const FILE_HEADER_PREFIXES = ["--- ", "+++ ", "index ", "new file mode", "deleted file mode"];
+// git metadata that is not part of the change: the file headers start with
+// +/- and would count as edits, and the no-newline marker would take a line
+// number that belongs to the next real line.
+const METADATA_PREFIXES = [
+  "--- ",
+  "+++ ",
+  "index ",
+  "new file mode",
+  "deleted file mode",
+  "\\ No newline",
+];
 
 export interface DiffLine {
   kind: "add" | "del" | "context" | "hunk";
@@ -46,7 +54,7 @@ export function parseDiff(patch: string): DiffFile[] {
       current = { path, lines: [] };
       files.push(current);
     } else if (current !== null) {
-      if (FILE_HEADER_PREFIXES.some((prefix) => line.startsWith(prefix))) {
+      if (METADATA_PREFIXES.some((prefix) => line.startsWith(prefix))) {
         continue;
       }
       if (line.startsWith("+")) {

@@ -20,17 +20,28 @@ export function App() {
   /**
    * Renders the run selector and the live terminal for the selected run.
    */
-  const [runId, setRunId] = useState("demo-run");
+  const [runId, setRunId] = useState("");
   const patch = useRunPatch(GATEWAY_URL, runId);
 
   return (
     <main className="app-shell">
       <header>
         <h1>shipwright</h1>
-        <input value={runId} onChange={(event) => setRunId(event.target.value)} />
+        <input
+          value={runId}
+          onChange={(event) => setRunId(event.target.value)}
+          placeholder="run id"
+          aria-label="run id"
+        />
       </header>
-      <TerminalViewer runId={runId} gatewayUrl={GATEWAY_URL} />
-      <DiffViewer patch={patch} />
+      {runId === "" ? (
+        <p className="run-hint">Paste a run id to follow its output and diff.</p>
+      ) : (
+        <>
+          <TerminalViewer runId={runId} gatewayUrl={GATEWAY_URL} />
+          <DiffViewer patch={patch} />
+        </>
+      )}
     </main>
   );
 }
@@ -46,6 +57,10 @@ export function useRunPatch(gatewayUrl: string, runId: string): string {
   const [patch, setPatch] = useState("");
 
   useEffect(() => {
+    if (runId === "") {
+      setPatch("");
+      return;
+    }
     let cancelled = false;
     const load = async () => {
       try {

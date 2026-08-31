@@ -16,6 +16,7 @@ const PATCH = [
   '+    "claude-sonnet-4-5": (3.0, 15.0),',
   '+    "gpt-4o-mini": (0.15, 0.6),',
   '     "scripted": (0.0, 0.0),',
+  "\\ No newline at end of file",
 ].join("\n");
 
 describe("parseDiff", () => {
@@ -35,6 +36,14 @@ describe("parseDiff", () => {
     const texts = parseDiff(PATCH).flatMap((f) => f.lines.map((l) => l.text));
     expect(texts.some((t) => t.startsWith("--- ") || t.startsWith("+++ "))).toBe(false);
     expect(texts.some((t) => t.startsWith("index "))).toBe(false);
+    expect(texts.some((t) => t.startsWith("\\ No newline"))).toBe(false);
+  });
+
+  it("does not spend a line number on the no-newline marker", () => {
+    const lines = parseDiff(PATCH)[0]?.lines ?? [];
+    const last = lines[lines.length - 1];
+    expect(last?.kind).toBe("context");
+    expect(last?.text).toContain("scripted");
   });
 
   it("numbers lines from the hunk header", () => {
