@@ -13,9 +13,12 @@ Contains:
     ToolDispatcher._run_tests(): runs the repo's test suite
     ToolDispatcher._write_file(): writes one file in the checkout
     ToolDispatcher._edit_file(): replaces one line in a file
+    _comparable(): normalises a line for forgiving matching
+    _numbered(): renders a file's lines for a failed match
 """
 
 import logging
+import re
 import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -25,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_COMMAND_TIMEOUT_S = 120
 MAX_OUTPUT_CHARS = 6000
+MAX_LISTED_LINES = 40
 TOOL_TIMEOUTS: dict[str, int] = {"run_tests": 300}
 TOOL_SUMMARIES: dict[str, str] = {
     "edit_file": "replace one line in a file, leaving everything else untouched",
@@ -70,6 +74,38 @@ class ToolResult:
 
 class ToolError(Exception):
     """Raised when a tool call is malformed or the tool fails."""
+
+
+def _comparable(line: str) -> str:
+    """Normalises a line so a model's approximation of it still matches.
+
+    Models routinely escape punctuation as though the argument were a regex,
+    and are inconsistent about runs of whitespace. Neither difference should
+    decide whether an edit lands, so both are removed before comparing.
+
+    Args:
+        line: Line from the file, or the snippet the model asked for.
+
+    Returns:
+        text: The line reduced to what is worth comparing.
+    """
+    unescaped = re.sub(r"\\(?=[^\w\s])", "", line)
+    return " ".join(unescaped.split())
+
+
+def _numbered(lines: list[str]) -> str:
+    """Renders a file's lines so a failed match can be corrected.
+
+    Args:
+        lines: File contents, one entry per line.
+
+    Returns:
+        listing: Numbered lines, truncated to keep the observation small.
+    """
+    shown = [f"{index + 1}: {line.rstrip()}" for index, line in enumerate(lines[:MAX_LISTED_LINES])]
+    if len(lines) > MAX_LISTED_LINES:
+        shown.append(f"... {len(lines) - MAX_LISTED_LINES} more lines")
+    return "\n".join(shown)
 
 
 class ToolDispatcher:
@@ -163,13 +199,16 @@ class ToolDispatcher:
             confirmation: Which line of which file changed.
         """
         target = self._resolve(args["path"])
-        needle = args["find"].strip()
+        needle = _comparable(args["find"])
         if not needle:
             raise ToolError("edit_file requires a non-empty find")
         lines = target.read_text(errors="replace").splitlines(keepends=True)
-        matches = [index for index, line in enumerate(lines) if line.strip() == needle]
+        matches = [index for index, line in enumerate(lines) if _comparable(line) == needle]
         if not matches:
-            raise ToolError(f"no line matching {needle!r} in {args['path']}")
+            raise ToolError(
+                f"no line matching {args['find'].strip()!r} in {args['path']}. "
+                f"Its lines are:\n{_numbered(lines)}"
+            )
         if len(matches) > 1:
             raise ToolError(f"{len(matches)} lines match {needle!r}; include more of the line")
         index = matches[0]

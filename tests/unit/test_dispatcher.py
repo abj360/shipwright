@@ -512,3 +512,40 @@ def test_edit_file_needs_all_three_arguments(tmp_path: Path) -> None:
     result = ToolDispatcher(tmp_path).dispatch("edit_file", {"path": "m.py"})
     assert not result.ok
     assert "missing args" in result.error
+
+
+def test_edit_file_matches_through_regex_escaping(tmp_path: Path) -> None:
+    """Verifies a model escaping punctuation still lands its edit.
+
+    Small models write find= as though it were a regex; the backslashes are
+    theirs, not the file's, and must not decide whether the edit applies.
+    """
+    (tmp_path / "m.py").write_text("def multiply(a, b):\n    return a * b\n")
+    result = ToolDispatcher(tmp_path).dispatch(
+        "edit_file",
+        {"path": "m.py", "find": r"def multiply\(a, b\):", "replace": "def product(a, b):"},
+    )
+    assert result.ok
+    assert (tmp_path / "m.py").read_text() == "def product(a, b):\n    return a * b\n"
+
+
+def test_edit_file_matches_through_uneven_whitespace(tmp_path: Path) -> None:
+    """Verifies runs of spaces inside a line do not decide the match."""
+    (tmp_path / "m.py").write_text("x   =    1\n")
+    assert (
+        ToolDispatcher(tmp_path)
+        .dispatch("edit_file", {"path": "m.py", "find": "x = 1", "replace": "x = 2"})
+        .ok
+    )
+
+
+def test_edit_file_shows_the_file_when_nothing_matches(tmp_path: Path) -> None:
+    """Verifies a miss reports the real lines so the next attempt can be right."""
+    (tmp_path / "m.py").write_text("alpha = 1\nbeta = 2\n")
+    error = (
+        ToolDispatcher(tmp_path)
+        .dispatch("edit_file", {"path": "m.py", "find": "gamma = 3", "replace": "gamma = 4"})
+        .error
+    )
+    assert "1: alpha = 1" in error
+    assert "2: beta = 2" in error
