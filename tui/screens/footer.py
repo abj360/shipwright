@@ -55,7 +55,7 @@ class FooterBar(Static):
             bindings: Bindings rendered on the bar.
         """
         super().__init__()
-        self.bindings = list(bindings)
+        self.bindings: list[Binding] = list(bindings)
 
     def on_mount(self) -> None:
         """Draws the hints once the bar is attached to the app."""
