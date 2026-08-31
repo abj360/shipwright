@@ -3,6 +3,7 @@
  * github_sidecar.ts --- git and GitHub API operations for agent runs
  *
  * Contains:
+ *   git(): runs one git command without a shell
  *   SidecarConfig: repo coordinates and credentials
  *   cloneRepo(): shallow-clones the target repository
  *   RepoCoordinates: owner and repo name of a repository
@@ -31,14 +32,14 @@
  *   closesIssueLine(): builds the Closes trailer
  */
 
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import { RequestQueue } from "./rate_limiter";
 import { Octokit } from "@octokit/rest";
 import pino from "pino";
 
-const run = promisify(exec);
+const execFileAsync = promisify(execFile);
 const logger = pino({ name: "github-sidecar" });
 
 const BRANCH_PREFIX = "shipwright/";
@@ -46,6 +47,18 @@ const mutationQueue = new RequestQueue();
 const CLONE_DEPTH = 1;
 const API_TIMEOUT_MS = 20_000;
 const DEFAULT_REVIEWERS: string[] = [];
+
+async function git(args: string[]): Promise<void> {
+  /**
+   * Runs one git command with its arguments passed as an argv array.
+   *
+   * Never build a shell string here: task ids, branch names and commit
+   * messages all originate in request bodies.
+   *
+   * @param args - Argument vector handed to the git binary.
+   */
+  await execFileAsync("git", args);
+}
 
 export interface SidecarConfig {
   repoUrl: string;
@@ -82,7 +95,15 @@ export async function cloneRepo(config: SidecarConfig, taskId: string): Promise<
    * @returns dest - Local path of the fresh clone.
    */
   const dest = `${config.workDir}/${taskId}`;
-  await run(`git clone --depth ${CLONE_DEPTH} --branch ${config.baseBranch} ${config.repoUrl} ${dest}`);
+  await git([
+    "clone",
+    "--depth",
+    String(CLONE_DEPTH),
+    "--branch",
+    config.baseBranch,
+    config.repoUrl,
+    dest,
+  ]);
   return dest;
 }
 
@@ -96,7 +117,7 @@ export async function createBranch(repoDir: string, taskId: string): Promise<str
    */
   const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const branch = `${BRANCH_PREFIX}${stamp}-${taskId}`;
-  await run(`git -C ${repoDir} checkout -b ${branch}`);
+  await git(["-C", repoDir, "checkout", "-b", branch]);
   return branch;
 }
 
@@ -112,10 +133,10 @@ export async function commitAndPush(
    * @param branch - Branch to push.
    * @param message - Commit message.
    */
-  await run(`git -C ${repoDir} add -A`);
-  const trailer = "\n\nTask-Id: " + branch.replace(BRANCH_PREFIX, "");
-  await run(`git -C ${repoDir} commit -m "${message}${trailer}"`);
-  await run(`git -C ${repoDir} push -u origin ${branch}`);
+  await git(["-C", repoDir, "add", "-A"]);
+  const trailer = `\n\nTask-Id: ${branch.replace(BRANCH_PREFIX, "")}`;
+  await git(["-C", repoDir, "commit", "-m", `${message}${trailer}`]);
+  await git(["-C", repoDir, "push", "-u", "origin", branch]);
 }
 
 export async function createDraftPr(
