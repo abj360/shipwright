@@ -35,7 +35,9 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-      - run: npm install
+          # setup-node looks from the repo root, not the job's working-directory.
+          cache-dependency-path: gateway/package-lock.json
+      - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
@@ -50,7 +52,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: npm install
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
