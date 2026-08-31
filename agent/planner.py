@@ -230,7 +230,7 @@ class RepoPlanner:
         Returns:
             steps: Parsed steps in order; empty when nothing parses.
         """
-        steps = []
+        steps: list[PlanStep] = []
         for line in text.splitlines():
             stripped = line.strip()
             if stripped[:2] in {f"{n}." for n in range(1, 10)} and len(stripped) > 3:

@@ -6,6 +6,7 @@ Contains:
     MountSpec: one bind mount for a sandbox container
     MountSpec.render(): short human-readable mount string
     build_mounts(): read-only root plus one writable workdir
+    RootfsKwargs: read-only rootfs container kwargs
     rootfs_kwargs(): enforces the read-only root filesystem
     to_docker_volumes(): renders mounts for docker-py
     WORKSPACE_ROOT: host directory all workdirs must live under
@@ -18,6 +19,7 @@ Contains:
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypedDict
 
 
 @dataclass(frozen=True)
@@ -65,7 +67,19 @@ def build_mounts(workdir: str, extra: list[MountSpec] | None = None) -> list[Mou
     return mounts
 
 
-def rootfs_kwargs(tmp_size: str = "64m") -> dict[str, object]:
+class RootfsKwargs(TypedDict):
+    """Container keyword arguments enforcing a read-only root filesystem.
+
+    Attributes:
+        read_only: Whether the container root filesystem forbids writes.
+        tmpfs: Mount options for each tmpfs the container gets.
+    """
+
+    read_only: bool
+    tmpfs: dict[str, str]
+
+
+def rootfs_kwargs(tmp_size: str = "64m") -> RootfsKwargs:
     """Returns container kwargs enforcing a read-only root filesystem.
 
     Args:
