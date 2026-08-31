@@ -5,6 +5,7 @@ tool_dispatcher.py --- dispatches parsed tool calls to safe, validated implement
 Contains:
     ToolResult: outcome of one tool invocation
     ToolError: malformed call or tool failure
+    ToolDispatcher.describe_tools(): renders the tool list for the prompt
     ToolDispatcher.dispatch(): executes and normalizes one tool call
     ToolDispatcher._resolve(): confines paths to the checkout
     ToolDispatcher._apply_patch(): applies a unified diff
@@ -24,6 +25,20 @@ logger = logging.getLogger(__name__)
 DEFAULT_COMMAND_TIMEOUT_S = 120
 MAX_OUTPUT_CHARS = 6000
 TOOL_TIMEOUTS: dict[str, int] = {"run_tests": 300}
+TOOL_SUMMARIES: dict[str, str] = {
+    "read_file": "read one file in the checkout",
+    "list_dir": "list one directory, defaulting to the checkout root",
+    "run_shell": "run a shell command in the checkout",
+    "write_file": "write text to one file, creating parent directories",
+    "run_tests": "run the test suite, optionally narrowed by selector",
+    "git_diff": "show the working-tree diff, optionally for one path",
+    "apply_patch": "apply a unified diff to the checkout",
+}
+OPTIONAL_ARGS: dict[str, tuple[str, ...]] = {
+    "list_dir": ("path",),
+    "run_tests": ("selector",),
+    "git_diff": ("path",),
+}
 REQUIRED_ARGS: dict[str, tuple[str, ...]] = {
     "read_file": ("path",),
     "list_dir": (),
@@ -77,6 +92,23 @@ class ToolDispatcher:
             "git_diff": self._git_diff,
             "apply_patch": self._apply_patch,
         }
+
+    def describe_tools(self) -> str:
+        """Renders the registered tools and their arguments for the system prompt.
+
+        Generated from the registry rather than written out separately, so a
+        tool can never be added without the model being told it exists.
+
+        Returns:
+            description: One line per tool, naming its arguments.
+        """
+        lines = []
+        for name in sorted(self._tools):
+            required = [f"{key}=..." for key in REQUIRED_ARGS.get(name, ())]
+            optional = [f"[{key}=...]" for key in OPTIONAL_ARGS.get(name, ())]
+            args = "; ".join(required + optional) or "no arguments"
+            lines.append(f"- {name}: {TOOL_SUMMARIES.get(name, '')} ({args})")
+        return "\n".join(lines)
 
     def dispatch(self, name: str, args: dict[str, str]) -> ToolResult:
         """Executes one tool call and normalizes the outcome.

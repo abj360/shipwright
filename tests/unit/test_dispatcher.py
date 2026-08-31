@@ -435,3 +435,19 @@ def test_disp_mx_3_1(tmp_path) -> None:
     dispatcher = ToolDispatcher(tmp_path)
     result = dispatcher.dispatch("write_file", {"path": None})
     assert result.ok is False
+
+
+def test_describe_tools_covers_the_whole_registry(tmp_path: Path) -> None:
+    """Verifies the prompt description cannot drift from the registered tools."""
+    dispatcher = ToolDispatcher(tmp_path)
+    described = dispatcher.describe_tools()
+    for name in dispatcher._tools:
+        assert f"- {name}:" in described
+
+
+def test_describe_tools_names_required_arguments(tmp_path: Path) -> None:
+    """Verifies a tool's required arguments are spelled out for the model."""
+    described = ToolDispatcher(tmp_path).describe_tools()
+    assert "write_file" in described
+    assert "path=..." in described
+    assert "content=..." in described

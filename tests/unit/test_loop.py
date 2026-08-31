@@ -830,3 +830,60 @@ def test_loop_mx2_1_1() -> None:
     responses = ["think\nAction: read_file\npath=a.py", "FINAL: done"]
     result = AgentLoop(ScriptedLLM(responses), make_config()).run()
     assert result.final_answer == "done"
+
+
+def test_action_wins_when_a_reply_also_carries_a_final() -> None:
+    """Verifies a premature FINAL cannot discard the action beside it."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("Action: write_file\npath=a.py; content=x = 1\n\nFINAL: fixed it")
+    assert step.tool_name == "write_file"
+    assert step.tool_args["path"] == "a.py"
+
+
+def test_final_wins_when_it_comes_first() -> None:
+    """Verifies an answer that precedes any action still ends the run."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("FINAL: nothing to change\nAction: read_file\npath=a.py")
+    assert step.tool_name == ""
+
+
+def test_arguments_may_share_the_action_line() -> None:
+    """Verifies 'Action: read_file path=a.py' parses like the two-line form."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    assert loop._parse_step("Action: read_file path=a.py").tool_args == {"path": "a.py"}
+
+
+def test_a_semicolon_after_the_tool_name_is_tolerated() -> None:
+    """Verifies 'Action: read_file; path=a.py' names the tool, not the whole line."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    assert loop._parse_step("Action: read_file; path=a.py").tool_name == "read_file"
+
+
+def test_prose_after_the_arguments_is_ignored() -> None:
+    """Verifies commentary the model appends does not land in an argument."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("Action: read_file\npath=a.py\nThe file contains a bug")
+    assert step.tool_args == {"path": "a.py"}
+
+
+def test_only_the_first_action_in_a_reply_is_taken() -> None:
+    """Verifies a second action does not get swallowed into the first's value."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("Action: read_file\npath=a.py\nAction: write_file\npath=b.py")
+    assert step.tool_name == "read_file"
+    assert step.tool_args == {"path": "a.py"}
+
+
+def test_content_may_span_several_lines() -> None:
+    """Verifies write_file keeps a multi-line body intact."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    step = loop._parse_step("Action: write_file\npath=a.py; content=def f():\n    return 1")
+    assert step.tool_args["content"] == "def f():\n    return 1"
+
+
+def test_system_prompt_lists_every_registered_tool() -> None:
+    """Verifies the model is told which tool names exist before it guesses."""
+    loop = AgentLoop(ScriptedLLM([]), make_config())
+    prompt = loop._build_system_prompt()
+    for tool in ("read_file", "write_file", "run_shell", "run_tests", "apply_patch"):
+        assert tool in prompt

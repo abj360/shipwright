@@ -39,9 +39,26 @@ TRANSCRIPT_TOKEN_BUDGET = 28000
 CHARS_PER_TOKEN_ESTIMATE = 4
 STEP_BUDGET_TOKENS = 6000
 FINAL_ANSWER_PREFIX = "FINAL:"
+ACTION_PREFIX = "Action:"
+# Arguments whose value may run past the end of the line.
+MULTILINE_ARGS = frozenset({"content", "patch"})
 TOOL_USAGE_INSTRUCTIONS = (
-    "Think step by step. Reply with your reasoning, then either one tool call as "
-    "'Action: <name>' followed by 'key=value; ...' arguments, or 'FINAL: <answer>'."
+    "Work in small steps. Each reply is your reasoning followed by EITHER one "
+    "tool call OR a final answer, never both.\n\n"
+    "To call a tool, end your reply with the tool name on an Action line and "
+    "its arguments on the next line, separated by semicolons:\n\n"
+    "Action: read_file\n"
+    "path=calc.py\n\n"
+    "Action: write_file\n"
+    "path=calc.py; content=def add(a, b):\n"
+    "    return a + b\n\n"
+    "Reading a file does not change it. Every edit must go through write_file "
+    "or apply_patch, and write_file replaces the whole file, so include the "
+    "complete new contents.\n\n"
+    "Never answer FINAL before you have used a tool: inspect the checkout "
+    "first, make the change, then finish with\n\n"
+    "FINAL: <one sentence describing the change you made>\n\n"
+    "Only the tool names listed above exist; anything else is rejected."
 )
 TRUNCATED_OBSERVATION_NOTE = "[older observation trimmed to fit the context budget]"
 PARSE_RETRY_HINT = (
@@ -230,18 +247,43 @@ class AgentLoop:
         """
         index = len(self._transcript)
         cleaned = text.replace("<think>", "").replace("</think>", "").strip()
-        if FINAL_ANSWER_PREFIX in cleaned:
+        action_at = cleaned.find(ACTION_PREFIX)
+        final_at = cleaned.find(FINAL_ANSWER_PREFIX)
+        # A reply carrying both markers has not seen the tool result yet, so the
+        # answer is premature: run the action and let the next turn conclude.
+        if action_at < 0 or (0 <= final_at < action_at):
             return Step(index=index, thought=cleaned)
-        thought, _, rest = cleaned.partition("Action:")
-        tool_name, _, arg_text = rest.partition("\n")
-        args = {}
-        for pair in arg_text.strip().split(";"):
-            key, sep, value = pair.partition("=")
-            if sep:
-                args[key.strip()] = value.strip()
-        return Step(
-            index=index, thought=thought.strip(), tool_name=tool_name.strip(), tool_args=args
-        )
+        thought, _, rest = cleaned.partition(ACTION_PREFIX)
+        head, _, following = rest.partition("\n")
+        # Models routinely put the arguments on the Action line itself, so the
+        # tool name is the first token and everything after it is arguments.
+        first_token, separator, inline = head.strip().partition(" ")
+        tool_name = first_token.strip().strip(";")
+        arg_text = f"{inline}\n{following}" if separator else following
+        args: dict[str, str] = {}
+        # Only the first action in a reply is executed, so arguments stop at the
+        # next marker rather than swallowing a second call into a value.
+        arg_lines: list[str] = []
+        for line in arg_text.splitlines():
+            if line.startswith((ACTION_PREFIX, FINAL_ANSWER_PREFIX)):
+                break
+            arg_lines.append(line)
+        pending = ""
+        for line in arg_lines:
+            if pending:
+                args[pending] += f"\n{line}"
+                continue
+            for pair in line.split(";"):
+                key, sep, value = pair.partition("=")
+                name = key.strip()
+                # Prose the model added after its arguments has spaces in the
+                # "key", which no real argument name does.
+                if not sep or not name or " " in name:
+                    continue
+                args[name] = value.strip()
+                if name in MULTILINE_ARGS:
+                    pending = name
+        return Step(index=index, thought=thought.strip(), tool_name=tool_name, tool_args=args)
 
     def _act(self, step: Step) -> str:
         """Runs the tool the model asked for and captures its output.
@@ -359,7 +401,8 @@ class AgentLoop:
             prompt: System prompt sent with every completion.
         """
         base = self.config.system_prompt or "You are an autonomous coding agent."
-        return f"{base}\n\n{TOOL_USAGE_INSTRUCTIONS}"
+        tools = self._dispatcher.describe_tools()
+        return f"{base}\n\nAvailable tools:\n{tools}\n\n{TOOL_USAGE_INSTRUCTIONS}"
 
     def resume(self, prior: list[Step]) -> None:
         """Seeds the transcript with steps from an earlier, interrupted run.

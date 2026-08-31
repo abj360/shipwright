@@ -55,7 +55,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("SHIPWRIGHT_PROVIDER", Provider.ANTHROPIC.value),
         help="model provider to run the loop with",
     )
-    parser.add_argument("--model", help="model identifier; defaults to the provider's default")
+    parser.add_argument(
+        "--model",
+        default=os.environ.get("SHIPWRIGHT_MODEL"),
+        help="model identifier; defaults to the provider's default",
+    )
     return parser
 
 
