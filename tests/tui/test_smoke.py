@@ -7,6 +7,7 @@ Contains:
     _boot(): runs the app under a pilot and reports what mounted
     test_widgets_mount_headless(): the interface boots with no display attached
     test_footer_renders_its_bindings(): the hint bar draws once mounted
+    test_boot_is_repeatable(): a second boot in the same process still works
 """
 
 import asyncio
@@ -62,3 +63,11 @@ def test_footer_renders_its_bindings() -> None:
     _, footer_text = asyncio.run(_boot())
 
     assert "ctrl+c Quit" in footer_text
+
+
+def test_boot_is_repeatable() -> None:
+    """Asserts booting twice in one process works, as the suite does in CI."""
+    first, _ = asyncio.run(_boot())
+    second, _ = asyncio.run(_boot())
+
+    assert first == second
