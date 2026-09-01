@@ -9,6 +9,7 @@ Contains:
     test_hint_reports_the_remaining_lines(): the hint counts what is held back
     test_toggle_reveals_everything(): the toggle shows the whole observation
     test_collapsed_row_shows_nothing(): the toggle does not leak past collapse
+    test_exactly_preview_length_is_not_truncated(): the boundary is inclusive
 """
 
 from tui.widgets.step_row import PREVIEW_LINES, StepRow
@@ -69,3 +70,13 @@ def test_collapsed_row_shows_nothing() -> None:
     row.is_expanded = False
 
     assert row.detail_lines() == []
+
+
+def test_exactly_preview_length_is_not_truncated() -> None:
+    """Asserts output of exactly the preview length is shown without a hint."""
+    output = "\n".join(f"line {index}" for index in range(PREVIEW_LINES))
+    row = StepRow("run_tests", {}, output)
+    row.is_expanded = True
+
+    assert row.is_truncated() is False
+    assert len(row.detail_lines()) == PREVIEW_LINES
