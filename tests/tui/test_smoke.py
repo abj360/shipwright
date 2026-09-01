@@ -45,7 +45,7 @@ async def _boot() -> tuple[list[str], str]:
     app = SmokeApp()
     async with app.run_test() as pilot:
         await pilot.pause()
-        mounted = [type(node).__name__ for node in app.query("PlanPanel, FooterBar")]
+        mounted = [type(n).__name__ for n in app.query("PlanPanel, FooterBar")]
         footer_text = str(app.query_one(FooterBar).render())
     return mounted, footer_text
 
