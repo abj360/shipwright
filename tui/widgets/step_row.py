@@ -175,7 +175,8 @@ class StepRow(Static):
         if self.shows_full_output or not self.is_truncated():
             return lines
         remaining: int = len(lines) - PREVIEW_LINES
-        return [*lines[:PREVIEW_LINES], MORE_OUTPUT_TEMPLATE.format(remaining=remaining)]
+        hint = MORE_OUTPUT_TEMPLATE.format(remaining=remaining)
+        return [*lines[:PREVIEW_LINES], hint]
 
     def action_show_full_output(self) -> None:
         """Reveals the rest of a long observation."""
