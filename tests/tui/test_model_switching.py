@@ -9,6 +9,7 @@ Contains:
     test_switch_passes_the_model_through(): an explicit model reaches the factory
     test_unknown_provider_is_refused(): a bad provider name changes nothing
     test_missing_credential_is_reported(): the credential error reaches the operator
+    test_bare_model_command_shows_usage(): /model alone explains itself
 """
 
 from pathlib import Path
@@ -89,3 +90,11 @@ def test_missing_credential_is_reported(tmp_path: Path) -> None:
     line = switch_model(_loop(tmp_path), "openai", build)
 
     assert "OPENAI_API_KEY is not set" in line
+
+
+def test_bare_model_command_shows_usage(tmp_path: Path) -> None:
+    """Asserts /model with no argument explains itself instead of switching."""
+    seen: list[tuple[Provider, str | None]] = []
+
+    assert switch_model(_loop(tmp_path), "", _factory(seen)) == USAGE_MODEL  # type: ignore[arg-type]
+    assert seen == []
