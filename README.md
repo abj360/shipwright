@@ -33,14 +33,17 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
 
 ## How you use it
 
+Type `ship` in a terminal and the interface opens on the checkout you are in.
+
 1. **Bring the stack up** — `docker compose -f docker/docker-compose.yml up --build`,
    or `scripts/run_local.sh` if you would rather not use compose.
 2. **Give it a task**, from the terminal:
    ```bash
    python -m agent.cli --task "add validation to apply_discount and cover it with tests" --repo .
    ```
-   or drive the same run from the terminal interface. Point it at a ticket with
-   `--issue-url` instead, or make it plan before touching anything with `--plan-mode`.
+   or drive the same run from the terminal interface with `ship`. Point it at a
+   ticket with `--issue-url` instead, or make it plan before touching anything
+   with `--plan-mode`.
 3. **Watch it work.** Every step shows up as it happens — the files it reads, the
    edits it makes, the tests it runs — with the diff for each write inline, so you
    are reviewing as it goes rather than reading a wall of changes at the end.
@@ -195,9 +198,34 @@ up, and the send arrow becomes a square for the duration.
 
 ### Using it
 
-1. Start the stack (`docker compose … up`, or `scripts/run_local.sh`).
-2. Open the terminal interface, put the folder you want worked on in the header,
-   and type what the agent should do. Enter starts the run.
+```bash
+ship                                    # native Linux/WSL, on the current checkout
+ship --repo /path/to/checkout           # point it somewhere else
+shipwright --tui                        # same interface, via the main entrypoint
+docker compose exec agent ship          # against the running containerized stack
+```
+
+No extra service is needed: the interface is an interactive terminal app, not a
+background process, so it attaches to the same gateway (`:4000`) the CLI uses.
+
+Once it is open:
+
+1. The header shows the checkout, its branch, the provider, and live spend.
+2. Type what the agent should do and press Enter. Anything typed while a run is
+   in flight is queued and starts when the agent frees up.
+3. Slash commands adjust the run without restarting it:
+
+| Command | What it does |
+| ------- | ------------ |
+| `/plan` | Propose steps and wait for an explicit accept before running them |
+| `/resume <transcript>` | Reload a prior run as dimmed, completed rows |
+| `/model <provider> [model]` | Switch provider or model mid-run |
+| `/max-cost <usd>` | Raise or lower the run's spend ceiling live |
+| `/max-steps <n>` | Raise or lower the run's iteration ceiling live |
+
+On first run, if neither `ANTHROPIC_API_KEY` nor `OPENAI_API_KEY` is set, a
+setup panel asks for one, masks it as you paste, and writes it to `.env` with
+owner-only permissions. It is never echoed into the transcript.
 
 Runs started elsewhere show up the same way — `POST /runs`, a GitHub issue
 labelled `shipwright`, or a `/shipwright` comment:
