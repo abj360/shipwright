@@ -5,6 +5,8 @@ step_row.py --- one Read/Edited/Ran activity row, collapsed or expanded
 Contains:
     COLLAPSED_MARKER / EXPANDED_MARKER: the disclosure glyphs
     WARNING_PREFIX: marker put in front of a failed step's summary
+    PREVIEW_LINES: how much of a long observation is shown before the toggle
+    MORE_OUTPUT_TEMPLATE: the hint offering the rest of a long observation
     TARGET_ARGS: tool arguments that name what a step acted on
     step_target(): picks the argument naming what a step acted on
     shorten_target(): trims a target through the CLI's own truncation helper
@@ -13,6 +15,8 @@ Contains:
     StepRow.summary_line(): renders the collapsed one-line summary
     StepRow.highlight_color(): the colour a failed row is drawn in
     StepRow.detail_lines(): renders the output revealed when expanded
+    StepRow.is_truncated(): whether the observation is longer than the preview
+    StepRow.action_show_full_output(): reveals the rest of a long observation
     StepRow.action_toggle(): opens or closes the row
 """
 
@@ -25,6 +29,8 @@ from agent.loop import TOOL_ERROR_PREFIX
 from tui.labels import label_for
 from tui.theme import Palette, palette_for
 
+PREVIEW_LINES = 12
+MORE_OUTPUT_TEMPLATE = "… show full output ({remaining} more lines)"
 WARNING_PREFIX = "!"
 COLLAPSED_MARKER = "▸"
 EXPANDED_MARKER = "▾"
@@ -72,9 +78,13 @@ class StepRow(Static):
         is_expanded: True while the row is showing its output.
     """
 
-    BINDINGS = [Binding("enter", "toggle", "Expand step")]
+    BINDINGS = [
+        Binding("enter", "toggle", "Expand step"),
+        Binding("o", "show_full_output", "Full output"),
+    ]
 
     is_expanded: reactive[bool] = reactive(False)
+    shows_full_output: reactive[bool] = reactive(False)
 
     def __init__(
         self,
@@ -133,15 +143,34 @@ class StepRow(Static):
             return self.palette.status_error
         return self.palette.foreground
 
+    def is_truncated(self) -> bool:
+        """Reports whether the observation is longer than the preview shows.
+
+        Returns:
+            is_truncated: True when output is being held back behind the toggle.
+        """
+        return len(self.observation.splitlines()) > PREVIEW_LINES
+
     def detail_lines(self) -> list[str]:
         """Renders the output revealed when the row is expanded.
 
+        A long observation is previewed rather than dumped, so one noisy test
+        run cannot push the rest of the timeline off screen.
+
         Returns:
-            lines: Observation split into lines, empty while collapsed.
+            lines: Observation lines, plus a hint when output is held back.
         """
         if not self.is_expanded or not self.observation:
             return []
-        return self.observation.splitlines()
+        lines = self.observation.splitlines()
+        if self.shows_full_output or not self.is_truncated():
+            return lines
+        remaining = len(lines) - PREVIEW_LINES
+        return [*lines[:PREVIEW_LINES], MORE_OUTPUT_TEMPLATE.format(remaining=remaining)]
+
+    def action_show_full_output(self) -> None:
+        """Reveals the rest of a long observation."""
+        self.shows_full_output = True
 
     def action_toggle(self) -> None:
         """Opens the row when it is closed, and closes it when it is open."""
