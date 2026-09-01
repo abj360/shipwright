@@ -6,8 +6,7 @@
 [![node](https://img.shields.io/badge/node-22-2f81f7)](gateway/package.json)
 [![typescript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](gateway/package.json)
 [![express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)](gateway/package.json)
-[![react](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)](ui/package.json)
-[![vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](ui/vite.config.ts)
+[![textual](https://img.shields.io/badge/Textual-5a5fd6)](tui/)
 [![docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](docker/)
 [![gvisor](https://img.shields.io/badge/gVisor-2f81f7)](sandbox/)
 [![license](https://img.shields.io/badge/license-MIT-2f81f7)](LICENSE.md)
@@ -16,7 +15,6 @@ Shipwright is an autonomous coding agent that reads a repository, edits code,
 runs the tests, and opens a draft PR, with every command it issues executing inside a
 gVisor-isolated sandbox under hard resource limits and a default-deny egress allowlist.
 
-<img src="docs/media/live-viewer.gif" alt="A run in the live viewer, from typing the request to the diff" width="940" />
 
 </div>
 
@@ -41,7 +39,7 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
    ```bash
    python -m agent.cli --task "add validation to apply_discount and cover it with tests" --repo .
    ```
-   or type the same sentence into the chat UI on `:5173`. Point it at a ticket with
+   or drive the same run from the terminal interface. Point it at a ticket with
    `--issue-url` instead, or make it plan before touching anything with `--plan-mode`.
 3. **Watch it work.** Every step shows up as it happens — the files it reads, the
    edits it makes, the tests it runs — with the diff for each write inline, so you
@@ -62,8 +60,8 @@ Full flag reference in [Running tasks](#running-tasks).
      │ live stream        │  │ webhooks              ▼
      │                    │  │                ┌─────────────────┐
 ┌────────┐                │  └────────────────│ sandbox (runsc) │
-│   ui   │────────────────┘                   │ ro root, cgroup │
-│ chat   │                                    │ egress allowlist│
+│  tui   │────────────────┘                   │ ro root, cgroup │
+│textual │                                    │ egress allowlist│
 └────────┘                                    └─────────────────┘
 ```
 
@@ -72,7 +70,7 @@ Full flag reference in [Running tasks](#running-tasks).
 | `agent/`    | ReAct loop, planner, tool dispatcher, cli, cost tracking, judgeline |
 | `sandbox/`  | Docker runtime, gVisor config, cgroup/mount/egress policies, audit  |
 | `gateway/`  | Express API, GitHub sidecar (clone/branch/push/PR), webhooks, queue |
-| `ui/`       | React conversation view: run activity and per-run diffs             |
+| `tui/`      | Textual terminal interface: run activity, diffs, slash commands     |
 | `security/` | Red-team suite and regression tests for prior findings              |
 | `docker/`   | One Dockerfile per service plus the compose file for the full stack |
 
@@ -97,7 +95,7 @@ regression suite (`security/red_team_suite/test_regressions.py`).
 ```bash
 cp .env.example .env          # then fill in your provider key and GITHUB_TOKEN
 docker compose -f docker/docker-compose.yml up --build
-# ui on :5173, gateway on :4000
+# gateway on :4000
 ```
 
 No local Python/Node install needed. The `agent` container mounts the host's
@@ -184,10 +182,10 @@ All endpoints except `/health` and `/webhooks/*` require
 HMAC-SHA256 signature and deduplicated by delivery id; agent-authored PR events
 are explicitly ignored so runs can never trigger themselves in a loop.
 
-## Live UI
+## Terminal UI
 
-The React viewer (`ui/`) is a conversation: each request you send becomes a
-turn showing what the agent did and the diff it produced.
+The terminal interface (`tui/`) is a conversation: each request you send becomes
+a turn showing what the agent did and the diff it produced.
 
 Each turn collapses the run into activity rows — `Read`, `Edited`, `Ran` — that
 open to reveal that step's output, followed by the agent's answer, the token
@@ -195,17 +193,11 @@ count, and the diff for that turn alone. The composer stays live while a run is
 in flight: anything typed meanwhile is queued and starts when the agent frees
 up, and the send arrow becomes a square for the duration.
 
-![Two turns of a conversation, one activity row expanded](docs/media/conversation.png)
-
-Above: two requests against the same checkout, the first turn's `Read` row
-opened to show what the agent saw. The second turn is an honest one — two edits
-missed before it fell back to rewriting the file.
-
 ### Using it
 
 1. Start the stack (`docker compose … up`, or `scripts/run_local.sh`).
-2. Open the UI on `:5173`, put the folder you want worked on in the header, and
-   type what the agent should do. Enter starts the run.
+2. Open the terminal interface, put the folder you want worked on in the header,
+   and type what the agent should do. Enter starts the run.
 
 Runs started elsewhere show up the same way — `POST /runs`, a GitHub issue
 labelled `shipwright`, or a `/shipwright` comment:
@@ -284,7 +276,7 @@ regression suite runs without the integration flag and pins every prior finding
 agent/            ReAct loop, planner, dispatcher, cli, cost, judgeline, breaker
 sandbox/          docker runtime, gVisor config, cgroup/mount/egress, audit log
 gateway/          Express server, GitHub sidecar, webhooks, task queue, tests
-ui/               React conversation view: run activity and per-run diffs
+tui/              Textual terminal interface: timeline, diffs, slash commands
 security/         red-team payloads, runner, regression suite
 tests/            unit and integration suites mirroring the source tree
 docker/           per-service Dockerfiles + docker-compose.yml (whole stack)
