@@ -10,6 +10,7 @@ Contains:
     test_toggle_reveals_everything(): the toggle shows the whole observation
     test_collapsed_row_shows_nothing(): the toggle does not leak past collapse
     test_exactly_preview_length_is_not_truncated(): the boundary is inclusive
+    test_one_line_over_the_preview_is_truncated(): the boundary is not off by one
 """
 
 from tui.widgets.step_row import PREVIEW_LINES, StepRow
@@ -80,3 +81,13 @@ def test_exactly_preview_length_is_not_truncated() -> None:
 
     assert row.is_truncated() is False
     assert len(row.detail_lines()) == PREVIEW_LINES
+
+
+def test_one_line_over_the_preview_is_truncated() -> None:
+    """Asserts a single line past the preview does trigger the toggle hint."""
+    output = "\n".join(f"line {index}" for index in range(PREVIEW_LINES + 1))
+    row = StepRow("run_tests", {}, output)
+    row.is_expanded = True
+
+    assert row.is_truncated() is True
+    assert row.detail_lines()[-1].endswith("(1 more lines)")
