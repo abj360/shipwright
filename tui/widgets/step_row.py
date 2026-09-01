@@ -15,6 +15,7 @@ Contains:
     StepRow.summary_line(): renders the collapsed one-line summary
     StepRow.highlight_color(): the colour a failed row is drawn in
     StepRow.detail_lines(): renders the output revealed when expanded
+    StepRow.observation_lines(): the observation split into lines
     StepRow.is_truncated(): whether the observation is longer than the preview
     StepRow.action_show_full_output(): reveals the rest of a long observation
     StepRow.action_toggle(): opens or closes the row
@@ -143,13 +144,21 @@ class StepRow(Static):
             return self.palette.status_error
         return self.palette.foreground
 
+    def observation_lines(self) -> list[str]:
+        """Splits the observation into lines.
+
+        Returns:
+            lines: Observation lines, empty when there was no output.
+        """
+        return self.observation.splitlines()
+
     def is_truncated(self) -> bool:
         """Reports whether the observation is longer than the preview shows.
 
         Returns:
             is_truncated: True when output is being held back behind the toggle.
         """
-        return len(self.observation.splitlines()) > PREVIEW_LINES
+        return len(self.observation_lines()) > PREVIEW_LINES
 
     def detail_lines(self) -> list[str]:
         """Renders the output revealed when the row is expanded.
@@ -162,7 +171,7 @@ class StepRow(Static):
         """
         if not self.is_expanded or not self.observation:
             return []
-        lines = self.observation.splitlines()
+        lines = self.observation_lines()
         if self.shows_full_output or not self.is_truncated():
             return lines
         remaining = len(lines) - PREVIEW_LINES
