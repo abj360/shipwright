@@ -208,14 +208,13 @@ curl -s -X POST localhost:4000/runs \
   -d '{"task": "fix the sign in add()", "repo": "/path/to/checkout"}'
 ```
 
-The browser never holds `GATEWAY_TOKEN`: it calls the gateway same-origin and
-the proxy in front of the UI attaches the header — the vite dev server in
-development, nginx in the built image.
+`GATEWAY_TOKEN` stays in the environment the terminal interface reads it from;
+it is sent as a bearer header on each call and never written to the transcript.
 
-Which checkout a run edits comes from the folder box in the header, remembered
-per browser and sent with each run. Leaving it empty falls back to `AGENT_REPO`,
-which `GET /workspace` reports. The gateway refuses a path that is not a
-directory before queueing anything.
+Which checkout a run edits comes from the repo path in the header bar, and is
+sent with each run. Leaving it empty falls back to `AGENT_REPO`, which
+`GET /workspace` reports. The gateway refuses a path that is not a directory
+before queueing anything.
 
 ### What it handles, and what it does not
 
