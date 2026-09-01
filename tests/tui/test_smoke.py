@@ -18,7 +18,7 @@ from agent.planner import Plan, PlanStep
 from tui.screens.footer import FooterBar
 from tui.widgets.plan_panel import PlanPanel
 
-SMOKE_BINDINGS = [
+SMOKE_BINDINGS: list[Binding] = [
     Binding("ctrl+c", "quit", "Quit"),
     Binding("ctrl+p", "plan", "Plan"),
 ]
