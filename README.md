@@ -224,6 +224,9 @@ Once it is open:
 | `/max-cost <usd>` | Raise or lower the run's spend ceiling live |
 | `/max-steps <n>` | Raise or lower the run's iteration ceiling live |
 
+`NO_COLOR` or a `TERM` the terminal reports as colourless drops the interface to
+a monochrome layout rather than printing escape codes.
+
 On first run, if neither `ANTHROPIC_API_KEY` nor `OPENAI_API_KEY` is set, a
 setup panel asks for one, masks it as you paste, and writes it to `.env` with
 owner-only permissions. It is never echoed into the transcript.
