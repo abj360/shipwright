@@ -30,7 +30,7 @@ from agent.loop import AgentLoop
 COMMAND_PREFIX = "/"
 USAGE_MAX_COST = "usage: /max-cost <positive amount in USD>"
 USAGE_MAX_STEPS = "usage: /max-steps <positive step count>"
-USAGE_MODEL = "usage: /model <anthropic|openai> [model-id]"
+USAGE_MODEL = "usage: /model <anthropic|openai> [model-id]  (current provider stays if refused)"
 
 
 class UnknownCommandError(Exception):
