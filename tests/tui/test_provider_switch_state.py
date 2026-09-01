@@ -7,6 +7,7 @@ Contains:
     test_transcript_survives_a_switch(): earlier steps are not discarded
     test_spend_survives_a_switch(): the run's accumulated cost is not reset
     test_breaker_survives_a_switch(): the ceilings still apply after a switch
+    test_failed_switch_leaves_the_backend_alone(): a refused switch changes nothing
 """
 
 from pathlib import Path
@@ -65,3 +66,19 @@ def test_breaker_survives_a_switch(tmp_path: Path) -> None:
 
     assert loop.config.breaker.max_iterations == 7
     assert loop.config.breaker.max_cost_usd == 2.0
+
+
+def test_failed_switch_leaves_the_backend_alone(tmp_path: Path) -> None:
+    """Asserts a refused switch never calls the factory nor touches the run."""
+    loop, tracker = _seeded_loop(tmp_path)
+    calls: list[Provider] = []
+
+    def build(provider: Provider, model: str | None) -> ScriptedLLM:
+        calls.append(provider)
+        return ScriptedLLM([])
+
+    switch_model(loop, "not-a-provider", build)
+
+    assert calls == []
+    assert len(loop.transcript) == 2
+    assert tracker.total_usd() > 0
