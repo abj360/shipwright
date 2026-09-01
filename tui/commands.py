@@ -16,6 +16,7 @@ Contains:
     set_max_steps(): raises or lowers the run's iteration ceiling live
     USAGE_MODEL: usage line for the provider-switch command
     ClientFactory: builds a completion backend for one provider
+    _parse_provider(): reads a provider name, returning None when unknown
     switch_model(): points the live run at another provider or model
 """
 
@@ -169,6 +170,21 @@ def set_max_steps(breaker: CircuitBreaker, argument: str) -> str:
 ClientFactory: TypeAlias = Callable[[Provider, str | None], LLMClient]
 
 
+def _parse_provider(name: str) -> Provider | None:
+    """Reads a provider name, returning None when it is not one we support.
+
+    Args:
+        name: Provider name as the operator typed it.
+
+    Returns:
+        provider: Matching provider, or None when the name is unknown.
+    """
+    try:
+        return Provider(name.lower())
+    except ValueError:
+        return None
+
+
 def switch_model(
     loop: AgentLoop,
     argument: str,
@@ -190,9 +206,8 @@ def switch_model(
     parts = argument.split()
     if not parts:
         return USAGE_MODEL
-    try:
-        provider = Provider(parts[0].lower())
-    except ValueError:
+    provider = _parse_provider(parts[0])
+    if provider is None:
         return USAGE_MODEL
     model = parts[1] if len(parts) > 1 else None
     try:
