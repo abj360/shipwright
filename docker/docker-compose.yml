@@ -36,17 +36,6 @@ services:
       timeout: 3s
       retries: 10
 
-  ui:
-    restart: unless-stopped
-    build:
-      context: ..
-      dockerfile: docker/ui.Dockerfile
-    env_file: ../.env
-    ports:
-      - "5173:80"
-    depends_on:
-      - gateway
-
 networks:
   shipwright-egress:
     driver: bridge
