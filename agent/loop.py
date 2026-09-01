@@ -19,6 +19,7 @@ Contains:
     AgentLoop._trim_transcript(): drops oldest observations over budget
     AgentLoop._build_system_prompt(): composes the steering prompt
     AgentLoop.resume(): seeds steps from an interrupted run
+    AgentLoop.set_client(): swaps the completion backend mid-run
 """
 
 import difflib
@@ -694,6 +695,19 @@ class AgentLoop:
             f"Available tools:\n{tools}\n\n"
             f"{TOOL_USAGE_INSTRUCTIONS}"
         )
+
+    def set_client(self, client: LLMClient) -> None:
+        """Swaps the completion backend without disturbing the run in progress.
+
+        The transcript, spend, and breaker are deliberately left alone: a
+        provider switch changes who answers the next step, not what the run has
+        already done or how much of its budget is left.
+
+        Args:
+            client: Completion backend later steps are asked of.
+        """
+        self._client = client
+        logger.info("run %s switched completion backend", self._run_id)
 
     def resume(self, prior: list[Step]) -> None:
         """Seeds the transcript with steps from an earlier, interrupted run.
