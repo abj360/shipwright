@@ -7,6 +7,7 @@
 [![typescript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](gateway/package.json)
 [![express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)](gateway/package.json)
 [![textual](https://img.shields.io/badge/Textual-5a5fd6)](tui/)
+[![tui](https://img.shields.io/badge/entrypoint-ship-2f81f7)](tui/__main__.py)
 [![docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](docker/)
 [![gvisor](https://img.shields.io/badge/gVisor-2f81f7)](sandbox/)
 [![license](https://img.shields.io/badge/license-MIT-2f81f7)](LICENSE.md)
