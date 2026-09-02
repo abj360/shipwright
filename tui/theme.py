@@ -148,7 +148,7 @@ def css_variables(palette: Palette) -> dict[str, str]:
     Returns:
         variables: Token name to colour, omitting anything the palette leaves blank.
     """
-    rendered = {}
+    rendered: dict[str, str] = {}
     for token, field_name in CSS_VARIABLE_NAMES.items():
         value = getattr(palette, field_name)
         if value:
