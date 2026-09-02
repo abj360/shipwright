@@ -26,7 +26,11 @@ SMOKE_BINDINGS: list[Binding] = [
 
 
 class SmokeApp(App[None]):
-    """Mounts the widgets CI should prove still boot without a terminal."""
+    """Mounts the widgets CI should prove still boot without a terminal.
+
+    Kept deliberately small: this guards against import-time and mount-time
+    breakage, not against how any single widget renders.
+    """
 
     def compose(self) -> ComposeResult:
         """Mounts the plan panel above the generated hint bar."""
