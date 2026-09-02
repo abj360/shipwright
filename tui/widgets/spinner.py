@@ -45,8 +45,12 @@ class Spinner(Static):
         self.set_interval(FRAME_INTERVAL_S, self.advance)
 
     def advance(self) -> None:
-        """Moves the animation on by one frame."""
-        if not self.is_spinning:
+        """Moves the animation on by one frame.
+
+        A spinner scrolled out of view costs nothing to leave alone, so the
+        frame is only advanced while the row is actually on screen.
+        """
+        if not self.is_spinning or not self.display:
             return
         self.frame_index = (self.frame_index + 1) % len(BRAILLE_FRAMES)
 
