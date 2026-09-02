@@ -7,12 +7,20 @@ Contains:
     test_max_steps_updates_the_breaker(): a valid count reaches the breaker
     test_router_routes_both_commands(): both commands dispatch through the router
     test_new_ceiling_actually_trips(): the adjusted ceiling is enforced
+    test_garbage_argument_is_refused(): a typo never widens a ceiling
+    test_zero_and_negative_are_refused(): a ceiling must stay positive
 """
 
 import pytest
 
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
-from tui.commands import CommandRouter, set_max_cost, set_max_steps
+from tui.commands import (
+    USAGE_MAX_COST,
+    USAGE_MAX_STEPS,
+    CommandRouter,
+    set_max_cost,
+    set_max_steps,
+)
 
 
 def test_max_cost_updates_the_breaker() -> None:
@@ -56,3 +64,22 @@ def test_new_ceiling_actually_trips() -> None:
 
     with pytest.raises(RunawayRunError):
         breaker.check(3, 0.0)
+
+
+def test_garbage_argument_is_refused() -> None:
+    """Asserts a non-numeric argument leaves the ceilings untouched."""
+    breaker = CircuitBreaker(max_iterations=10, max_cost_usd=1.0)
+
+    assert set_max_cost(breaker, "lots") == USAGE_MAX_COST
+    assert set_max_steps(breaker, "many") == USAGE_MAX_STEPS
+    assert breaker.max_cost_usd == 1.0
+    assert breaker.max_iterations == 10
+
+
+def test_zero_and_negative_are_refused() -> None:
+    """Asserts a ceiling of zero or less is rejected rather than applied."""
+    breaker = CircuitBreaker(max_iterations=10, max_cost_usd=1.0)
+
+    assert set_max_cost(breaker, "0") == USAGE_MAX_COST
+    assert set_max_steps(breaker, "-5") == USAGE_MAX_STEPS
+    assert breaker.max_iterations == 10
