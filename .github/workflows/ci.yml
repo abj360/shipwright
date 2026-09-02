@@ -54,7 +54,7 @@ jobs:
       - name: headless Textual pilot smoke test
         env:
           TERM: xterm-256color
-        run: pytest tests/tui -q
+        run: pytest tests/tui -q --no-header
 
   docker:
     runs-on: ubuntu-latest
