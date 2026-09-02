@@ -10,12 +10,19 @@ Contains:
     CommandRouter: dispatches parsed commands to their handlers
     CommandRouter.register(): binds one handler to one command name
     CommandRouter.dispatch(): runs the handler a typed line names
+    USAGE_MAX_COST / USAGE_MAX_STEPS: usage lines for the breaker commands
+    set_max_cost(): raises or lowers the run's spend ceiling live
+    set_max_steps(): raises or lowers the run's iteration ceiling live
 """
 
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from agent.circuit_breaker import CircuitBreaker
+
 COMMAND_PREFIX = "/"
+USAGE_MAX_COST = "usage: /max-cost <usd>"
+USAGE_MAX_STEPS = "usage: /max-steps <count>"
 
 
 class UnknownCommandError(Exception):
@@ -92,3 +99,52 @@ class CommandRouter:
         if handler is None:
             raise UnknownCommandError(parsed.name)
         return handler(parsed.argument)
+
+
+def set_max_cost(breaker: CircuitBreaker, argument: str) -> str:
+    """Raises or lowers the run's spend ceiling without restarting it.
+
+    Rejects anything that is not a positive number, so a typo can never widen
+    the ceiling to something unbounded.
+
+    Args:
+        breaker: Breaker guarding the live run.
+        argument: Text the operator typed after the command.
+
+    Returns:
+        line: Confirmation of the new ceiling, or a usage hint.
+    """
+    trimmed = argument.strip()
+    if not trimmed:
+        return USAGE_MAX_COST
+    try:
+        ceiling = float(trimmed)
+    except ValueError:
+        return USAGE_MAX_COST
+    if ceiling <= 0:
+        return USAGE_MAX_COST
+    breaker.max_cost_usd = ceiling
+    return f"cost ceiling now ${ceiling:.2f}"
+
+
+def set_max_steps(breaker: CircuitBreaker, argument: str) -> str:
+    """Raises or lowers the run's iteration ceiling without restarting it.
+
+    Args:
+        breaker: Breaker guarding the live run.
+        argument: Text the operator typed after the command.
+
+    Returns:
+        line: Confirmation of the new ceiling, or a usage hint.
+    """
+    trimmed = argument.strip()
+    if not trimmed:
+        return USAGE_MAX_STEPS
+    try:
+        ceiling = int(trimmed)
+    except ValueError:
+        return USAGE_MAX_STEPS
+    if ceiling <= 0:
+        return USAGE_MAX_STEPS
+    breaker.max_iterations = ceiling
+    return f"step ceiling now {ceiling}"
