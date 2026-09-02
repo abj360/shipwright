@@ -6,6 +6,7 @@ Contains:
     test_dark_palette_fills_every_token(): a colour palette emits all tokens
     test_panel_tokens_match_the_palette(): panel and border tokens are carried over
     test_monochrome_emits_nothing(): a blank palette falls back to Textual defaults
+    test_every_token_names_a_real_field(): the token map cannot drift from Palette
 """
 
 from tui.theme import CSS_VARIABLE_NAMES, DARK, MONOCHROME, css_variables
@@ -30,3 +31,9 @@ def test_panel_tokens_match_the_palette() -> None:
 def test_monochrome_emits_nothing() -> None:
     """Asserts a colourless palette emits no tokens rather than empty ones."""
     assert css_variables(MONOCHROME) == {}
+
+
+def test_every_token_names_a_real_field() -> None:
+    """Asserts each design token maps onto a field the Palette actually has."""
+    for field_name in CSS_VARIABLE_NAMES.values():
+        assert hasattr(DARK, field_name), field_name
