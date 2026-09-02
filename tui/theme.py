@@ -7,6 +7,7 @@ Contains:
     DARK: default palette, carried over from the web view's stylesheet
     MONOCHROME: fallback palette for terminals that cannot show colour
     COLORLESS_TERMS: TERM values that mean "no colour available"
+    _term_name(): normalizes the TERM value for comparison
     supports_color(): decides whether a terminal should be sent colour
     palette_for(): picks the palette a terminal should render with
 """
@@ -74,6 +75,18 @@ MONOCHROME = Palette(
 COLORLESS_TERMS = frozenset({"", "dumb", "unknown"})
 
 
+def _term_name(environ: Mapping[str, str]) -> str:
+    """Normalizes the reported TERM value for comparison.
+
+    Args:
+        environ: Environment carrying the TERM variable.
+
+    Returns:
+        term: Lowercased TERM value with surrounding whitespace removed.
+    """
+    return environ.get("TERM", "").strip().lower()
+
+
 def supports_color(environ: Mapping[str, str] | None = None) -> bool:
     """Decides whether this terminal should be sent colour at all.
 
@@ -89,7 +102,7 @@ def supports_color(environ: Mapping[str, str] | None = None) -> bool:
     source: Mapping[str, str] = os.environ if environ is None else environ
     if source.get("NO_COLOR") is not None:
         return False
-    return source.get("TERM", "").strip().lower() not in COLORLESS_TERMS
+    return _term_name(source) not in COLORLESS_TERMS
 
 
 def palette_for(environ: Mapping[str, str] | None = None) -> Palette:
