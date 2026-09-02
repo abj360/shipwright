@@ -5,8 +5,14 @@ theme.py --- brand color tokens carried over from the retired web view
 Contains:
     Palette: color tokens one display mode renders with
     DARK: default palette, carried over from the web view's stylesheet
+    MONOCHROME: fallback palette for terminals that cannot show colour
+    COLORLESS_TERMS: TERM values that mean "no colour available"
+    supports_color(): decides whether a terminal should be sent colour
+    palette_for(): picks the palette a terminal should render with
 """
 
+import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 
@@ -51,3 +57,48 @@ DARK = Palette(
     panel_border="#21262d",
     border_subtle="#30363d",
 )
+
+
+MONOCHROME = Palette(
+    background="",
+    foreground="",
+    accent="",
+    add="",
+    delete="",
+    hunk="",
+    status_error="",
+    panel_background="",
+    panel_border="",
+    border_subtle="",
+)
+COLORLESS_TERMS = frozenset({"", "dumb", "unknown"})
+
+
+def supports_color(environ: Mapping[str, str] | None = None) -> bool:
+    """Decides whether this terminal should be sent colour at all.
+
+    Honours the NO_COLOR convention first, then falls back to TERM, so a
+    terminal that cannot render colour is never sent escape codes.
+
+    Args:
+        environ: Environment to inspect; defaults to the process environment.
+
+    Returns:
+        supports_color: True when colour output is appropriate.
+    """
+    source: Mapping[str, str] = os.environ if environ is None else environ
+    if source.get("NO_COLOR") is not None:
+        return False
+    return source.get("TERM", "").strip().lower() not in COLORLESS_TERMS
+
+
+def palette_for(environ: Mapping[str, str] | None = None) -> Palette:
+    """Picks the palette this terminal should render with.
+
+    Args:
+        environ: Environment to inspect; defaults to the process environment.
+
+    Returns:
+        palette: DARK when colour is available, MONOCHROME otherwise.
+    """
+    return DARK if supports_color(environ) else MONOCHROME
