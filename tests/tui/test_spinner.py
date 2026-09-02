@@ -7,6 +7,7 @@ Contains:
     _advance_twice(): mounts a spinner and advances it twice
     test_spinner_cycles_frames(): advancing changes the visible frame
     test_stopped_spinner_stops_advancing(): a finished step freezes
+    test_advancing_never_refreshes_the_whole_app(): only the row repaints
 """
 
 import asyncio
@@ -56,3 +57,31 @@ def test_stopped_spinner_stops_advancing() -> None:
     _, stopped = asyncio.run(_advance_twice())
 
     assert stopped == IDLE_GLYPH
+
+
+def test_advancing_never_refreshes_the_whole_app() -> None:
+    """Asserts a frame tick repaints one row, never the entire timeline.
+
+    Pins the regression that re-rendered every row on every frame.
+    """
+
+    async def _count_app_refreshes() -> int:
+        app = SpinnerHarness()
+        async with app.run_test() as pilot:
+            spinner = app.query_one(Spinner)
+            calls = 0
+            original = app.refresh
+
+            def _tracked(*args: object, **kwargs: object) -> object:
+                nonlocal calls
+                calls += 1
+                return original(*args, **kwargs)
+
+            app.refresh = _tracked  # type: ignore[method-assign]
+            for _ in range(5):
+                spinner.advance()
+            await pilot.pause()
+            app.refresh = original  # type: ignore[method-assign]
+        return calls
+
+    assert asyncio.run(_count_app_refreshes()) == 0
