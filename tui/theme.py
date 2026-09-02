@@ -150,7 +150,7 @@ def css_variables(palette: Palette) -> dict[str, str]:
     """
     rendered: dict[str, str] = {}
     for token, field_name in CSS_VARIABLE_NAMES.items():
-        value = getattr(palette, field_name)
+        value = str(getattr(palette, field_name))
         if value:
             rendered[token] = value
     return rendered
