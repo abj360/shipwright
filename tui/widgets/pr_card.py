@@ -36,7 +36,7 @@ def read_score(record: dict[str, Any]) -> ScoreResult | None:
     Returns:
         result: Score carried by the record, or None when it is unscored.
     """
-    raw = record.get("score")
+    raw: object = record.get("score")
     if isinstance(raw, bool) or not isinstance(raw, int | float):
         return None
     return ScoreResult(score=float(raw), verdict=str(record.get("verdict", "")))
