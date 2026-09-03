@@ -156,7 +156,7 @@ class SetupPanel(Static):
         """Builds the prompt, the masked key input, and the save button."""
         target = self.target()
         yield Vertical(
-            Label(f"No {target.env_var} found. Paste a key to get started."),
+            Label(f"{target.env_var} is not set. Paste your key below to get started."),
             Input(placeholder=target.env_var, password=True, id=KEY_INPUT_ID),
             Button("Save key", id=SAVE_BUTTON_ID),
         )
