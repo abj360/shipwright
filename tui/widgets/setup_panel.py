@@ -6,9 +6,11 @@ Contains:
     CredentialStatus: whether one provider has a usable credential
     detect_missing(): lists providers whose credential is unset
     persist_key(): writes one provider credential into the .env file
+    confirmation_line(): renders a save confirmation carrying no credential
     SetupPanel: prompts for a provider key on first run
-    SetupPanel.compose(): builds the prompt, input, and save button
+    SetupPanel.compose(): builds the prompt, masked input, and save button
     SetupPanel.on_button_pressed(): saves the key that was entered
+    SetupPanel.Saved: reports which variable was written, never its value
 """
 
 import os
@@ -17,9 +19,11 @@ from pathlib import Path
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
+from textual.message import Message
 from textual.widgets import Button, Input, Label, Static
 
 from agent.llm_client import CREDENTIAL_ENV_VARS, Provider
+from tui.redaction import redact_secrets
 
 ENV_FILENAME = ".env"
 ENV_FILE_MODE = 0o600
@@ -87,6 +91,24 @@ def persist_key(env_var: str, key: str, repo_path: Path) -> Path:
     return env_path
 
 
+def confirmation_line(env_var: str, env_path: Path, key: str) -> str:
+    """Renders the line the timeline shows once a key has been saved.
+
+    The entered key is passed only so it can be scrubbed: the panel feeds the
+    result straight into the visible timeline, which is persisted with the
+    rest of the transcript.
+
+    Args:
+        env_var: Environment variable that was written.
+        env_path: File the credential was written to.
+        key: Credential the operator pasted, removed from the output.
+
+    Returns:
+        line: Confirmation text with no credential left in it.
+    """
+    return redact_secrets(f"Saved {env_var} to {env_path}", [key])
+
+
 class SetupPanel(Static):
     """Prompts for a provider API key when none is configured yet.
 
@@ -94,6 +116,25 @@ class SetupPanel(Static):
         repo_path: Checkout whose .env file the entered key is written to.
         missing: Providers still waiting on a credential.
     """
+
+    class Saved(Message):
+        """Reports that a credential was written, without carrying its value.
+
+        Attributes:
+            env_var: Environment variable that was written.
+            env_path: File the credential was written to.
+        """
+
+        def __init__(self, env_var: str, env_path: Path) -> None:
+            """Records which variable was written and where.
+
+            Args:
+                env_var: Environment variable that was written.
+                env_path: File the credential was written to.
+            """
+            super().__init__()
+            self.env_var = env_var
+            self.env_path = env_path
 
     def __init__(self, repo_path: Path) -> None:
         """Builds the panel for whichever providers lack a credential.
@@ -106,11 +147,11 @@ class SetupPanel(Static):
         self.missing = detect_missing()
 
     def compose(self) -> ComposeResult:
-        """Builds the prompt, the key input, and the save button."""
+        """Builds the prompt, the masked key input, and the save button."""
         target = self.missing[0]
         yield Vertical(
             Label(f"No {target.env_var} found. Paste a key to get started."),
-            Input(placeholder=target.env_var, id=KEY_INPUT_ID),
+            Input(placeholder=target.env_var, password=True, id=KEY_INPUT_ID),
             Button("Save key", id=SAVE_BUTTON_ID),
         )
 
@@ -128,7 +169,5 @@ class SetupPanel(Static):
             return
         target = self.missing[0]
         env_path = persist_key(target.env_var, key, self.repo_path)
-        self.post_message(self.Saved(target.env_var, key, env_path))
-
-    class Saved(Input.Changed):
-        """Signals that a credential was written to disk."""
+        entry.value = ""
+        self.post_message(self.Saved(target.env_var, env_path))
