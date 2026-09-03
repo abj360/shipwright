@@ -83,6 +83,6 @@ class PrCard(Static):
 
     def compose(self) -> ComposeResult:
         """Lays out the PR line above the readiness badge."""
-        url = str(self.record.get("prUrl", "")) or "no pull request yet"
-        yield Label(url)
+        url = str(self.record.get("prUrl", ""))
+        yield Label(url or "no pull request yet")
         yield Label(badge_for(read_score(self.record)))
