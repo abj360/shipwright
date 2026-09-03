@@ -7,6 +7,7 @@ Contains:
     test_blend_midpoint_is_between(): the midpoint sits between both channels
     test_gradient_line_colours_every_character(): one span per character
     test_wordmark_renders_every_line(): the block carries all four lines
+    test_gradient_starts_at_the_start_colour(): the first column is the start colour
 """
 
 from tui.widgets.wordmark import (
@@ -51,3 +52,10 @@ def test_wordmark_renders_every_line() -> None:
 
     for line in WORDMARK_LINES:
         assert line in block
+
+
+def test_gradient_starts_at_the_start_colour() -> None:
+    """Asserts the leftmost character is rendered in the gradient's start colour."""
+    rendered = gradient_line("shipwright")
+
+    assert str(rendered.spans[0].style) == GRADIENT_START
