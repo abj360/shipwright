@@ -59,11 +59,7 @@ def detect_missing(environ: Mapping[str, str] | None = None) -> list[CredentialS
     """
     source: Mapping[str, str] = os.environ if environ is None else environ
     statuses = [
-        CredentialStatus(
-            provider=provider,
-            env_var=env_var,
-            is_present=bool(source.get(env_var, "").strip()),
-        )
+        CredentialStatus(provider, env_var, bool(source.get(env_var, "").strip()))
         for provider, env_var in CREDENTIAL_ENV_VARS.items()
     ]
     return [status for status in statuses if not status.is_present]
