@@ -9,6 +9,7 @@ Contains:
     confirmation_line(): renders a save confirmation carrying no credential
     SetupPanel: prompts for a provider key on first run
     SetupPanel.compose(): builds the prompt, masked input, and save button
+    SetupPanel.target(): the provider this panel is currently collecting for
     SetupPanel.on_button_pressed(): saves the key that was entered
     SetupPanel.Saved: reports which variable was written, never its value
 """
@@ -146,9 +147,17 @@ class SetupPanel(Static):
         self.repo_path = repo_path
         self.missing = detect_missing()
 
+    def target(self) -> CredentialStatus:
+        """Returns the provider whose credential the panel is collecting.
+
+        Returns:
+            status: First provider still missing a credential.
+        """
+        return self.missing[0]
+
     def compose(self) -> ComposeResult:
         """Builds the prompt, the masked key input, and the save button."""
-        target = self.missing[0]
+        target = self.target()
         yield Vertical(
             Label(f"No {target.env_var} found. Paste a key to get started."),
             Input(placeholder=target.env_var, password=True, id=KEY_INPUT_ID),
@@ -167,7 +176,7 @@ class SetupPanel(Static):
         key = entry.value.strip()
         if not key:
             return
-        target = self.missing[0]
+        target = self.target()
         env_path = persist_key(target.env_var, key, self.repo_path)
         entry.value = ""
         self.post_message(self.Saved(target.env_var, env_path))
