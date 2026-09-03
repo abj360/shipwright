@@ -82,7 +82,7 @@ def gradient_line(text: str, start: str = GRADIENT_START, end: str = GRADIENT_EN
     """
     rendered = Text()
     for index, character in enumerate(text):
-        rendered.append(character, style=blend(start, end, index / len(text)))
+        rendered.append(character, style=blend(start, end, index / (len(text) - 1)))
     return rendered
 
 

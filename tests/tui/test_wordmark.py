@@ -8,6 +8,7 @@ Contains:
     test_gradient_line_colours_every_character(): one span per character
     test_wordmark_renders_every_line(): the block carries all four lines
     test_gradient_starts_at_the_start_colour(): the first column is the start colour
+    test_gradient_ends_at_the_end_colour(): the last column reaches the end colour
 """
 
 from tui.widgets.wordmark import (
@@ -59,3 +60,10 @@ def test_gradient_starts_at_the_start_colour() -> None:
     rendered = gradient_line("shipwright")
 
     assert str(rendered.spans[0].style) == GRADIENT_START
+
+
+def test_gradient_ends_at_the_end_colour() -> None:
+    """Asserts the rightmost character actually reaches the gradient's end colour."""
+    rendered = gradient_line("shipwright")
+
+    assert str(rendered.spans[-1].style) == GRADIENT_END
