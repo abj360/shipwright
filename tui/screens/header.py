@@ -188,7 +188,7 @@ class HeaderBar(Static):
         Returns:
             line: Repo, branch, and provider joined by the field separator.
         """
-        fields = [
+        fields: list[str] = [
             format_repo(self.repo_path),
             current_branch(self.repo_path),
             self.client_status.label(),
