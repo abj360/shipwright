@@ -173,6 +173,7 @@ class SetupPanel(Static):
         key = entry.value.strip()
         if not key:
             return
+
         target = self.target()
         env_path = persist_key(target.env_var, key, self.repo_path)
         entry.value = ""
