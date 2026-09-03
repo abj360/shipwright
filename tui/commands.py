@@ -10,12 +10,20 @@ Contains:
     CommandRouter: dispatches parsed commands to their handlers
     CommandRouter.register(): binds one handler to one command name
     CommandRouter.dispatch(): runs the handler a typed line names
+    USAGE_MAX_COST / USAGE_MAX_STEPS: usage lines for the breaker commands
+    _positive_number(): parses a ceiling argument, rejecting anything unusable
+    set_max_cost(): raises or lowers the run's spend ceiling live
+    set_max_steps(): raises or lowers the run's iteration ceiling live
 """
 
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from agent.circuit_breaker import CircuitBreaker
+
 COMMAND_PREFIX = "/"
+USAGE_MAX_COST = "usage: /max-cost <positive amount in USD>"
+USAGE_MAX_STEPS = "usage: /max-steps <positive step count>"
 
 
 class UnknownCommandError(Exception):
@@ -92,3 +100,60 @@ class CommandRouter:
         if handler is None:
             raise UnknownCommandError(parsed.name)
         return handler(parsed.argument)
+
+
+def _positive_number(argument: str) -> float | None:
+    """Parses a ceiling argument, rejecting anything that is not positive.
+
+    Args:
+        argument: Text the operator typed after the command.
+
+    Returns:
+        value: The parsed number, or None when it cannot be used as a ceiling.
+    """
+    trimmed = argument.strip()
+    if not trimmed:
+        return None
+    try:
+        value = float(trimmed)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+def set_max_cost(breaker: CircuitBreaker, argument: str) -> str:
+    """Raises or lowers the run's spend ceiling without restarting it.
+
+    Rejects anything that is not a positive number, so a typo can never widen
+    the ceiling to something unbounded.
+
+    Args:
+        breaker: Breaker guarding the live run.
+        argument: Text the operator typed after the command.
+
+    Returns:
+        line: Confirmation of the new ceiling, or a usage hint.
+    """
+    ceiling = _positive_number(argument)
+    if ceiling is None:
+        return USAGE_MAX_COST
+    breaker.max_cost_usd = ceiling
+    return f"cost ceiling now ${ceiling:.2f}"
+
+
+def set_max_steps(breaker: CircuitBreaker, argument: str) -> str:
+    """Raises or lowers the run's iteration ceiling without restarting it.
+
+    Args:
+        breaker: Breaker guarding the live run.
+        argument: Text the operator typed after the command.
+
+    Returns:
+        line: Confirmation of the new ceiling, or a usage hint.
+    """
+    parsed = _positive_number(argument)
+    if parsed is None or parsed != int(parsed):
+        return USAGE_MAX_STEPS
+    ceiling = int(parsed)
+    breaker.max_iterations = ceiling
+    return f"step ceiling now {ceiling}"
