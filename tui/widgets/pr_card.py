@@ -5,6 +5,7 @@ pr_card.py --- PR summary card carrying the run's judgeline score badge
 Contains:
     READY_BADGE / NOT_READY_BADGE: wording shown beside the score
     UNSCORED_BADGE: wording used when the run record carries no score
+    _GATE: shared judgeline client consulted for the readiness threshold
     read_score(): reads the judgeline score off a run record
     badge_for(): renders the readiness badge for one score
     PrCard: renders the PR link and its readiness badge
@@ -21,6 +22,9 @@ from agent.judgeline_client import JudgelineClient, ScoreResult
 READY_BADGE = "READY"
 NOT_READY_BADGE = "NOT READY"
 UNSCORED_BADGE = "NOT SCORED"
+
+# The gate is stateless for threshold checks, so one instance serves every card.
+_GATE = JudgelineClient()
 
 
 def read_score(record: dict[str, Any]) -> ScoreResult | None:
@@ -56,7 +60,7 @@ def badge_for(result: ScoreResult | None) -> str:
     """
     if result is None:
         return UNSCORED_BADGE
-    is_ready = JudgelineClient().is_ready(result)
+    is_ready = _GATE.is_ready(result)
     label = READY_BADGE if is_ready else NOT_READY_BADGE
     return f"{label} ({result.score:.2f})"
 
