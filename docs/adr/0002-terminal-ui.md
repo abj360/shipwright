@@ -50,6 +50,12 @@ activity labels are the same `Read`/`Edited`/`Ran` wording the web view used.
 - Losing the browser costs the shareable URL for a run. `GET /runs/:id` still serves that
   record, so anything that needs a link can read it from the gateway.
 
+## Follow-up: NO_COLOR fallback (2026-09-02)
+
+Colour capability is resolved once, from `NO_COLOR` and then `TERM`, into a palette the
+widgets read. A terminal that cannot render colour gets the monochrome palette rather
+than escape codes it will print literally.
+
 ## Alternatives considered
 
 - **Keep both front ends.** Rejected: two renderers for one run drift, and the activity
