@@ -8,6 +8,7 @@ Contains:
     parse_hex(): splits a hex colour into its channels
     to_hex(): renders channels back into a hex colour
     blend(): mixes two colours at a given ratio
+    _ratio_at(): position of one column within the gradient
     gradient_line(): renders one line with the gradient applied across it
     Wordmark: boot-screen widget drawing the gradient wordmark
     Wordmark.render(): renders every wordmark line
@@ -69,6 +70,19 @@ def blend(start: str, end: str, ratio: float) -> str:
     return to_hex(mixed)  # type: ignore[arg-type]
 
 
+def _ratio_at(index: int, width: int) -> float:
+    """Computes where one column sits within the gradient.
+
+    Args:
+        index: Zero-based column being rendered.
+        width: Total number of columns on the line.
+
+    Returns:
+        ratio: Position between 0 and 1 across the gradient.
+    """
+    return index / (width - 1)
+
+
 def gradient_line(text: str, start: str = GRADIENT_START, end: str = GRADIENT_END) -> Text:
     """Renders one line with the gradient applied across its width.
 
@@ -82,7 +96,7 @@ def gradient_line(text: str, start: str = GRADIENT_START, end: str = GRADIENT_EN
     """
     rendered = Text()
     for index, character in enumerate(text):
-        rendered.append(character, style=blend(start, end, index / (len(text) - 1)))
+        rendered.append(character, style=blend(start, end, _ratio_at(index, len(text))))
     return rendered
 
 
