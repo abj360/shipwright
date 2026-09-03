@@ -9,7 +9,7 @@ Contains:
     HEAD_REF_PREFIX: prefix marking a symbolic HEAD in .git/HEAD
     _read_head(): reads .git/HEAD, empty when the path is not a checkout
     current_branch(): reads the checked-out branch without shelling out
-    format_repo(): renders the checkout path for the bar
+    format_checkout_name(): renders the checkout path for the bar
     NO_SPEND_LABEL: cost field shown before anything has been spent
     OVER_BUDGET_MARKER: appended once spend passes the tracker's warn threshold
     _is_over_budget(): whether spend has passed the tracker's warn threshold
@@ -74,7 +74,7 @@ def current_branch(repo_path: Path) -> str:
     return DETACHED_LABEL
 
 
-def format_repo(repo_path: Path) -> str:
+def format_checkout_name(repo_path: Path) -> str:
     """Renders the checkout path as the header should show it.
 
     Args:
@@ -189,7 +189,7 @@ class HeaderBar(Static):
             line: Repo, branch, and provider joined by the field separator.
         """
         fields: list[str] = [
-            format_repo(self.repo_path),
+            format_checkout_name(self.repo_path),
             current_branch(self.repo_path),
             self.client_status.label(),
             format_cost(self.cost_tracker, self.tokens),

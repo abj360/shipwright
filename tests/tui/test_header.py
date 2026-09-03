@@ -18,7 +18,7 @@ from tui.screens.header import (
     NO_BRANCH_LABEL,
     HeaderBar,
     current_branch,
-    format_repo,
+    format_checkout_name,
 )
 
 
@@ -61,7 +61,7 @@ def test_repo_label_is_the_directory_name(tmp_path: Path) -> None:
     """Asserts the header shows the checkout's folder name, not its full path."""
     repo = _checkout(tmp_path, "ref: refs/heads/main\n")
 
-    assert format_repo(repo) == "myproject"
+    assert format_checkout_name(repo) == "myproject"
 
 
 def test_line_contains_every_field(tmp_path: Path) -> None:
