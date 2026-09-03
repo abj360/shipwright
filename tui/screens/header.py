@@ -143,7 +143,9 @@ class ClientStatus:
         Returns:
             label: Provider alone, or provider and model when one is pinned.
         """
-        return f"{self.provider}/{self.model}" if self.model else self.provider
+        if not self.model:
+            return self.provider
+        return f"{self.provider}/{self.model}"
 
 
 class HeaderBar(Static):
