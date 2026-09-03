@@ -15,6 +15,7 @@ Contains:
 """
 
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -47,7 +48,7 @@ class CredentialStatus:
     is_present: bool
 
 
-def detect_missing(environ: dict[str, str] | None = None) -> list[CredentialStatus]:
+def detect_missing(environ: Mapping[str, str] | None = None) -> list[CredentialStatus]:
     """Lists the providers whose credential is absent from the environment.
 
     Args:
@@ -56,7 +57,7 @@ def detect_missing(environ: dict[str, str] | None = None) -> list[CredentialStat
     Returns:
         missing: Status entries for providers that still need a key.
     """
-    source = os.environ if environ is None else environ
+    source: Mapping[str, str] = os.environ if environ is None else environ
     statuses = [
         CredentialStatus(
             provider=provider,
