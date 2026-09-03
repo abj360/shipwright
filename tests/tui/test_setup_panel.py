@@ -7,13 +7,14 @@ Contains:
     test_present_key_is_not_reported(): a configured provider is left alone
     test_persist_key_writes_owner_only_file(): the .env file is not world-readable
     test_persist_key_replaces_existing_entry(): re-saving does not duplicate a variable
+    test_confirmation_line_carries_no_key(): the saved-key notice is credential-free
 """
 
 import stat
 from pathlib import Path
 
 from agent.llm_client import CREDENTIAL_ENV_VARS, Provider
-from tui.widgets.setup_panel import detect_missing, persist_key
+from tui.widgets.setup_panel import confirmation_line, detect_missing, persist_key
 
 
 def test_every_provider_reported_missing(keyless_environ: dict[str, str]) -> None:
@@ -48,3 +49,14 @@ def test_persist_key_replaces_existing_entry(keyless_repo: Path) -> None:
     body = env_path.read_text()
     assert body.count("ANTHROPIC_API_KEY=") == 1
     assert "sk-ant-second" in body
+
+
+def test_confirmation_line_carries_no_key(keyless_repo: Path) -> None:
+    """Asserts the timeline confirmation never repeats the pasted credential."""
+    key = "sk-ant-api03-Nn4TbQ2wXsL7yRk9ZmHc1VdUeJ6gPa0F"
+    env_path = persist_key("ANTHROPIC_API_KEY", key, keyless_repo)
+
+    line = confirmation_line("ANTHROPIC_API_KEY", env_path, key)
+
+    assert key not in line
+    assert "ANTHROPIC_API_KEY" in line
