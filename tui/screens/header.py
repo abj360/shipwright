@@ -14,14 +14,19 @@ Contains:
     OVER_BUDGET_MARKER: appended once spend passes the tracker's warn threshold
     _is_over_budget(): whether spend has passed the tracker's warn threshold
     format_cost(): renders spend and token counts for the bar
+    ClientStatus: which provider and model are answering steps
+    ClientStatus.label(): renders the status as the header shows it
     HeaderBar: status bar across the top of the interface
     HeaderBar.compose(): builds the single status line
     HeaderBar.render_line_text(): renders the bar's current contents
+    HeaderBar.watch_client_status(): repaints the bar when the provider changes
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from textual.app import ComposeResult
+from textual.reactive import reactive
 from textual.widgets import Label, Static
 
 from agent.cost_tracker import WARN_THRESHOLD, CostTracker
@@ -120,21 +125,45 @@ def format_cost(tracker: CostTracker | None, tokens: int = 0) -> str:
     return f"{spend}  {tokens} tok"
 
 
+@dataclass(frozen=True)
+class ClientStatus:
+    """Records which provider and model are answering the run's steps.
+
+    Attributes:
+        provider: Provider name currently answering steps.
+        model: Model identifier, or None when the provider default is in use.
+    """
+
+    provider: str
+    model: str | None = None
+
+    def label(self) -> str:
+        """Renders the status as the header shows it.
+
+        Returns:
+            label: Provider alone, or provider and model when one is pinned.
+        """
+        return f"{self.provider}/{self.model}" if self.model else self.provider
+
+
 class HeaderBar(Static):
     """Renders repo, branch, and provider across the top of the interface.
 
     Attributes:
         repo_path: Checkout the run is pointed at.
-        provider: Provider name currently answering steps.
+        client_status: Provider and model currently answering steps.
         cost_tracker: Tracker the live cost readout is drawn from.
         tokens: Tokens consumed so far in the run.
     """
+
+    client_status: reactive[ClientStatus] = reactive(ClientStatus("unknown"))
 
     def __init__(
         self,
         repo_path: Path,
         provider: str,
         cost_tracker: CostTracker | None = None,
+        model: str | None = None,
     ) -> None:
         """Builds the bar for one checkout, provider, and cost tracker.
 
@@ -142,11 +171,15 @@ class HeaderBar(Static):
             repo_path: Checkout the run is pointed at.
             provider: Provider name currently answering steps.
             cost_tracker: Tracker the live cost readout is drawn from.
+            model: Model identifier, when one is pinned rather than defaulted.
         """
         super().__init__()
         self.repo_path: Path = repo_path
-        self.provider: str = provider
         self.cost_tracker: CostTracker | None = cost_tracker
+        self.tokens: int = 0
+        # Assigning the reactive fires its watcher, so every field it reads
+        # must already be set by this point.
+        self.client_status = ClientStatus(provider, model)
         self.tokens: int = 0
 
     def render_line_text(self) -> str:
@@ -158,10 +191,19 @@ class HeaderBar(Static):
         fields = [
             format_repo(self.repo_path),
             current_branch(self.repo_path),
-            self.provider,
+            self.client_status.label(),
             format_cost(self.cost_tracker, self.tokens),
         ]
         return SEPARATOR.join(fields)
+
+    def watch_client_status(self, client_status: ClientStatus) -> None:
+        """Repaints only the header when the provider or model changes.
+
+        Args:
+            client_status: Provider and model now answering steps.
+        """
+        if self.is_mounted:
+            self.update(self.render_line_text())
 
     def compose(self) -> ComposeResult:
         """Builds the single status line."""
