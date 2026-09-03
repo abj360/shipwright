@@ -7,6 +7,7 @@ Contains:
     test_dark_scheme_matches_golden(): every kind keeps its documented colour
     test_add_delete_and_hunk_are_distinct(): the three colours never collide
     test_monochrome_terminal_gets_no_colour(): NO_COLOR yields empty tokens
+    test_context_and_hunk_differ(): context text is not muted like a hunk header
 """
 
 from tui.theme import DARK, MONOCHROME
@@ -44,3 +45,10 @@ def test_monochrome_terminal_gets_no_colour() -> None:
 
     assert panel.color_for(LineKind.ADD) == ""
     assert panel.color_for(LineKind.DELETE) == ""
+
+
+def test_context_and_hunk_differ() -> None:
+    """Asserts unchanged context is not rendered in the muted hunk colour."""
+    panel = DiffPanel("", palette=DARK)
+
+    assert panel.color_for(LineKind.CONTEXT) != panel.color_for(LineKind.HUNK)
