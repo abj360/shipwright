@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-09-03
+- Supersedes: the React conversation view removed in this sprint
 
 ## Context
 
