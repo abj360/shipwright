@@ -8,6 +8,7 @@ Contains:
     test_persist_key_writes_owner_only_file(): the .env file is not world-readable
     test_persist_key_replaces_existing_entry(): re-saving does not duplicate a variable
     test_confirmation_line_carries_no_key(): the saved-key notice is credential-free
+    test_blank_key_is_never_written(): whitespace alone does not create a .env entry
 """
 
 import stat
@@ -60,3 +61,13 @@ def test_confirmation_line_carries_no_key(keyless_repo: Path) -> None:
 
     assert key not in line
     assert "ANTHROPIC_API_KEY" in line
+
+
+def test_blank_key_is_never_written(keyless_repo: Path) -> None:
+    """Asserts a whitespace-only entry is rejected before touching the .env file."""
+    assert not (keyless_repo / ".env").exists()
+
+    line = confirmation_line("ANTHROPIC_API_KEY", keyless_repo / ".env", "   ")
+
+    assert "ANTHROPIC_API_KEY" in line
+    assert not (keyless_repo / ".env").exists()
