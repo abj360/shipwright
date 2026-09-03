@@ -7,6 +7,7 @@ Contains:
     test_pinned_model_label(): a pinned model is shown beside the provider
     test_switching_status_updates_the_line(): reassigning repaints the bar text
     test_status_is_immutable(): the status cannot be mutated in place
+    test_blank_model_is_treated_as_default(): an empty model shows provider alone
 """
 
 from pathlib import Path
@@ -43,3 +44,8 @@ def test_status_is_immutable() -> None:
 
     with pytest.raises(AttributeError):
         status.provider = "openai"  # type: ignore[misc]
+
+
+def test_blank_model_is_treated_as_default() -> None:
+    """Asserts an empty model string is treated as 'provider default', not shown."""
+    assert ClientStatus("anthropic", "").label() == "anthropic"
