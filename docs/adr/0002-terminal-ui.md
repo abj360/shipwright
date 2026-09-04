@@ -57,6 +57,13 @@ Colour capability is resolved once, from `NO_COLOR` and then `TERM`, into a pale
 widgets read. A terminal that cannot render colour gets the monochrome palette rather
 than escape codes it will print literally.
 
+## Follow-up: brand colour on the boot screen (2026-09-04)
+
+The wordmark first shipped with a blue-to-purple gradient, which was not a colour the
+project uses anywhere. It now draws in block capitals in the single brand blue sampled
+from `docs/media/wordmark.png` (`#2f81f7`, the same blue as the README badges), and drops
+to no colour at all on a terminal the capability check reports as colourless.
+
 ## Alternatives considered
 
 - **Keep both front ends.** Rejected: two renderers for one run drift, and the activity
