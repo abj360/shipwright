@@ -80,6 +80,8 @@ def _ratio_at(index: int, width: int) -> float:
     Returns:
         ratio: Position between 0 and 1 across the gradient.
     """
+    if width <= 1:
+        return 0.0
     return index / (width - 1)
 
 

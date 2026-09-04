@@ -9,6 +9,7 @@ Contains:
     test_wordmark_renders_every_line(): the block carries all four lines
     test_gradient_starts_at_the_start_colour(): the first column is the start colour
     test_gradient_ends_at_the_end_colour(): the last column reaches the end colour
+    test_single_character_line_does_not_divide_by_zero(): a 1-wide line renders
 """
 
 from tui.widgets.wordmark import (
@@ -67,3 +68,11 @@ def test_gradient_ends_at_the_end_colour() -> None:
     rendered = gradient_line("shipwright")
 
     assert str(rendered.spans[-1].style) == GRADIENT_END
+
+
+def test_single_character_line_does_not_divide_by_zero() -> None:
+    """Asserts a one-character line renders instead of dividing by zero."""
+    rendered = gradient_line("s")
+
+    assert rendered.plain == "s"
+    assert str(rendered.spans[0].style) == GRADIENT_START
