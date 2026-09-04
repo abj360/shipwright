@@ -55,7 +55,7 @@ def build_app(argv: list[str] | None = None) -> ShipwrightApp:
     Returns:
         app: Application pointed at the requested checkout.
     """
-    args = build_parser().parse_args(argv)
+    args: argparse.Namespace = build_parser().parse_args(argv)
     return ShipwrightApp(
         repo_path=Path(args.repo),
         provider=args.provider,
