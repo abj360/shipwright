@@ -10,6 +10,8 @@ Contains:
     _term_name(): normalizes the TERM value for comparison
     supports_color(): decides whether a terminal should be sent colour
     palette_for(): picks the palette a terminal should render with
+    CSS_VARIABLE_NAMES: which Textual design token each palette field feeds
+    css_variables(): renders a palette as Textual design tokens
 """
 
 import os
@@ -115,3 +117,40 @@ def palette_for(environ: Mapping[str, str] | None = None) -> Palette:
         palette: DARK when colour is available, MONOCHROME otherwise.
     """
     return DARK if supports_color(environ) else MONOCHROME
+
+
+# Textual resolves widget CSS against these design tokens, so feeding the palette
+# through them themes every widget at once instead of per-widget colour literals.
+CSS_VARIABLE_NAMES: dict[str, str] = {
+    "background": "background",
+    "surface": "panel_background",
+    "panel": "panel_background",
+    "text": "foreground",
+    "accent": "accent",
+    "success": "add",
+    "error": "status_error",
+    "warning": "hunk",
+    "panel-border": "panel_border",
+    "border-subtle": "border_subtle",
+}
+
+
+def css_variables(palette: Palette) -> dict[str, str]:
+    """Renders a palette as the Textual design tokens widgets resolve against.
+
+    Fields that are blank are omitted rather than emitted empty, so a
+    monochrome terminal falls back to Textual's own defaults instead of being
+    handed unusable values.
+
+    Args:
+        palette: Palette to translate into design tokens.
+
+    Returns:
+        variables: Token name to colour, omitting anything the palette leaves blank.
+    """
+    rendered: dict[str, str] = {}
+    for token, field_name in CSS_VARIABLE_NAMES.items():
+        value = str(getattr(palette, field_name))
+        if value:
+            rendered[token] = value
+    return rendered
