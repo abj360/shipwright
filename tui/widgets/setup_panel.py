@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from textual.app import ComposeResult
+from textual.css.query import NoMatches
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.widgets import Button, Input, Label, RadioButton, RadioSet, Static
@@ -161,7 +162,7 @@ class SetupPanel(Static):
         """
         try:
             chosen = self.query_one(f"#{PROVIDER_SET_ID}", RadioSet).pressed_index
-        except Exception:
+        except NoMatches:
             return self.missing[0]
         if chosen < 0 or chosen >= len(self.missing):
             return self.missing[0]
