@@ -55,12 +55,25 @@ class ShipwrightApp(App[None]):
         layout: vertical;
         overflow: hidden;
     }
-    #region-header { height: 1; }
-    #region-connection { height: 1; }
-    #region-setup { height: auto; max-height: 10; }
-    #region-timeline { height: 1fr; }
-    #region-composer { height: 3; }
-    #region-footer { height: 1; }
+    #region-header {
+        height: 1;
+    }
+    #region-connection {
+        height: 1;
+    }
+    #region-setup {
+        height: auto;
+        max-height: 10;
+    }
+    #region-timeline {
+        height: 1fr;
+    }
+    #region-composer {
+        height: 3;
+    }
+    #region-footer {
+        height: 1;
+    }
     """
 
     BINDINGS = [
