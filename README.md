@@ -20,6 +20,19 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
 
 </div>
 
+## What it does
+
+- Reads a task (free text or a GitHub issue URL) and explores the target repo.
+- Thinks in a ReAct-style loop: thought → one tool call → observation, until a
+  final answer.
+- Optionally plans first (`--plan-mode`): a planner reads the repo map and
+  produces a capped, validated step list that the loop then executes verbatim.
+- Edits code, runs tests, and opens a **draft PR** through the gateway.
+- Scores the PR diff through `judgeline` before anything is marked ready for
+  review — and the gate fails closed on timeout or persistent 5xx.
+- Halts and flags runaway runs automatically (iteration and cost circuit
+  breaker), so a stuck task can never quietly burn budget for hours.
+
 ## How you use it
 
 1. **Bring the stack up** — `docker compose -f docker/docker-compose.yml up --build`,
@@ -37,19 +50,6 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
    the readiness threshold; see [Quality gating](#quality-gating).
 
 Full flag reference in [Running tasks](#running-tasks).
-
-## What it does
-
-- Reads a task (free text or a GitHub issue URL) and explores the target repo.
-- Thinks in a ReAct-style loop: thought → one tool call → observation, until a
-  final answer.
-- Optionally plans first (`--plan-mode`): a planner reads the repo map and
-  produces a capped, validated step list that the loop then executes verbatim.
-- Edits code, runs tests, and opens a **draft PR** through the gateway.
-- Scores the PR diff through `judgeline` before anything is marked ready for
-  review — and the gate fails closed on timeout or persistent 5xx.
-- Halts and flags runaway runs automatically (iteration and cost circuit
-  breaker), so a stuck task can never quietly burn budget for hours.
 
 ## Architecture
 
