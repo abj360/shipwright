@@ -41,9 +41,9 @@ def test_each_command_reaches_its_own_handler() -> None:
     calls: list[tuple[str, str]] = []
     router = _router(calls)
 
-    assert router.dispatch("/plan") == "plan ok"
-    assert router.dispatch("/resume") == "resume ok"
-    assert router.dispatch("/model") == "model ok"
+    results = [router.dispatch(f"/{name}") for name in ("plan", "resume", "model")]
+
+    assert results == ["plan ok", "resume ok", "model ok"]
     assert [name for name, _ in calls] == ["plan", "resume", "model"]
 
 

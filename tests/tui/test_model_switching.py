@@ -63,9 +63,8 @@ def test_switch_passes_the_model_through(tmp_path: Path) -> None:
     """Asserts an explicit model identifier is handed to the factory."""
     seen: list[tuple[Provider, str | None]] = []
 
-    line = switch_model(
-        _loop(tmp_path), "anthropic claude-opus-4-1", _factory(seen)
-    )  # type: ignore[arg-type]
+    factory = _factory(seen)
+    line = switch_model(_loop(tmp_path), "anthropic claude-opus-4-1", factory)  # type: ignore[arg-type]
 
     assert seen == [(Provider.ANTHROPIC, "claude-opus-4-1")]
     assert "claude-opus-4-1" in line

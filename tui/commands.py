@@ -22,7 +22,6 @@ Contains:
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TypeAlias
 
 from agent.circuit_breaker import CircuitBreaker
 from agent.llm_client import LLMClient, MissingCredentialError, Provider, build_client
@@ -167,7 +166,7 @@ def set_max_steps(breaker: CircuitBreaker, argument: str) -> str:
     return f"step ceiling now {ceiling}"
 
 
-ClientFactory: TypeAlias = Callable[[Provider, str | None], LLMClient]
+type ClientFactory = Callable[[Provider, str | None], LLMClient]
 
 
 def _parse_provider(name: str) -> Provider | None:
