@@ -9,6 +9,7 @@ Contains:
     confirmation_line(): renders a save confirmation carrying no credential
     SetupPanel: prompts for a provider key on first run
     SetupPanel.target(): the provider this panel is currently collecting for
+    SetupPanel.is_needed(): whether any provider still requires a key
     SetupPanel.compose(): builds the provider choice, masked input, and buttons
     SetupPanel.on_button_pressed(): saves the key or skips setup
     SetupPanel.Saved: reports which variable was written, never its value
@@ -154,6 +155,14 @@ class SetupPanel(Static):
         self.repo_path = repo_path
         self.missing = detect_missing() if missing is None else missing
 
+    def is_needed(self) -> bool:
+        """Reports whether the panel has anything left to ask for.
+
+        Returns:
+            is_needed: True while at least one provider lacks a credential.
+        """
+        return bool(self.missing)
+
     def target(self) -> CredentialStatus:
         """Returns the provider whose credential the panel is collecting.
 
@@ -170,6 +179,10 @@ class SetupPanel(Static):
 
     def compose(self) -> ComposeResult:
         """Builds the provider choice, the masked key input, and the buttons."""
+        if not self.is_needed():
+            yield Label("Every provider already has a key configured.")
+            return
+
         choices = [
             RadioButton(status.env_var, value=index == 0)
             for index, status in enumerate(self.missing)
