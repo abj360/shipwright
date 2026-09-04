@@ -51,9 +51,16 @@ class ShipwrightApp(App[None]):
     """
 
     CSS = """
-    #region-timeline {
-        height: 1fr;
+    Screen {
+        layout: vertical;
+        overflow: hidden;
     }
+    #region-header { height: 1; }
+    #region-connection { height: 1; }
+    #region-setup { height: auto; max-height: 10; }
+    #region-timeline { height: 1fr; }
+    #region-composer { height: 3; }
+    #region-footer { height: 1; }
     """
 
     BINDINGS = [
@@ -102,16 +109,30 @@ class ShipwrightApp(App[None]):
 
     def compose(self) -> ComposeResult:
         """Lays out the header, timeline, composer, and footer."""
-        yield HeaderBar(self.repo_path, self.provider, self.cost_tracker)
-        yield ConnectionDot()
+        header = HeaderBar(self.repo_path, self.provider, self.cost_tracker)
+        header.id = REGION_IDS[0]
+        yield header
+
+        dot = ConnectionDot()
+        dot.id = "region-connection"
+        yield dot
+
         if self.needs_setup():
-            yield SetupPanel(self.repo_path)
+            setup = SetupPanel(self.repo_path)
+            setup.id = "region-setup"
+            yield setup
+
         timeline = Timeline()
         timeline.id = REGION_IDS[1]
         yield timeline
 
-        yield Composer()
-        yield FooterBar(self.BINDINGS)
+        composer = Composer()
+        composer.id = REGION_IDS[2]
+        yield composer
+
+        footer = FooterBar(self.BINDINGS)
+        footer.id = REGION_IDS[3]
+        yield footer
 
     def register_commands(self) -> None:
         """Binds each slash command the composer can route to its handler."""
