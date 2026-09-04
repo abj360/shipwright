@@ -219,6 +219,8 @@ class SetupPanel(Static):
 
         target = self.target()
         env_path = persist_key(target.env_var, key, self.repo_path)
+        # Clear the field before the confirmation renders: the widget keeps its
+        # value in the DOM, and the transcript snapshots the DOM.
         entry.value = ""
         status.update(confirmation_line(target.env_var, env_path, key))
         self.post_message(self.Saved(target.env_var, env_path))
