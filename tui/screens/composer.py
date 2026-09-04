@@ -12,6 +12,7 @@ Contains:
     Composer.take_next(): pops the next queued instruction
     Composer.mark_busy(): records that a run has started
     Composer.mark_idle(): records that the run finished
+    Composer._refresh_outlines(): rescans the checkout at most once per run
     Composer.Submitted: carries an instruction that is ready to run
 """
 
@@ -63,6 +64,7 @@ class Composer(Static):
         self.repo_map: RepoMap | None = repo_map
         self.is_busy = False
         self.pending: list[str] = []
+        self._needs_rescan = True
 
     def prompt_text(self) -> str:
         """Returns the placeholder matching the current run state.
@@ -79,10 +81,12 @@ class Composer(Static):
     def mark_busy(self) -> None:
         """Records that a run has started, so later input is queued."""
         self.is_busy = True
+        self._needs_rescan = True
 
     def mark_idle(self) -> None:
         """Records that the run finished, so the next instruction sends directly."""
         self.is_busy = False
+        self._needs_rescan = True
 
     def submit(self, text: str) -> str:
         """Sends the instruction, or queues it when a run is already in flight.
@@ -115,7 +119,14 @@ class Composer(Static):
         return self.pending.pop(0)
 
     def _refresh_outlines(self) -> None:
-        """Drops outline cache entries for files that changed on disk."""
-        if self.repo_map is None:
+        """Drops outline cache entries for files that changed on disk.
+
+        Queueing several follow-ups behind one run used to rescan the checkout
+        per instruction, which is pure waste: nothing can change on disk between
+        two keystrokes while the agent holds the run. The scan is therefore done
+        once and reused until the run state changes.
+        """
+        if self.repo_map is None or not self._needs_rescan:
             return
         self.repo_map.refresh(self.repo_map.detect_changes())
+        self._needs_rescan = False
