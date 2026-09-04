@@ -14,16 +14,23 @@ Contains:
     _positive_number(): parses a ceiling argument, rejecting anything unusable
     set_max_cost(): raises or lowers the run's spend ceiling live
     set_max_steps(): raises or lowers the run's iteration ceiling live
+    USAGE_MODEL: usage line for the provider-switch command
+    ClientFactory: builds a completion backend for one provider
+    _parse_provider(): reads a provider name, returning None when unknown
+    switch_model(): points the live run at another provider or model
 """
 
 from collections.abc import Callable
 from dataclasses import dataclass
 
 from agent.circuit_breaker import CircuitBreaker
+from agent.llm_client import LLMClient, MissingCredentialError, Provider, build_client
+from agent.loop import AgentLoop
 
 COMMAND_PREFIX = "/"
 USAGE_MAX_COST = "usage: /max-cost <positive amount in USD>"
 USAGE_MAX_STEPS = "usage: /max-steps <positive step count>"
+USAGE_MODEL = "usage: /model <anthropic|openai> [model-id]  (current provider stays if refused)"
 
 
 class UnknownCommandError(Exception):
@@ -157,3 +164,54 @@ def set_max_steps(breaker: CircuitBreaker, argument: str) -> str:
     ceiling = int(parsed)
     breaker.max_iterations = ceiling
     return f"step ceiling now {ceiling}"
+
+
+type ClientFactory = Callable[[Provider, str | None], LLMClient]
+
+
+def _parse_provider(name: str) -> Provider | None:
+    """Reads a provider name, returning None when it is not one we support.
+
+    Args:
+        name: Provider name as the operator typed it.
+
+    Returns:
+        provider: Matching provider, or None when the name is unknown.
+    """
+    try:
+        return Provider(name.lower())
+    except ValueError:
+        return None
+
+
+def switch_model(
+    loop: AgentLoop,
+    argument: str,
+    factory: ClientFactory = build_client,
+) -> str:
+    """Points the live run at another provider, or another model on the same one.
+
+    The switch goes through the same factory the CLI's --provider/--model flags
+    use, so the terminal cannot reach a combination the command line could not.
+
+    Args:
+        loop: Run whose completion backend is being swapped.
+        argument: Provider name, optionally followed by a model identifier.
+        factory: Builds the client; injected so tests need no real credential.
+
+    Returns:
+        line: Confirmation of the new provider, or a usage hint.
+    """
+    parts = argument.split()
+    if not parts:
+        return USAGE_MODEL
+    provider = _parse_provider(parts[0])
+    if provider is None:
+        return USAGE_MODEL
+    model = parts[1] if len(parts) > 1 else None
+    try:
+        client = factory(provider, model)
+    except MissingCredentialError as exc:
+        return str(exc)
+    loop.set_client(client)
+    return f"now using {provider.value}" + (f" / {model}" if model else "")
