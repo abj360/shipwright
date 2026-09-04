@@ -20,6 +20,24 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
 
 </div>
 
+## How you use it
+
+1. **Bring the stack up** — `docker compose -f docker/docker-compose.yml up --build`,
+   or `scripts/run_local.sh` if you would rather not use compose.
+2. **Give it a task**, from the terminal:
+   ```bash
+   python -m agent.cli --task "add validation to apply_discount and cover it with tests" --repo .
+   ```
+   or type the same sentence into the chat UI on `:5173`. Point it at a ticket with
+   `--issue-url` instead, or make it plan before touching anything with `--plan-mode`.
+3. **Watch it work.** Every step shows up as it happens — the files it reads, the
+   edits it makes, the tests it runs — with the diff for each write inline, so you
+   are reviewing as it goes rather than reading a wall of changes at the end.
+4. **Take the draft PR.** Nothing is marked ready for review until the diff clears
+   the readiness threshold; see [Quality gating](#quality-gating).
+
+Full flag reference in [Running tasks](#running-tasks).
+
 ## What it does
 
 - Reads a task (free text or a GitHub issue URL) and explores the target repo.
