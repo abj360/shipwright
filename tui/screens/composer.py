@@ -12,7 +12,7 @@ Contains:
     Composer.take_next(): pops the next queued instruction
     Composer.mark_busy(): records that a run has started
     Composer.mark_idle(): records that the run finished
-    Composer._refresh_outlines(): rescans the checkout at most once per run
+    Composer._refresh_outlines(): rescans the checkout at most once per run state
     Composer.Submitted: carries an instruction that is ready to run
 """
 
@@ -64,7 +64,7 @@ class Composer(Static):
         self.repo_map: RepoMap | None = repo_map
         self.is_busy = False
         self.pending: list[str] = []
-        self._needs_rescan = True
+        self._outlines_are_stale = True
 
     def prompt_text(self) -> str:
         """Returns the placeholder matching the current run state.
@@ -81,12 +81,12 @@ class Composer(Static):
     def mark_busy(self) -> None:
         """Records that a run has started, so later input is queued."""
         self.is_busy = True
-        self._needs_rescan = True
+        self._outlines_are_stale = True
 
     def mark_idle(self) -> None:
         """Records that the run finished, so the next instruction sends directly."""
         self.is_busy = False
-        self._needs_rescan = True
+        self._outlines_are_stale = True
 
     def submit(self, text: str) -> str:
         """Sends the instruction, or queues it when a run is already in flight.
@@ -126,7 +126,7 @@ class Composer(Static):
         two keystrokes while the agent holds the run. The scan is therefore done
         once and reused until the run state changes.
         """
-        if self.repo_map is None or not self._needs_rescan:
+        if self.repo_map is None or not self._outlines_are_stale:
             return
         self.repo_map.refresh(self.repo_map.detect_changes())
-        self._needs_rescan = False
+        self._outlines_are_stale = False
