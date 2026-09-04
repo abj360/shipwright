@@ -2,14 +2,15 @@
 
 <img src="docs/media/wordmark.png" alt="shipwright" width="440" />
 
-[![python 3.12+](https://img.shields.io/badge/Python%203.12+-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![python](https://img.shields.io/badge/python-3.12+-2f81f7)](pyproject.toml)
+[![node](https://img.shields.io/badge/node-22-2f81f7)](gateway/package.json)
 [![typescript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](gateway/package.json)
 [![express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)](gateway/package.json)
 [![react](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)](ui/package.json)
 [![vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)](ui/vite.config.ts)
 [![docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](docker/)
 [![gvisor](https://img.shields.io/badge/gVisor-2f81f7)](sandbox/)
-[![mit](https://img.shields.io/badge/MIT-2f81f7?logo=opensourceinitiative&logoColor=white)](LICENSE.md)
+[![license](https://img.shields.io/badge/license-MIT-2f81f7)](LICENSE.md)
 
 Shipwright is an autonomous coding agent that reads a repository, edits code,
 runs the tests, and opens a draft PR, with every command it issues executing inside a
