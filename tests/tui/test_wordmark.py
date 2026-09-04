@@ -12,17 +12,23 @@ Contains:
     test_single_character_line_does_not_divide_by_zero(): a 1-wide line renders
     test_empty_line_renders_nothing(): a blank line produces no spans
     test_ratio_is_clamped(): a ratio outside 0..1 does not escape the gradient
+    test_wordmark_spells_the_project_name(): the art is SHIPWRIGHT, letter by letter
+    test_every_row_is_the_same_width(): the block letters line up in a rectangle
 """
 
 from tui.widgets.wordmark import (
+    BLOCK_FONT,
+    GLYPH_HEIGHT,
     GRADIENT_END,
     GRADIENT_START,
+    PROJECT_NAME,
     WORDMARK_LINES,
     Wordmark,
     _ratio_at,
     blend,
     gradient_line,
     parse_hex,
+    render_word,
 )
 
 
@@ -94,3 +100,28 @@ def test_ratio_is_clamped() -> None:
     assert blend(GRADIENT_START, GRADIENT_END, -2.0) == GRADIENT_START
     assert blend(GRADIENT_START, GRADIENT_END, 5.0) == GRADIENT_END
     assert _ratio_at(0, 1) == 0.0
+
+
+def test_wordmark_spells_the_project_name() -> None:
+    """Asserts the boot art is the word SHIPWRIGHT, checked letter by letter."""
+    assert PROJECT_NAME == "SHIPWRIGHT"
+
+    for position, letter in enumerate(PROJECT_NAME):
+        column_start = position * (len(BLOCK_FONT[letter][0]) + 1)
+        for row in range(GLYPH_HEIGHT):
+            width = len(BLOCK_FONT[letter][row])
+            sliced = WORDMARK_LINES[row][column_start : column_start + width]
+            assert sliced == BLOCK_FONT[letter][row], (letter, row)
+
+
+def test_every_row_is_the_same_width() -> None:
+    """Asserts every rendered row is the same width so the block stays rectangular."""
+    widths = {len(row) for row in WORDMARK_LINES}
+
+    assert len(WORDMARK_LINES) == GLYPH_HEIGHT
+    assert len(widths) == 1
+
+
+def test_render_word_handles_a_single_letter() -> None:
+    """Asserts rendering one letter reproduces that letter's glyph exactly."""
+    assert render_word("T") == BLOCK_FONT["T"]

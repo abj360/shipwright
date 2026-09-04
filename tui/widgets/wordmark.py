@@ -3,6 +3,10 @@
 wordmark.py --- ASCII wordmark drawn with a horizontal colour gradient
 
 Contains:
+    PROJECT_NAME: the word the boot screen spells out
+    GLYPH_HEIGHT: how many rows tall one block letter is
+    BLOCK_FONT: one block-capital glyph per letter of the project name
+    render_word(): renders a word as block-capital rows
     WORDMARK_LINES: the ASCII art shown on the boot screen
     GRADIENT_START / GRADIENT_END: the two colours the gradient runs between
     parse_hex(): splits a hex colour into its channels
@@ -17,14 +21,42 @@ Contains:
 from rich.text import Text
 from textual.widgets import Static
 
-WORDMARK_LINES = (
-    " ___ _  _ ___ ___ _    _ ___ ___ ___ _  _ _____ ",
-    "/ __| || |_ _| _ \\ \\  / / _ \\_ _/ __| || |_   _|",
-    "\\__ \\ __ || ||  _/\\ \\/ /| " + "   /| | (_ | __ | | |  ",
-    "|___/_||_|___|_|   \\__/ |_|_\\___|\\___|_||_| |_|  ",
-)
+PROJECT_NAME = "SHIPWRIGHT"
+GLYPH_HEIGHT = 5
+GLYPH_SEPARATOR = " "
+BLOCK_FONT: dict[str, tuple[str, ...]] = {
+    "S": ("█████", "█    ", "█████", "    █", "█████"),
+    "H": ("█   █", "█   █", "█████", "█   █", "█   █"),
+    "I": ("█████", "  █  ", "  █  ", "  █  ", "█████"),
+    "P": ("█████", "█   █", "█████", "█    ", "█    "),
+    "W": ("█   █", "█   █", "█ █ █", "██ ██", "█   █"),
+    "R": ("█████", "█   █", "█████", "█  █ ", "█   █"),
+    "G": ("█████", "█    ", "█  ██", "█   █", "█████"),
+    "T": ("█████", "  █  ", "  █  ", "  █  ", "  █  "),
+}
 GRADIENT_START = "#6cb6ff"
 GRADIENT_END = "#d2a8ff"
+
+
+def render_word(word: str) -> tuple[str, ...]:
+    """Renders a word as block-capital rows.
+
+    Args:
+        word: Upper-case word whose letters all appear in BLOCK_FONT.
+
+    Returns:
+        rows: One string per row of the rendered word.
+
+    Raises:
+        KeyError: A letter of the word has no glyph in BLOCK_FONT.
+    """
+    glyphs = [BLOCK_FONT[letter] for letter in word]
+    return tuple(
+        GLYPH_SEPARATOR.join(glyph[row] for glyph in glyphs) for row in range(GLYPH_HEIGHT)
+    )
+
+
+WORDMARK_LINES = render_word(PROJECT_NAME)
 
 
 def parse_hex(color: str) -> tuple[int, int, int]:
