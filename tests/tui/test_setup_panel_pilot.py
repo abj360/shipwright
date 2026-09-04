@@ -54,7 +54,7 @@ async def _save_key(repo_path: Path, key: str) -> str:
     """
     app = SetupHarness(repo_path)
     async with app.run_test() as pilot:
-        entry = app.query_one(f"#setup-key", Input)
+        entry = app.query_one("#setup-key", Input)
         entry.value = key
         rendered = str(entry.render())
         await pilot.click("#setup-save")
