@@ -4,6 +4,7 @@ theme.py --- brand color tokens carried over from the retired web view
 
 Contains:
     Palette: color tokens one display mode renders with
+    BRAND_BLUE: the single blue the project wordmark is drawn in
     DARK: default palette, carried over from the web view's stylesheet
     MONOCHROME: fallback palette for terminals that cannot show colour
     COLORLESS_TERMS: TERM values that mean "no colour available"
@@ -47,6 +48,9 @@ class Palette:
     panel_border: str
     border_subtle: str
 
+
+# Sampled from docs/media/wordmark.png, and the same blue the README badges use.
+BRAND_BLUE = "#2f81f7"
 
 DARK = Palette(
     background="#0d1117",

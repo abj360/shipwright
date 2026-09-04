@@ -1,105 +1,26 @@
 #!/usr/bin/env python3
 """
-test_wordmark.py --- covers the boot-screen wordmark gradient
+test_wordmark.py --- covers the boot-screen wordmark and its brand colour
 
 Contains:
-    test_blend_returns_each_end(): ratio 0 and 1 return the endpoint colours
-    test_blend_midpoint_is_between(): the midpoint sits between both channels
-    test_gradient_line_colours_every_character(): one span per character
-    test_wordmark_renders_every_line(): the block carries all four lines
-    test_gradient_starts_at_the_start_colour(): the first column is the start colour
-    test_gradient_ends_at_the_end_colour(): the last column reaches the end colour
-    test_single_character_line_does_not_divide_by_zero(): a 1-wide line renders
-    test_empty_line_renders_nothing(): a blank line produces no spans
-    test_ratio_is_clamped(): a ratio outside 0..1 does not escape the gradient
     test_wordmark_spells_the_project_name(): the art is SHIPWRIGHT, letter by letter
+    test_project_name_is_upper_case(): the wordmark is drawn in capitals
     test_every_row_is_the_same_width(): the block letters line up in a rectangle
+    test_render_word_handles_a_single_letter(): one letter reproduces its glyph
+    test_wordmark_uses_the_brand_blue(): the only colour used is the brand token
+    test_monochrome_terminal_gets_no_colour(): a colourless terminal gets no style
+    test_render_covers_every_line(): the rendered block carries all five rows
 """
 
+from tui.theme import BRAND_BLUE, DARK, MONOCHROME
 from tui.widgets.wordmark import (
     BLOCK_FONT,
     GLYPH_HEIGHT,
-    GRADIENT_END,
-    GRADIENT_START,
     PROJECT_NAME,
     WORDMARK_LINES,
     Wordmark,
-    _ratio_at,
-    blend,
-    gradient_line,
-    parse_hex,
     render_word,
 )
-
-
-def test_blend_returns_each_end() -> None:
-    """Asserts a ratio of 0 and of 1 return the two endpoint colours."""
-    assert blend(GRADIENT_START, GRADIENT_END, 0.0) == GRADIENT_START
-    assert blend(GRADIENT_START, GRADIENT_END, 1.0) == GRADIENT_END
-
-
-def test_blend_midpoint_is_between() -> None:
-    """Asserts the midpoint colour sits between both endpoints on every channel."""
-    low = parse_hex(GRADIENT_START)
-    high = parse_hex(GRADIENT_END)
-    middle = parse_hex(blend(GRADIENT_START, GRADIENT_END, 0.5))
-
-    for channel in range(3):
-        assert min(low[channel], high[channel]) <= middle[channel]
-        assert middle[channel] <= max(low[channel], high[channel])
-
-
-def test_gradient_line_colours_every_character() -> None:
-    """Asserts every character of a line gets its own colour span."""
-    rendered = gradient_line("shipwright")
-
-    assert len(rendered.plain) == len("shipwright")
-    assert len(rendered.spans) == len("shipwright")
-
-
-def test_wordmark_renders_every_line() -> None:
-    """Asserts the rendered block contains each line of the wordmark."""
-    block = Wordmark().render().plain
-
-    for line in WORDMARK_LINES:
-        assert line in block
-
-
-def test_gradient_starts_at_the_start_colour() -> None:
-    """Asserts the leftmost character is rendered in the gradient's start colour."""
-    rendered = gradient_line("shipwright")
-
-    assert str(rendered.spans[0].style) == GRADIENT_START
-
-
-def test_gradient_ends_at_the_end_colour() -> None:
-    """Asserts the rightmost character actually reaches the gradient's end colour."""
-    rendered = gradient_line("shipwright")
-
-    assert str(rendered.spans[-1].style) == GRADIENT_END
-
-
-def test_single_character_line_does_not_divide_by_zero() -> None:
-    """Asserts a one-character line renders instead of dividing by zero."""
-    rendered = gradient_line("s")
-
-    assert rendered.plain == "s"
-    assert str(rendered.spans[0].style) == GRADIENT_START
-
-
-def test_empty_line_renders_nothing() -> None:
-    """Asserts an empty line renders no spans rather than raising."""
-    rendered = gradient_line("")
-
-    assert rendered.plain == ""
-    assert rendered.spans == []
-
-
-def test_ratio_is_clamped() -> None:
-    """Asserts a ratio beyond either end still yields an endpoint colour."""
-    assert blend(GRADIENT_START, GRADIENT_END, -2.0) == GRADIENT_START
-    assert blend(GRADIENT_START, GRADIENT_END, 5.0) == GRADIENT_END
-    assert _ratio_at(0, 1) == 0.0
 
 
 def test_wordmark_spells_the_project_name() -> None:
@@ -114,6 +35,12 @@ def test_wordmark_spells_the_project_name() -> None:
             assert sliced == BLOCK_FONT[letter][row], (letter, row)
 
 
+def test_project_name_is_upper_case() -> None:
+    """Asserts the wordmark is drawn in capitals, as the boot screen expects."""
+    assert PROJECT_NAME.isupper()
+    assert set(PROJECT_NAME) <= set(BLOCK_FONT)
+
+
 def test_every_row_is_the_same_width() -> None:
     """Asserts every rendered row is the same width so the block stays rectangular."""
     widths = {len(row) for row in WORDMARK_LINES}
@@ -125,3 +52,27 @@ def test_every_row_is_the_same_width() -> None:
 def test_render_word_handles_a_single_letter() -> None:
     """Asserts rendering one letter reproduces that letter's glyph exactly."""
     assert render_word("T") == BLOCK_FONT["T"]
+
+
+def test_wordmark_uses_the_brand_blue() -> None:
+    """Asserts the wordmark is drawn in the brand blue and nothing else."""
+    wordmark = Wordmark(palette=DARK)
+
+    assert wordmark.style_for_palette() == BRAND_BLUE
+    assert BRAND_BLUE == "#2f81f7"
+
+    styles = {str(span.style) for span in wordmark.render().spans}
+    assert styles <= {BRAND_BLUE, ""}
+
+
+def test_monochrome_terminal_gets_no_colour() -> None:
+    """Asserts a terminal without colour is handed no style at all."""
+    assert Wordmark(palette=MONOCHROME).style_for_palette() == ""
+
+
+def test_render_covers_every_line() -> None:
+    """Asserts the rendered block contains each row of the wordmark."""
+    block = Wordmark(palette=DARK).render().plain
+
+    for line in WORDMARK_LINES:
+        assert line in block
