@@ -6,7 +6,7 @@ Contains:
     build_parser(): builds the CLI argument parser
     _run_headless(): runs the loop for CI output
     _run_interactive(): runs the loop with live output
-    main(): runs one agent task from the command line
+    main(): runs one agent task, or opens the terminal interface
     _format_step(): renders one step as a single line
     _shorten(): trims a long argument value for display
     _emit_json_step(): prints one step as a JSON line
@@ -55,6 +55,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-cost", type=float, default=5.0, help="cost ceiling per run in USD")
     parser.add_argument("--resume", metavar="TRANSCRIPT", help="resume from a saved transcript")
     parser.add_argument("--plan-mode", action="store_true", help="plan first, then execute")
+    parser.add_argument(
+        "--tui",
+        action="store_true",
+        help="open the interactive terminal interface instead of running once",
+    )
     parser.add_argument(
         "--provider",
         choices=[p.value for p in Provider],
@@ -128,6 +133,10 @@ def main(argv: list[str] | None = None) -> int:
         exit_code: Process exit status.
     """
     args = build_parser().parse_args(argv)
+    if args.tui:
+        from tui.__main__ import main as open_tui
+
+        return open_tui(["--repo", args.repo, "--provider", args.provider])
     if not args.task and not args.issue_url:
         print("one of --task or --issue-url is required", file=sys.stderr)
         return EXIT_INFRA
