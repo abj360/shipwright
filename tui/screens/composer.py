@@ -64,7 +64,7 @@ class Composer(Static):
         self.repo_map: RepoMap | None = repo_map
         self.is_busy = False
         self.pending: list[str] = []
-        self._outlines_are_stale = True
+        self._outlines_are_stale: bool = True
 
     def prompt_text(self) -> str:
         """Returns the placeholder matching the current run state.
