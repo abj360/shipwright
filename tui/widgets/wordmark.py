@@ -49,7 +49,8 @@ def to_hex(channels: tuple[int, int, int]) -> str:
     Returns:
         color: Colour written as #rrggbb.
     """
-    return "#{:02x}{:02x}{:02x}".format(*channels)
+    red, green, blue = channels
+    return f"#{red:02x}{green:02x}{blue:02x}"
 
 
 def blend(start: str, end: str, ratio: float) -> str:
