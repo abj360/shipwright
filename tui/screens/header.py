@@ -11,6 +11,7 @@ Contains:
     current_branch(): reads the checked-out branch without shelling out
     format_checkout_name(): renders the checkout path for the bar
     NO_SPEND_LABEL: cost field shown before anything has been spent
+    UNKNOWN_PROVIDER: provider label used before a client has been built
     OVER_BUDGET_MARKER: appended once spend passes the tracker's warn threshold
     _is_over_budget(): whether spend has passed the tracker's warn threshold
     format_cost(): renders spend and token counts for the bar
@@ -36,6 +37,7 @@ DETACHED_LABEL = "detached"
 NO_BRANCH_LABEL = "no branch"
 HEAD_REF_PREFIX = "ref: refs/heads/"
 NO_SPEND_LABEL = "$0.0000"
+UNKNOWN_PROVIDER = "unknown"
 OVER_BUDGET_MARKER = " (over budget)"
 
 
@@ -158,7 +160,7 @@ class HeaderBar(Static):
         tokens: Tokens consumed so far in the run.
     """
 
-    client_status: reactive[ClientStatus] = reactive(ClientStatus("unknown"))
+    client_status: reactive[ClientStatus] = reactive(ClientStatus(UNKNOWN_PROVIDER))
 
     def __init__(
         self,
