@@ -100,6 +100,7 @@ class Composer(Static):
         instruction = text.strip()
         if not instruction:
             return ""
+
         self._refresh_outlines()
         if self.is_busy:
             self.pending.append(instruction)
