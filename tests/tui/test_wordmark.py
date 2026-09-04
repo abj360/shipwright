@@ -10,6 +10,8 @@ Contains:
     test_gradient_starts_at_the_start_colour(): the first column is the start colour
     test_gradient_ends_at_the_end_colour(): the last column reaches the end colour
     test_single_character_line_does_not_divide_by_zero(): a 1-wide line renders
+    test_empty_line_renders_nothing(): a blank line produces no spans
+    test_ratio_is_clamped(): a ratio outside 0..1 does not escape the gradient
 """
 
 from tui.widgets.wordmark import (
@@ -17,6 +19,7 @@ from tui.widgets.wordmark import (
     GRADIENT_START,
     WORDMARK_LINES,
     Wordmark,
+    _ratio_at,
     blend,
     gradient_line,
     parse_hex,
@@ -76,3 +79,18 @@ def test_single_character_line_does_not_divide_by_zero() -> None:
 
     assert rendered.plain == "s"
     assert str(rendered.spans[0].style) == GRADIENT_START
+
+
+def test_empty_line_renders_nothing() -> None:
+    """Asserts an empty line renders no spans rather than raising."""
+    rendered = gradient_line("")
+
+    assert rendered.plain == ""
+    assert rendered.spans == []
+
+
+def test_ratio_is_clamped() -> None:
+    """Asserts a ratio beyond either end still yields an endpoint colour."""
+    assert blend(GRADIENT_START, GRADIENT_END, -2.0) == GRADIENT_START
+    assert blend(GRADIENT_START, GRADIENT_END, 5.0) == GRADIENT_END
+    assert _ratio_at(0, 1) == 0.0
