@@ -11,6 +11,7 @@ Contains:
     test_collapsing_is_idempotent(): a second pass folds nothing new
     test_keep_expanded_zero_folds_everything(): every finished turn can fold
     test_empty_timeline_collapses_nothing(): no turns is not an error
+    test_keep_more_than_exists_collapses_nothing(): an oversized keep is safe
 """
 
 import pytest
@@ -112,3 +113,11 @@ def test_starting_a_turn_collapses_the_previous_one() -> None:
 def test_empty_timeline_collapses_nothing() -> None:
     """Asserts collapsing an empty timeline is a no-op rather than an error."""
     assert collapse_completed_turns([], keep_expanded=1) == 0
+
+
+def test_keep_more_than_exists_collapses_nothing() -> None:
+    """Asserts keeping more turns open than exist folds nothing away."""
+    turns = [_finished("one")]
+
+    assert collapse_completed_turns(turns, keep_expanded=10) == 0
+    assert turns[0].is_collapsed is False
