@@ -134,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     """
     args = build_parser().parse_args(argv)
     if args.tui:
+        # Imported lazily so a headless CI run never pays for the Textual import.
         from tui.__main__ import main as open_tui
 
         return open_tui(["--repo", args.repo, "--provider", args.provider])
