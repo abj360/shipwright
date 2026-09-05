@@ -6,10 +6,14 @@ Contains:
     ConnectionState: whether the gateway is reachable and healthy
     DOT_GLYPH: the character the indicator draws
     HEALTH_PATH: gateway endpoint the indicator polls
+    STREAM_PATH_TEMPLATE: websocket path carrying one run's live output
+    WS_SCHEMES: how an http gateway root maps onto a websocket root
     HEALTH_TIMEOUT_S: how long a probe waits before giving up
     HealthProbe: returns the status code GET /health answered with
     health_url(): builds the health endpoint for one gateway root
     probe_health(): resolves one health probe into a connection state
+    stream_url(): builds the run-output websocket URL for one run
+    state_for_stream(): maps a stream lifecycle event onto a connection state
     ConnectionDot: indicator widget reflecting the gateway's health
     ConnectionDot.color_for(): the colour one state draws in
     ConnectionDot.watch_state(): repaints the dot when the state changes
@@ -29,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 DOT_GLYPH = "●"
 HEALTH_PATH = "/health"
+STREAM_PATH_TEMPLATE = "/runs/{run_id}/stream"
+WS_SCHEMES = {"http": "ws", "https": "wss"}
 HEALTH_TIMEOUT_S = 2.0
 HEALTHY_STATUS = 200
 
@@ -134,3 +140,38 @@ class ConnectionDot(Static):
         # An empty token means a monochrome terminal: leave the colour unset
         # rather than writing an empty string Textual cannot parse.
         self.styles.color = self.color_for(state) or None
+
+
+def stream_url(base_url: str, run_id: str) -> str:
+    """Builds the websocket URL carrying one run's live output.
+
+    The gateway serves the stream on the same host and port as the REST API,
+    so the root is reused and only the scheme is swapped.
+
+    Args:
+        base_url: Root URL of the gateway, as an http or https address.
+        run_id: Run whose output stream is wanted.
+
+    Returns:
+        url: Websocket URL for that run's output stream.
+    """
+    root = base_url.rstrip("/")
+    scheme, separator, remainder = root.partition("://")
+    if separator:
+        root = f"{WS_SCHEMES.get(scheme, scheme)}://{remainder}"
+    return root + STREAM_PATH_TEMPLATE.format(run_id=run_id)
+
+
+def state_for_stream(is_open: bool, had_error: bool) -> ConnectionState:
+    """Maps a stream's lifecycle onto the state the indicator should show.
+
+    Args:
+        is_open: Whether the websocket is currently connected.
+        had_error: Whether the stream reported an error or dropped.
+
+    Returns:
+        state: Red on error, green while open, blue while still connecting.
+    """
+    if had_error:
+        return ConnectionState.UNREACHABLE
+    return ConnectionState.HEALTHY if is_open else ConnectionState.CONNECTING
