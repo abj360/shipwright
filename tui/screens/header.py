@@ -32,7 +32,7 @@ from textual.widgets import Label, Static
 
 from agent.cost_tracker import WARN_THRESHOLD, CostTracker
 
-SEPARATOR = "  •  "
+SEPARATOR = "  │  "
 DETACHED_LABEL = "detached"
 NO_BRANCH_LABEL = "no branch"
 HEAD_REF_PREFIX = "ref: refs/heads/"
@@ -184,7 +184,6 @@ class HeaderBar(Static):
         # Assigning the reactive fires its watcher, so every field it reads
         # must already be set by this point.
         self.client_status = ClientStatus(provider, model)
-        self.tokens: int = 0
 
     def render_line_text(self) -> str:
         """Renders the bar's current contents as one line.
