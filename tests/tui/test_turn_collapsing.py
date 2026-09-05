@@ -12,6 +12,7 @@ Contains:
     test_keep_expanded_zero_folds_everything(): every finished turn can fold
     test_empty_timeline_collapses_nothing(): no turns is not an error
     test_keep_more_than_exists_collapses_nothing(): an oversized keep is safe
+    test_unfinished_newest_turn_blocks_nothing(): older turns still fold
 """
 
 import pytest
@@ -121,3 +122,13 @@ def test_keep_more_than_exists_collapses_nothing() -> None:
 
     assert collapse_completed_turns(turns, keep_expanded=10) == 0
     assert turns[0].is_collapsed is False
+
+
+def test_unfinished_newest_turn_blocks_nothing() -> None:
+    """Asserts a live newest turn does not stop older finished ones folding."""
+    turns = [_finished("one"), _finished("two"), _running("three")]
+
+    collapsed = collapse_completed_turns(turns, keep_expanded=1)
+
+    assert collapsed == 2
+    assert turns[2].is_collapsed is False
