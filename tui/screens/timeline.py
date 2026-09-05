@@ -74,7 +74,7 @@ class Turn:
         """
         count = self.step_count()
         plural = "step" if count == 1 else "steps"
-        parts = [f"{self.instruction} — {count} {plural}"]
+        parts: list[str] = [f"{self.instruction} — {count} {plural}"]
         failures = self.failed_step_count()
         if failures:
             parts.append(f"{failures} failed")
