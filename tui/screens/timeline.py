@@ -145,6 +145,7 @@ class Timeline(VerticalScroll):
         turn = Turn(instruction=instruction)
         self.turns.append(turn)
         collapse_completed_turns(self.turns)
+
         return turn
 
     def record_step(self, row: StepRow) -> None:
