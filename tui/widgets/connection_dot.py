@@ -155,7 +155,9 @@ def stream_url(base_url: str, run_id: str) -> str:
     Returns:
         url: Websocket URL for that run's output stream.
     """
-    root = base_url.rstrip("/")
+    root = base_url.strip().rstrip("/")
+    if not root:
+        return STREAM_PATH_TEMPLATE.format(run_id=run_id)
     scheme, separator, remainder = root.partition("://")
     if separator:
         root = f"{WS_SCHEMES.get(scheme, scheme)}://{remainder}"

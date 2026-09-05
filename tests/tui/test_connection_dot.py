@@ -12,6 +12,7 @@ Contains:
     test_timeout_is_unreachable(): a slow gateway is not shown as healthy
     test_stream_url_swaps_the_scheme(): http becomes ws, https becomes wss
     test_stream_state_mapping(): open is green, errored is red, neither is blue
+    test_stream_url_without_a_root(): a blank gateway yields just the path
 """
 
 import httpx
@@ -88,3 +89,8 @@ def test_stream_state_mapping() -> None:
     assert state_for_stream(is_open=True, had_error=False) is ConnectionState.HEALTHY
     assert state_for_stream(is_open=True, had_error=True) is ConnectionState.UNREACHABLE
     assert state_for_stream(is_open=False, had_error=False) is ConnectionState.CONNECTING
+
+
+def test_stream_url_without_a_root() -> None:
+    """Asserts a blank gateway root yields a bare path rather than a broken URL."""
+    assert stream_url("  ", "abc") == "/runs/abc/stream"
