@@ -10,6 +10,7 @@ Contains:
     test_running_turns_are_never_collapsed(): an in-flight turn stays open
     test_collapsing_is_idempotent(): a second pass folds nothing new
     test_keep_expanded_zero_folds_everything(): every finished turn can fold
+    test_empty_timeline_collapses_nothing(): no turns is not an error
 """
 
 import pytest
@@ -106,3 +107,8 @@ def test_starting_a_turn_collapses_the_previous_one() -> None:
 
     assert timeline.turns[0].is_collapsed is True
     assert timeline.turns[1].is_collapsed is False
+
+
+def test_empty_timeline_collapses_nothing() -> None:
+    """Asserts collapsing an empty timeline is a no-op rather than an error."""
+    assert collapse_completed_turns([], keep_expanded=1) == 0
