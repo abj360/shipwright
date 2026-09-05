@@ -74,11 +74,11 @@ class Turn:
         """
         count = self.step_count()
         plural = "step" if count == 1 else "steps"
-        line = f"{self.instruction} — {count} {plural}"
+        parts = [f"{self.instruction} — {count} {plural}"]
         failures = self.failed_step_count()
         if failures:
-            line += f", {failures} failed"
-        return line
+            parts.append(f"{failures} failed")
+        return ", ".join(parts)
 
 
 def collapse_completed_turns(turns: list[Turn], keep_expanded: int = KEEP_EXPANDED) -> int:
