@@ -4,6 +4,7 @@ __main__.py --- console entrypoint that opens the terminal interface
 
 Contains:
     build_parser(): builds the argument parser for the ship command
+    provider_choices(): the provider names the entrypoint accepts
     build_app(): builds the application from parsed arguments
     main(): opens the terminal interface and returns its exit status
 """
@@ -20,6 +21,15 @@ from tui.app import DEFAULT_GATEWAY_URL, ShipwrightApp
 EXIT_OK = 0
 
 
+def provider_choices() -> list[str]:
+    """Lists the provider names the entrypoint accepts.
+
+    Returns:
+        choices: Provider values, matching the ones the CLI accepts.
+    """
+    return [provider.value for provider in Provider]
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Builds the argument parser for the ship command.
 
@@ -34,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", default=".", help="checkout the agent works on")
     parser.add_argument(
         "--provider",
-        choices=[provider.value for provider in Provider],
+        choices=provider_choices(),
         default=Provider.ANTHROPIC.value,
         help="model provider to run the loop with",
     )
