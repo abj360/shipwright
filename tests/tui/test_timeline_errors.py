@@ -7,6 +7,7 @@ Contains:
     test_clean_turn_reports_no_failures(): a good turn says nothing about errors
     test_failed_steps_are_counted(): the collapsed summary counts failures
     test_summary_mentions_failures(): a collapsed turn surfaces that it failed
+    test_empty_turn_reports_no_failures(): a turn with no steps counts zero
 """
 
 from tui.screens.timeline import Timeline
@@ -59,3 +60,11 @@ def test_summary_mentions_failures() -> None:
     timeline.record_step(_bad_row())
 
     assert "1 failed" in timeline.turns[-1].summary_line()
+
+
+def test_empty_turn_reports_no_failures() -> None:
+    """Asserts a turn that ran no steps reports no failures rather than erroring."""
+    timeline = Timeline()
+    timeline.start_turn("nothing to do")
+
+    assert timeline.turns[-1].failed_step_count() == 0
