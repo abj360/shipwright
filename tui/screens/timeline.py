@@ -8,6 +8,7 @@ Contains:
     Turn.step_count(): how many steps the turn ran
     Turn.summary_line(): the one-line summary a collapsed turn shows
     Turn.failed_step_count(): how many of the turn's steps errored
+    _should_collapse(): whether one turn is eligible to be folded
     collapse_completed_turns(): closes finished turns, keeping the newest open
     Timeline: scrollable history of turns
     Timeline.start_turn(): opens a new turn for one instruction
@@ -81,6 +82,20 @@ class Turn:
         return ", ".join(parts)
 
 
+def _should_collapse(turn: Turn, index: int, cutoff: int) -> bool:
+    """Reports whether one turn is eligible to be folded away.
+
+    Args:
+        turn: Turn being considered.
+        index: Its position in the timeline.
+        cutoff: Index at and beyond which turns stay open.
+
+    Returns:
+        should_collapse: True when the turn is old, finished, and still open.
+    """
+    return index < cutoff and turn.is_finished and not turn.is_collapsed
+
+
 def collapse_completed_turns(turns: list[Turn], keep_expanded: int = KEEP_EXPANDED) -> int:
     """Folds finished turns to their summary, leaving the newest ones open.
 
@@ -99,7 +114,7 @@ def collapse_completed_turns(turns: list[Turn], keep_expanded: int = KEEP_EXPAND
     collapsed = 0
     cutoff = len(turns) - keep_expanded
     for index, turn in enumerate(turns):
-        if index >= cutoff or not turn.is_finished or turn.is_collapsed:
+        if not _should_collapse(turn, index, cutoff):
             continue
         turn.is_collapsed = True
         collapsed += 1
