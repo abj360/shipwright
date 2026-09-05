@@ -111,8 +111,8 @@ def collapse_completed_turns(turns: list[Turn], keep_expanded: int = KEEP_EXPAND
     """
     if keep_expanded < 0:
         raise ValueError("keep_expanded must not be negative")
-    collapsed = 0
-    cutoff = len(turns) - keep_expanded
+    collapsed: int = 0
+    cutoff: int = len(turns) - keep_expanded
     for index, turn in enumerate(turns):
         if not _should_collapse(turn, index, cutoff):
             continue
