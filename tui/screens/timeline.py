@@ -7,6 +7,7 @@ Contains:
     Turn: one instruction and the steps it produced
     Turn.step_count(): how many steps the turn ran
     Turn.summary_line(): the one-line summary a collapsed turn shows
+    Turn.failed_step_count(): how many of the turn's steps errored
     collapse_completed_turns(): closes finished turns, keeping the newest open
     Timeline: scrollable history of turns
     Timeline.start_turn(): opens a new turn for one instruction
@@ -57,6 +58,14 @@ class Turn:
         """
         return len(self.steps)
 
+    def failed_step_count(self) -> int:
+        """Counts how many of the turn's steps returned an error.
+
+        Returns:
+            count: Number of failed activity rows in the turn.
+        """
+        return sum(1 for step in self.steps if step.has_failed())
+
     def summary_line(self) -> str:
         """Renders the one-line summary a collapsed turn shows.
 
@@ -65,7 +74,11 @@ class Turn:
         """
         count = self.step_count()
         plural = "step" if count == 1 else "steps"
-        return f"{self.instruction} — {count} {plural}"
+        line = f"{self.instruction} — {count} {plural}"
+        failures = self.failed_step_count()
+        if failures:
+            line += f", {failures} failed"
+        return line
 
 
 def collapse_completed_turns(turns: list[Turn], keep_expanded: int = KEEP_EXPANDED) -> int:
