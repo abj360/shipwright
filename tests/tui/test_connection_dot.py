@@ -10,6 +10,8 @@ Contains:
     test_colours_are_distinct(): the three states are visually distinguishable
     test_health_url_is_built_once(): a trailing slash does not double up
     test_timeout_is_unreachable(): a slow gateway is not shown as healthy
+    test_stream_url_swaps_the_scheme(): http becomes ws, https becomes wss
+    test_stream_state_mapping(): open is green, errored is red, neither is blue
 """
 
 import httpx
@@ -20,6 +22,8 @@ from tui.widgets.connection_dot import (
     ConnectionState,
     health_url,
     probe_health,
+    state_for_stream,
+    stream_url,
 )
 
 
@@ -71,3 +75,16 @@ def test_timeout_is_unreachable() -> None:
         raise httpx.ReadTimeout("too slow")
 
     assert probe_health("http://localhost:4000", stall) is ConnectionState.UNREACHABLE
+
+
+def test_stream_url_swaps_the_scheme() -> None:
+    """Asserts the stream URL reuses the gateway host but as a websocket scheme."""
+    assert stream_url("http://localhost:4000", "abc") == "ws://localhost:4000/runs/abc/stream"
+    assert stream_url("https://gw.example/", "xyz") == "wss://gw.example/runs/xyz/stream"
+
+
+def test_stream_state_mapping() -> None:
+    """Asserts a live stream is green, a dropped one red, and a pending one blue."""
+    assert state_for_stream(is_open=True, had_error=False) is ConnectionState.HEALTHY
+    assert state_for_stream(is_open=True, had_error=True) is ConnectionState.UNREACHABLE
+    assert state_for_stream(is_open=False, had_error=False) is ConnectionState.CONNECTING
