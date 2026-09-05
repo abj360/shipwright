@@ -87,6 +87,7 @@ def probe_health(base_url: str, probe: HealthProbe | None = None) -> ConnectionS
         state: Connection state the indicator should show.
     """
     if not base_url.strip():
+        logger.warning("no gateway URL configured; reporting unreachable")
         return ConnectionState.UNREACHABLE
     caller: HealthProbe = _http_probe if probe is None else probe
     try:
