@@ -191,7 +191,7 @@ class StepRow(Static):
         Returns:
             rendered: The row as coloured text ready for the timeline.
         """
-        block = Text()
+        block: Text = Text()
         block.append(self.summary_line(), style=self.highlight_color())
         for line in self.detail_lines():
             block.append("\n    ")
