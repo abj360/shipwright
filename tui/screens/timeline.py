@@ -22,6 +22,7 @@ from textual.containers import VerticalScroll
 
 from tui.widgets.step_row import StepRow
 
+# One turn stays open: the one the operator is actually watching work.
 KEEP_EXPANDED = 1
 NO_ANSWER_YET = ""
 
