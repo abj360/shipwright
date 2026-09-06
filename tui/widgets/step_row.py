@@ -196,8 +196,7 @@ class StepRow(Static):
         block: Text = Text()
         block.append(self.summary_line(), style=self.highlight_color())
         for line in self.detail_lines():
-            block.append(f"\n{DETAIL_INDENT}")
-            block.append(line)
+            block.append(f"\n{DETAIL_INDENT}{line}")
         return block
 
     def action_toggle(self) -> None:
