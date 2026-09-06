@@ -18,6 +18,7 @@ from tui.screens.composer import Composer
 from tui.screens.footer import FooterBar
 from tui.screens.header import HeaderBar
 from tui.screens.timeline import Timeline
+from tui.widgets.wordmark import GLYPH_HEIGHT
 
 EXPECTED_ORDER = ["HeaderBar", "Timeline", "Composer", "FooterBar"]
 
@@ -60,7 +61,7 @@ def test_timeline_takes_the_remaining_height(tmp_path: Path) -> None:
     timeline_height, header_height, header_y = asyncio.run(_heights())
 
     assert timeline_height > header_height
-    assert header_y == 0
+    assert header_y == GLYPH_HEIGHT
 
 
 def test_header_sits_above_the_composer(tmp_path: Path) -> None:

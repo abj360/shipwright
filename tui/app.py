@@ -7,7 +7,7 @@ Contains:
     REGION_IDS: element ids for the four regions, in composition order
     ShipwrightApp: the terminal interface for one checkout
     ShipwrightApp.get_css_variables(): feeds the palette into Textual's tokens
-    ShipwrightApp.compose(): lays out header, timeline, composer, and footer
+    ShipwrightApp.compose(): lays out wordmark, header, timeline, composer, footer
     ShipwrightApp.needs_setup(): whether a provider credential is missing
     ShipwrightApp.register_commands(): binds each slash command to its handler
     ShipwrightApp.on_mount(): wires the slash commands once mounted
@@ -32,6 +32,7 @@ from tui.theme import css_variables, palette_for
 from tui.transcript import resume
 from tui.widgets.connection_dot import ConnectionDot
 from tui.widgets.setup_panel import SetupPanel, detect_missing
+from tui.widgets.wordmark import Wordmark
 
 DEFAULT_GATEWAY_URL = "http://localhost:4000"
 # The four regions, in the order they are composed down the screen.
@@ -54,6 +55,9 @@ class ShipwrightApp(App[None]):
     Screen {
         layout: vertical;
         overflow: hidden;
+    }
+    #region-wordmark {
+        height: 5;
     }
     #region-header {
         height: 1;
@@ -122,6 +126,10 @@ class ShipwrightApp(App[None]):
 
     def compose(self) -> ComposeResult:
         """Lays out the header, timeline, composer, and footer."""
+        wordmark = Wordmark()
+        wordmark.id = "region-wordmark"
+        yield wordmark
+
         header = HeaderBar(self.repo_path, self.provider, self.cost_tracker)
         header.id = REGION_IDS[0]
         yield header
@@ -143,7 +151,8 @@ class ShipwrightApp(App[None]):
         composer.id = REGION_IDS[2]
         yield composer
 
-        footer = FooterBar(self.BINDINGS)
+        bindings = [binding for binding in self.BINDINGS if isinstance(binding, Binding)]
+        footer = FooterBar(bindings)
         footer.id = REGION_IDS[3]
         yield footer
 
