@@ -8,6 +8,8 @@ Contains:
     test_collapsed_row_draws_only_its_summary(): output stays hidden
     test_expanded_row_draws_its_output(): opening reveals the observation
     test_failed_row_is_styled(): a failed row carries the error colour
+    test_output_lines_are_indented(): revealed output is indented under the row
+    test_row_with_no_output_draws_one_line(): a silent tool draws only a summary
 """
 
 import asyncio
@@ -15,7 +17,7 @@ import asyncio
 from textual.app import App, ComposeResult
 
 from tui.theme import DARK
-from tui.widgets.step_row import StepRow
+from tui.widgets.step_row import DETAIL_INDENT, StepRow
 
 
 class RowHarness(App[None]):
@@ -84,3 +86,19 @@ def test_failed_row_is_styled() -> None:
     styles = {str(span.style) for span in row.render().spans}
 
     assert DARK.status_error in styles
+
+
+def test_output_lines_are_indented() -> None:
+    """Asserts revealed output is indented so it reads as belonging to the row."""
+    row = StepRow("read_file", {"path": "a.py"}, "line one", palette=DARK)
+    row.is_expanded = True
+
+    assert f"\n{DETAIL_INDENT}line one" in row.render().plain
+
+
+def test_row_with_no_output_draws_one_line() -> None:
+    """Asserts a tool that produced no output draws just its summary line."""
+    row = StepRow("git_diff", {}, "", palette=DARK)
+    row.is_expanded = True
+
+    assert "\n" not in row.render().plain
