@@ -18,6 +18,7 @@ Contains:
     StepRow.observation_lines(): the observation split into lines
     StepRow.is_truncated(): whether the observation is longer than the preview
     StepRow.action_show_full_output(): reveals the rest of a long observation
+    DETAIL_INDENT: how far a revealed output line is indented
     StepRow.render(): draws the summary and any revealed output
     StepRow.action_toggle(): opens or closes the row
     StepRow.watch_is_expanded(): redraws only this row when it opens
@@ -35,6 +36,7 @@ from tui.theme import Palette, palette_for
 
 PREVIEW_LINES = 12
 MORE_OUTPUT_TEMPLATE = "… show full output ({remaining} more lines)"
+DETAIL_INDENT = "    "
 WARNING_PREFIX = "!"
 COLLAPSED_MARKER = "▸"
 EXPANDED_MARKER = "▾"
@@ -194,7 +196,7 @@ class StepRow(Static):
         block: Text = Text()
         block.append(self.summary_line(), style=self.highlight_color())
         for line in self.detail_lines():
-            block.append("\n    ")
+            block.append(f"\n{DETAIL_INDENT}")
             block.append(line)
         return block
 
