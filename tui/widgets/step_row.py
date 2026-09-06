@@ -18,9 +18,12 @@ Contains:
     StepRow.observation_lines(): the observation split into lines
     StepRow.is_truncated(): whether the observation is longer than the preview
     StepRow.action_show_full_output(): reveals the rest of a long observation
+    StepRow.render(): draws the summary and any revealed output
     StepRow.action_toggle(): opens or closes the row
+    StepRow.watch_is_expanded(): redraws only this row when it opens
 """
 
+from rich.text import Text
 from textual.binding import Binding
 from textual.reactive import reactive
 from textual.widgets import Static
@@ -182,6 +185,28 @@ class StepRow(Static):
         """Reveals the rest of a long observation."""
         self.shows_full_output = True
 
+    def render(self) -> Text:
+        """Draws the summary line and, when open, the output beneath it.
+
+        Returns:
+            rendered: The row as coloured text ready for the timeline.
+        """
+        block = Text()
+        block.append(self.summary_line(), style=self.highlight_color())
+        for line in self.detail_lines():
+            block.append("\n    ")
+            block.append(line)
+        return block
+
     def action_toggle(self) -> None:
         """Opens the row when it is closed, and closes it when it is open."""
         self.is_expanded = not self.is_expanded
+
+    def watch_is_expanded(self, is_expanded: bool) -> None:
+        """Redraws only this row when it opens or closes.
+
+        Args:
+            is_expanded: Whether the row is now showing its output.
+        """
+        if self.is_mounted:
+            self.refresh()
