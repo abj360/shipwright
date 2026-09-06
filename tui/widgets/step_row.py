@@ -20,7 +20,7 @@ Contains:
     StepRow.action_show_full_output(): reveals the rest of a long observation
     DETAIL_INDENT: how far a revealed output line is indented
     StepRow.render(): draws the summary and any revealed output
-    StepRow.action_toggle(): opens or closes the row
+    StepRow.action_toggle_step(): opens or closes the row
     StepRow.watch_is_expanded(): redraws only this row when it opens
 """
 
@@ -40,6 +40,7 @@ DETAIL_INDENT = "    "
 WARNING_PREFIX = "!"
 COLLAPSED_MARKER = "▸"
 EXPANDED_MARKER = "▾"
+# The arguments that name a step's subject, in the order they are preferred.
 TARGET_ARGS = ("path", "command", "selector")
 
 
@@ -85,7 +86,7 @@ class StepRow(Static):
     """
 
     BINDINGS = [
-        Binding("enter", "toggle", "Expand step"),
+        Binding("enter", "toggle_step", "Expand step"),
         Binding("o", "show_full_output", "Full output"),
     ]
 
@@ -199,7 +200,7 @@ class StepRow(Static):
             block.append(f"\n{DETAIL_INDENT}{line}")
         return block
 
-    def action_toggle(self) -> None:
+    def action_toggle_step(self) -> None:
         """Opens the row when it is closed, and closes it when it is open."""
         self.is_expanded = not self.is_expanded
 

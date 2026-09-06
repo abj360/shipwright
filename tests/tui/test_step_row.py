@@ -44,11 +44,11 @@ def test_toggle_opens_and_closes() -> None:
     """Asserts toggling reveals the output and then hides it again."""
     row = StepRow("read_file", {"path": "a.py"}, "line one\nline two")
 
-    row.action_toggle()
+    row.action_toggle_step()
     assert row.detail_lines() == ["line one", "line two"]
     assert row.summary_line().startswith(EXPANDED_MARKER)
 
-    row.action_toggle()
+    row.action_toggle_step()
     assert row.detail_lines() == []
 
 

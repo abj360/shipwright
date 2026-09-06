@@ -54,7 +54,7 @@ async def _mounted_text(row: StepRow, expand: bool) -> str:
     app = RowHarness(row)
     async with app.run_test() as pilot:
         if expand:
-            row.action_toggle()
+            row.action_toggle_step()
         await pilot.pause()
         return row.render().plain
 
