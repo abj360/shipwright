@@ -209,5 +209,6 @@ class StepRow(Static):
         Args:
             is_expanded: Whether the row is now showing its output.
         """
+        del is_expanded
         if self.is_mounted:
             self.refresh()
