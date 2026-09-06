@@ -63,7 +63,7 @@ def redact_transcript(
     Returns:
         cleaned: Transcript steps with every recognized credential removed.
     """
-    secrets = list(known_secrets)
+    secrets = [secret for secret in known_secrets if secret]
     cleaned: list[dict[str, Any]] = []
     for entry in entries:
         step = dict(entry)
