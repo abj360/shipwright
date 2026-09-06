@@ -8,9 +8,11 @@ Contains:
     test_surrounding_text_is_preserved(): redaction leaves other text intact
     test_openai_shaped_key_is_removed(): an OpenAI-shaped key is caught too
     test_empty_secret_is_ignored(): an empty registered value changes nothing
+    test_transcript_observation_is_scrubbed(): a key in an observation is removed
+    test_transcript_tool_args_are_scrubbed(): a key in tool arguments is removed
 """
 
-from tui.redaction import REDACTION_PLACEHOLDER, redact_secrets
+from tui.redaction import REDACTION_PLACEHOLDER, redact_secrets, redact_transcript
 
 ANTHROPIC_KEY = "sk-ant-api03-ZZm9QvW2ktLpR7xNs4Hb1TcUeY6gJd0A"
 
@@ -54,3 +56,22 @@ def test_empty_secret_is_ignored() -> None:
     cleaned = redact_secrets("nothing secret here", [""])
 
     assert cleaned == "nothing secret here"
+
+
+def test_transcript_observation_is_scrubbed() -> None:
+    """Asserts a credential inside a step observation never reaches the saved file."""
+    entries = [{"thought": "checking the key", "observation": f"env: {ANTHROPIC_KEY}"}]
+
+    cleaned = redact_transcript(entries, [ANTHROPIC_KEY])
+
+    assert ANTHROPIC_KEY not in cleaned[0]["observation"]
+    assert cleaned[0]["thought"] == "checking the key"
+
+
+def test_transcript_tool_args_are_scrubbed() -> None:
+    """Asserts a credential passed as a tool argument is removed as well."""
+    entries = [{"thought": "run it", "tool_args": {"command": f"export K={ANTHROPIC_KEY}"}}]
+
+    cleaned = redact_transcript(entries, [ANTHROPIC_KEY])
+
+    assert ANTHROPIC_KEY not in cleaned[0]["tool_args"]["command"]
