@@ -11,6 +11,7 @@ Contains:
     test_transcript_observation_is_scrubbed(): a key in an observation is removed
     test_transcript_tool_args_are_scrubbed(): a key in tool arguments is removed
     test_original_entries_are_not_mutated(): redaction copies rather than edits
+    test_non_string_fields_survive(): numeric fields pass through untouched
 """
 
 from tui.redaction import REDACTION_PLACEHOLDER, redact_secrets, redact_transcript
@@ -85,3 +86,13 @@ def test_original_entries_are_not_mutated() -> None:
     redact_transcript(entries, [ANTHROPIC_KEY])
 
     assert ANTHROPIC_KEY in entries[0]["thought"]
+
+
+def test_non_string_fields_survive() -> None:
+    """Asserts a non-string field is carried through instead of being stringified."""
+    entries = [{"index": 3, "thought": "", "tool_args": {"retries": 2}}]
+
+    cleaned = redact_transcript(entries)
+
+    assert cleaned[0]["index"] == 3
+    assert cleaned[0]["tool_args"]["retries"] == 2
