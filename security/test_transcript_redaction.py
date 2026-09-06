@@ -10,6 +10,7 @@ Contains:
     test_empty_secret_is_ignored(): an empty registered value changes nothing
     test_transcript_observation_is_scrubbed(): a key in an observation is removed
     test_transcript_tool_args_are_scrubbed(): a key in tool arguments is removed
+    test_original_entries_are_not_mutated(): redaction copies rather than edits
 """
 
 from tui.redaction import REDACTION_PLACEHOLDER, redact_secrets, redact_transcript
@@ -75,3 +76,12 @@ def test_transcript_tool_args_are_scrubbed() -> None:
     cleaned = redact_transcript(entries, [ANTHROPIC_KEY])
 
     assert ANTHROPIC_KEY not in cleaned[0]["tool_args"]["command"]
+
+
+def test_original_entries_are_not_mutated() -> None:
+    """Asserts redaction returns copies so the live transcript keeps working."""
+    entries = [{"thought": f"key {ANTHROPIC_KEY}", "observation": ""}]
+
+    redact_transcript(entries, [ANTHROPIC_KEY])
+
+    assert ANTHROPIC_KEY in entries[0]["thought"]
