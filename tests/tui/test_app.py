@@ -23,6 +23,7 @@ from tui.screens.composer import Composer
 from tui.screens.footer import FooterBar
 from tui.screens.header import HeaderBar
 from tui.screens.timeline import Timeline
+from tui.theme import DARK
 
 
 def _app(tmp_path: Path) -> ShipwrightApp:
@@ -34,7 +35,7 @@ def _app(tmp_path: Path) -> ShipwrightApp:
     Returns:
         app: Configured application instance.
     """
-    return ShipwrightApp(tmp_path, provider="anthropic")
+    return ShipwrightApp(tmp_path, provider="anthropic", palette=DARK)
 
 
 def test_four_regions_mount(tmp_path: Path) -> None:
@@ -116,9 +117,16 @@ def test_blank_line_starts_nothing(tmp_path: Path) -> None:
 
 
 def test_palette_reaches_textual_tokens(tmp_path: Path) -> None:
-    """Asserts the project palette is fed into Textual's own design tokens."""
-    from tui.theme import DARK
-
+    """Asserts the palette the app was given is fed into Textual's design tokens."""
     variables = _app(tmp_path).get_css_variables()
 
     assert variables["panel-border"] == DARK.panel_border
+
+
+def test_monochrome_palette_emits_no_tokens(tmp_path: Path) -> None:
+    """Asserts a colourless terminal falls back to Textual's own defaults."""
+    from tui.theme import MONOCHROME
+
+    app = ShipwrightApp(tmp_path, provider="anthropic", palette=MONOCHROME)
+
+    assert "panel-border" not in app.get_css_variables()

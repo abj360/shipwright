@@ -28,7 +28,7 @@ from tui.screens.composer import Composer
 from tui.screens.footer import FooterBar
 from tui.screens.header import HeaderBar
 from tui.screens.timeline import Timeline
-from tui.theme import css_variables, palette_for
+from tui.theme import Palette, css_variables, palette_for
 from tui.transcript import resume
 from tui.widgets.connection_dot import ConnectionDot
 from tui.widgets.setup_panel import SetupPanel, detect_missing
@@ -47,6 +47,7 @@ class ShipwrightApp(App[None]):
         provider: Provider answering the run's steps.
         gateway_url: Gateway the connection indicator polls.
         cost_tracker: Tracker the header's cost readout is drawn from.
+        palette: Colours the interface renders with.
         breaker: Ceilings the live /max-cost and /max-steps commands adjust.
         router: Slash-command router for the composer.
     """
@@ -91,6 +92,7 @@ class ShipwrightApp(App[None]):
         provider: str = Provider.ANTHROPIC.value,
         gateway_url: str = DEFAULT_GATEWAY_URL,
         cost_tracker: CostTracker | None = None,
+        palette: Palette | None = None,
     ) -> None:
         """Builds the interface for one checkout.
 
@@ -99,7 +101,11 @@ class ShipwrightApp(App[None]):
             provider: Provider answering the run's steps.
             gateway_url: Gateway the connection indicator polls.
             cost_tracker: Tracker the header's cost readout is drawn from.
+            palette: Colours to render with; detected from the terminal when None.
         """
+        # Textual resolves CSS variables inside App.__init__, so the palette has
+        # to exist before the base class is initialised.
+        self.palette: Palette = palette_for() if palette is None else palette
         super().__init__()
         self.repo_path: Path = repo_path
         self.provider: str = provider
@@ -111,10 +117,14 @@ class ShipwrightApp(App[None]):
     def get_css_variables(self) -> dict[str, str]:
         """Feeds the project palette into Textual's own design tokens.
 
+        The palette is resolved once when the app is built, not read from the
+        environment here: a test, or a CI run with no TERM, would otherwise get
+        a different theme than the one it asked for.
+
         Returns:
             variables: Textual's defaults overlaid with the project palette.
         """
-        return {**super().get_css_variables(), **css_variables(palette_for())}
+        return {**super().get_css_variables(), **css_variables(self.palette)}
 
     def needs_setup(self) -> bool:
         """Reports whether any provider credential is still missing.
