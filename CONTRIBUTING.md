@@ -47,11 +47,12 @@ pip install -e '.[dev]'          # python 3.12, pytest, ruff, mypy
 - Small, atomic commits. A commit does one logical thing and could be reverted
   cleanly on its own.
 - Every commit is authored and committed **as you** — your own configured
-  `user.name`/`user.email` matching your GitHub account. Never a tool's default
-  identity, never a bot. No `Co-Authored-By` trailers for tooling, and no
-  "Generated with …" footers — strip them if a tool ever appends one. AI
-  assistance is like an IDE: it may help write a change, but you review, edit,
-  test, and commit it as your own reviewed work.
+  `user.name`/`user.email` matching your GitHub account, never a tool's default
+  identity and never a bot. The point is traceability: a commit should lead back
+  to the person who reviewed and tested it.
+- Whatever tooling you used to get there — editors, generators, AI assistants —
+  is yours to mention or not. If it helps a reviewer understand the change, say
+  so in the PR description.
 
 ## Code standards
 
@@ -149,7 +150,7 @@ file for the exact layout.
       Args/Returns/Attributes filled in where relevant
 - [ ] No commented-out code, no restating-the-obvious comments
 - [ ] Tests added alongside the change, and they can actually fail
-- [ ] Commit authored and committed as you — no tool identity, no AI trailer
+- [ ] Commit authored and committed as you, not as a tool default or a bot
 - [ ] `docker compose up --build` still boots the whole stack cleanly
 - [ ] PR is small enough to review in one sitting
 
