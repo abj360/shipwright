@@ -128,6 +128,10 @@ exact layout.
 
 ## Testing
 
+- Widget and command tests live in `tests/tui` and drive the interface through
+  a headless Textual pilot, so they run in CI with no terminal attached. Keep
+  them independent of `TERM`: pass a palette explicitly rather than letting the
+  widget detect one.
 - Tests live next to what they test but never inside a build root: `tests/unit`
   and `tests/integration` mirror the Python source tree, and gateway tests live
   in `gateway/tests/` so `tsc -p tsconfig.json` never ships them in `dist/`.
@@ -160,6 +164,7 @@ exact layout.
 - [ ] Tests added alongside the change, and they can actually fail
 - [ ] Commit authored and committed as you, not as a tool default or a bot
 - [ ] `docker compose up --build` still boots the whole stack cleanly
+- [ ] `ship` still opens, and `pytest tests/tui` passes with no `TERM` set
 - [ ] PR is small enough to review in one sitting
 
 ## Review and merging
