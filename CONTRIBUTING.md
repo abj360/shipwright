@@ -7,24 +7,32 @@ enforce these — reading them once saves everyone a round trip.
 ## Getting started
 
 1. Fork the repo and clone your fork.
-2. `cp .env.example .env` and fill in `ANTHROPIC_API_KEY` and `GITHUB_TOKEN`.
+2. `cp .env.example .env` and fill in a provider key (`ANTHROPIC_API_KEY` or
+   `OPENAI_API_KEY`) plus `GITHUB_TOKEN`. If you skip the provider key, the
+   terminal interface prompts for one on first run and writes it to `.env`.
 3. Boot the whole stack with one command:
 
    ```bash
    docker compose -f docker/docker-compose.yml up --build
    ```
 
-   The gateway is on `:4000`, the UI on `:5173`. The agent container mounts the
-   host's `/var/run/docker.sock` to launch sibling sandboxes, so Docker (with
-   `runsc` registered) is a hard dependency, not a convenience.
+   The gateway is on `:4000`. The agent container mounts the host's
+   `/var/run/docker.sock` to launch sibling sandboxes, so Docker (with `runsc`
+   registered) is a hard dependency, not a convenience.
+
+4. Open the interface with `ship` (or `docker compose exec agent ship` against
+   the containerized stack). There is no web UI and no browser in the loop —
+   `tui/` is the front end.
 
 ### Local tooling (optional, for fast lint/test loops)
 
 ```bash
-pip install -e '.[dev]'          # python 3.12, pytest, ruff, mypy
+pip install -e '.[dev]'          # python 3.12, textual, pytest, ruff, mypy
 (cd gateway && npm install)      # node 20
-(cd ui && npm install)
 ```
+
+`pip install -e .` also puts `ship` on your PATH, which is the fastest way to
+exercise a change to `tui/`.
 
 ## How work flows here
 
@@ -72,9 +80,9 @@ Every Python file starts with the shebang, then a structured module docstring
 (`<filename> --- <role>`, a blank line, then `Contains:` listing what the file
 exposes), then imports ordered stdlib → third-party → local, alphabetized.
 TypeScript/JavaScript files follow the same shape with a JSDoc header block,
-and no shebang: vite and vitest both wrap a module before evaluating it, and a
-hashbang that is no longer on line one is a syntax error. Look at any existing
-file for the exact layout.
+and no shebang: vitest wraps a module before evaluating it, and a hashbang that
+is no longer on line one is a syntax error. Look at any existing file for the
+exact layout.
 
 ### Docstrings
 
