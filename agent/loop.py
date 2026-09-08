@@ -16,6 +16,7 @@ Contains:
     AgentLoop._plan_approved(): asks the gate whether a plan may execute
     AgentLoop._run_plan_mode(): executes planner steps directly
     AgentLoop.transcript(): read-only view of steps taken
+    AgentLoop.context_usage(): how full the model's working context is
     AgentLoop._trim_transcript(): drops oldest observations over budget
     AgentLoop._build_system_prompt(): composes the steering prompt
     AgentLoop.resume(): seeds steps from an interrupted run
@@ -260,6 +261,8 @@ class AgentConfig:
         mode: Execution mode: "react" for free-form, "plan_execute" for planned runs.
         planner: Planner used when mode is "plan_execute".
         plan_gate: Asked to approve a plan before any of its steps run.
+        escape_gate: Asked before a command may reach outside the checkout.
+        history: Earlier turns of the session, replayed before this task.
         breaker: Iteration and spend ceilings that halt a runaway run.
         cost_tracker: Optional tracker accumulating the run's model spend.
         require_tool_before_final: Refuse a final answer from a run that has
@@ -273,6 +276,8 @@ class AgentConfig:
     mode: str = "react"
     planner: RepoPlanner | None = None
     plan_gate: Callable[[Plan], bool] | None = None
+    escape_gate: Callable[[str, str], bool] | None = None
+    history: list[Message] = field(default_factory=list)
     breaker: CircuitBreaker = field(default_factory=CircuitBreaker)
     cost_tracker: CostTracker | None = None
     require_tool_before_final: bool = True
@@ -299,7 +304,7 @@ class AgentLoop:
         self._cost_usd = 0.0
         self._input_tokens = 0
         self._output_tokens = 0
-        self._dispatcher = ToolDispatcher(Path(config.repo_path))
+        self._dispatcher = ToolDispatcher(Path(config.repo_path), config.escape_gate)
         self._failed_calls: set[tuple[str, str]] = set()
         self._consecutive_failures = 0
         self._tool_calls = 0
@@ -385,10 +390,14 @@ class AgentLoop:
     def _build_messages(self) -> list[Message]:
         """Flattens the transcript into chat messages for the next completion.
 
+        Earlier turns are replayed ahead of the current task, so a follow-up
+        like "now do the same for the other module" is answered against what
+        the session already did rather than in isolation.
+
         Returns:
-            messages: Conversation history starting with the task itself.
+            messages: Earlier turns, this task, then the steps taken for it.
         """
-        messages = [Message(role="user", content=self.config.task)]
+        messages = [*self.config.history, Message(role="user", content=self.config.task)]
         for step in self._transcript:
             messages.append(Message(role="assistant", content=self._render_step(step)))
             if step.observation:
@@ -653,6 +662,21 @@ class AgentLoop:
             input_tokens=self._input_tokens,
             output_tokens=self._output_tokens,
         )
+
+    def context_usage(self) -> float:
+        """Estimates how full the working context is, as a fraction of budget.
+
+        Measured against the same budget _trim_transcript enforces, so the
+        readout and the trimming agree about what "full" means.
+
+        Returns:
+            usage: 0.0 when empty, 1.0 once the transcript budget is reached.
+        """
+        characters = sum(len(message.content) for message in self.config.history)
+        characters += len(self.config.task)
+        characters += sum(len(s.thought) + len(s.observation) for s in self._transcript)
+        budget = TRANSCRIPT_TOKEN_BUDGET * CHARS_PER_TOKEN_ESTIMATE
+        return min(1.0, characters / budget)
 
     @property
     def transcript(self) -> list[Step]:
