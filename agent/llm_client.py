@@ -12,6 +12,9 @@ Contains:
     OpenAILLMClient: calls the OpenAI chat completions API over HTTP
     ScriptedLLM: plays back a fixed queue of completions for tests
     DEFAULT_MODELS / CREDENTIAL_ENV_VARS / BASE_URL_ENV_VARS: per-provider defaults
+    MODEL_CATALOGUE: the models each provider is known to serve
+    models_for(): lists the models one provider offers
+    provider_for_model(): finds which provider serves a model identifier
     _ProviderAuth: attaches a credential without exposing it in a traceback
     _anthropic_text(): joins an Anthropic response's text blocks
     _openai_text(): reads an OpenAI response's message content
@@ -261,6 +264,41 @@ class ScriptedLLM:
             raise RuntimeError("ScriptedLLM exhausted: add another response for this test")
         text = self.responses.pop(0)
         return Completion(text=text, model=self.model, input_tokens=10, output_tokens=10)
+
+
+# Kept in step with agent/cost_tracker.PRICE_PER_MTOK: a model the tracker cannot
+# price would report a run as costing nothing.
+MODEL_CATALOGUE: dict[Provider, tuple[str, ...]] = {
+    Provider.ANTHROPIC: ("claude-haiku-4-5", "claude-sonnet-4-5", "claude-opus-4-1"),
+    Provider.OPENAI: ("gpt-4o-mini", "gpt-4o", "gpt-4.1", "gpt-4.1-mini"),
+}
+
+
+def models_for(provider: Provider) -> tuple[str, ...]:
+    """Lists the models one provider is known to serve.
+
+    Args:
+        provider: Provider whose catalogue is wanted.
+
+    Returns:
+        models: Model identifiers, cheapest-first.
+    """
+    return MODEL_CATALOGUE.get(provider, ())
+
+
+def provider_for_model(model: str) -> Provider | None:
+    """Finds which provider serves a model identifier.
+
+    Args:
+        model: Model identifier as the operator typed it.
+
+    Returns:
+        provider: Owning provider, or None when the model is unknown.
+    """
+    for provider, models in MODEL_CATALOGUE.items():
+        if model in models:
+            return provider
+    return None
 
 
 DEFAULT_MODELS: dict[Provider, str] = {
