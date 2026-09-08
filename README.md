@@ -229,7 +229,9 @@ a monochrome layout rather than printing escape codes.
 
 On first run, if neither `ANTHROPIC_API_KEY` nor `OPENAI_API_KEY` is set, a
 setup panel asks for one, masks it as you paste, and writes it to `.env` with
-owner-only permissions. It is never echoed into the transcript.
+owner-only permissions. It is never echoed into the transcript. The key applies
+immediately and is read back from `.env` on every later run, so you are asked
+once. A value exported in your shell always wins over the stored one.
 
 Runs started elsewhere show up the same way — `POST /runs`, a GitHub issue
 labelled `shipwright`, or a `/shipwright` comment:

@@ -25,6 +25,7 @@ from pathlib import Path
 from agent import __version__
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
+from agent.env_file import load_env_file
 from agent.llm_client import LLMClient, MissingCredentialError, Provider, build_client
 from agent.loop import AgentConfig, AgentLoop, Step
 from agent.planner import RepoPlanner, RepoReader, build_outline
@@ -133,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         exit_code: Process exit status.
     """
     args = build_parser().parse_args(argv)
+    load_env_file(Path(args.repo))
     if args.tui:
         # Imported lazily so a headless CI run never pays for the Textual import.
         from tui.__main__ import main as open_tui

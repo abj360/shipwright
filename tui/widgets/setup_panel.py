@@ -219,6 +219,9 @@ class SetupPanel(Static):
 
         target = self.target()
         env_path = persist_key(target.env_var, key, self.repo_path)
+        # Apply it now as well: the run about to start reads the environment,
+        # not the file, and re-prompting for a key just saved is nonsense.
+        os.environ[target.env_var] = key
         # Clear the field before the confirmation renders: the widget keeps its
         # value in the DOM, and the transcript snapshots the DOM.
         entry.value = ""

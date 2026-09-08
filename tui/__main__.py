@@ -5,7 +5,7 @@ __main__.py --- console entrypoint that opens the terminal interface
 Contains:
     build_parser(): builds the argument parser for the ship command
     provider_choices(): the provider names the entrypoint accepts
-    build_app(): builds the application from parsed arguments
+    build_app(): builds the application from parsed arguments, loading .env first
     main(): opens the terminal interface and returns its exit status
 """
 
@@ -15,6 +15,7 @@ from pathlib import Path
 
 from agent import __version__
 from agent.cost_tracker import CostTracker
+from agent.env_file import load_env_file
 from agent.llm_client import Provider
 from tui.app import DEFAULT_GATEWAY_URL, ShipwrightApp
 
@@ -66,6 +67,7 @@ def build_app(argv: list[str] | None = None) -> ShipwrightApp:
         app: Application pointed at the requested checkout.
     """
     args: argparse.Namespace = build_parser().parse_args(argv)
+    load_env_file(Path(args.repo))
     return ShipwrightApp(
         repo_path=Path(args.repo),
         provider=args.provider,
