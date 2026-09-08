@@ -39,7 +39,7 @@ class SetupHarness(App[None]):
 
     def compose(self) -> ComposeResult:
         """Mounts the setup panel with a single missing provider."""
-        yield SetupPanel(self.repo_path, [ANTHROPIC_MISSING])
+        yield SetupPanel(self.repo_path, [ANTHROPIC_MISSING], verifier=lambda p, k: "")
 
 
 async def _save_key(repo_path: Path, key: str) -> str:
@@ -58,7 +58,11 @@ async def _save_key(repo_path: Path, key: str) -> str:
         entry.value = key
         rendered = str(entry.render())
         await pilot.click("#setup-save")
-        await pilot.pause()
+        for _ in range(30):
+            await pilot.pause()
+            await asyncio.sleep(0.02)
+            if (repo_path / ".env").exists():
+                break
     return rendered
 
 
