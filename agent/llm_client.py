@@ -12,10 +12,14 @@ Contains:
     OpenAILLMClient: calls the OpenAI chat completions API over HTTP
     ScriptedLLM: plays back a fixed queue of completions for tests
     DEFAULT_MODELS / CREDENTIAL_ENV_VARS / BASE_URL_ENV_VARS: per-provider defaults
+    _ProviderAuth: attaches a credential without exposing it in a traceback
+    _anthropic_text(): joins an Anthropic response's text blocks
+    _openai_text(): reads an OpenAI response's message content
     build_client(): builds the client for one provider, failing closed
 """
 
 import os
+from collections.abc import Generator
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Protocol
@@ -143,11 +147,14 @@ class AnthropicLLMClient:
             "max_tokens": max_tokens,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
         }
-        headers = {"x-api-key": self._api_key, "anthropic-version": API_VERSION_HEADER}
-        data = _post_json(self._base_url, payload, headers)
+        data = _post_json(
+            self._base_url,
+            payload,
+            _ProviderAuth("x-api-key", self._api_key, {"anthropic-version": API_VERSION_HEADER}),
+        )
         usage = data.get("usage", {})
         return Completion(
-            text=data["content"][0]["text"],
+            text=_anthropic_text(data),
             model=data.get("model", self.model),
             input_tokens=int(usage.get("input_tokens", 0)),
             output_tokens=int(usage.get("output_tokens", 0)),
@@ -205,11 +212,12 @@ class OpenAILLMClient:
                 *({"role": m.role, "content": m.content} for m in messages),
             ],
         }
-        headers = {"authorization": f"Bearer {self._api_key}"}
-        data = _post_json(self._base_url, payload, headers)
+        data = _post_json(
+            self._base_url, payload, _ProviderAuth("authorization", f"Bearer {self._api_key}")
+        )
         usage = data.get("usage", {})
         return Completion(
-            text=data["choices"][0]["message"]["content"],
+            text=_openai_text(data),
             model=data.get("model", self.model),
             input_tokens=int(usage.get("prompt_tokens", 0)),
             output_tokens=int(usage.get("completion_tokens", 0)),
@@ -273,18 +281,106 @@ DEFAULT_BASE_URLS: dict[Provider, str] = {
 }
 
 
-def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> dict[str, Any]:
+class _ProviderAuth(httpx.Auth):
+    """Attaches a provider credential without exposing it in a traceback.
+
+    A crash report renders every frame local, so a credential held in a plain
+    header dict is printed in full when a run fails. Holding it behind an
+    object with a redacting repr means a traceback can no longer disclose it.
+
+    Attributes:
+        extra_headers: Non-secret headers sent alongside the credential.
+    """
+
+    def __init__(
+        self,
+        credential_header: str,
+        credential: str,
+        extra_headers: dict[str, str] | None = None,
+    ) -> None:
+        """Binds one credential to the header it is sent in.
+
+        Args:
+            credential_header: Header name carrying the credential.
+            credential: Secret value; never rendered.
+            extra_headers: Non-secret headers to send with each request.
+        """
+        self._credential_header = credential_header
+        self._credential = credential
+        self.extra_headers = dict(extra_headers or {})
+
+    def __repr__(self) -> str:
+        """Renders the auth with its credential redacted.
+
+        Returns:
+            text: Repr naming the header but never the secret.
+        """
+        return f"{type(self).__name__}({self._credential_header!r}, '<redacted>')"
+
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+        """Adds the credential and any extra headers to one request.
+
+        Args:
+            request: Request about to be sent.
+
+        Yields:
+            request: The same request, now carrying its headers.
+        """
+        request.headers[self._credential_header] = self._credential
+        for name, value in self.extra_headers.items():
+            request.headers[name] = value
+        yield request
+
+
+def _anthropic_text(data: dict[str, Any]) -> str:
+    """Joins the text blocks of an Anthropic response.
+
+    A turn can legitimately carry no text -- a refusal, or one that stopped
+    after non-text blocks -- so an empty content list yields an empty
+    completion instead of failing mid-run.
+
+    Args:
+        data: Decoded response body.
+
+    Returns:
+        text: Concatenated text blocks, empty when the reply carried none.
+    """
+    blocks = data.get("content") or []
+    return "".join(
+        str(block.get("text", ""))
+        for block in blocks
+        if isinstance(block, dict) and block.get("type", "text") == "text"
+    )
+
+
+def _openai_text(data: dict[str, Any]) -> str:
+    """Reads the message content out of an OpenAI response.
+
+    Args:
+        data: Decoded response body.
+
+    Returns:
+        text: Message content, empty when the reply carried none.
+    """
+    choices = data.get("choices") or []
+    if not choices:
+        return ""
+    message = choices[0].get("message") or {}
+    return str(message.get("content") or "")
+
+
+def _post_json(url: str, payload: dict[str, Any], auth: _ProviderAuth) -> dict[str, Any]:
     """Posts one completion request and returns the decoded response body.
 
     Args:
         url: Provider endpoint to call.
         payload: Request body to send as JSON.
-        headers: Provider-specific authentication headers.
+        auth: Carries the provider credential and its extra headers.
 
     Returns:
         body: Decoded JSON response.
     """
-    response = httpx.post(url, json=payload, headers=headers, timeout=REQUEST_TIMEOUT_S)
+    response = httpx.post(url, json=payload, auth=auth, timeout=REQUEST_TIMEOUT_S)
     response.raise_for_status()
     decoded: dict[str, Any] = response.json()
     return decoded
