@@ -33,6 +33,8 @@ class PlanPanel(Static):
         is_accepted: True once the plan has been approved.
     """
 
+    can_focus = True
+
     DEFAULT_CSS = """
     PlanPanel {
         border: dashed $accent;

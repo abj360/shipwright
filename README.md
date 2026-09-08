@@ -32,6 +32,26 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
 - Halts and flags runaway runs automatically (iteration and cost circuit
   breaker), so a stuck task can never quietly burn budget for hours.
 
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh | sh
+```
+
+Needs `git` and Python 3.12+. It installs into `~/.local/share/shipwright` with
+its own virtualenv and links `ship` into `~/.local/bin`; re-running upgrades in
+place. Then:
+
+```bash
+ship
+```
+
+The first run asks which provider you want and for its key, stores it in the
+checkout's `.env` with owner-only permissions, and never asks again.
+
+Working from a clone instead? `scripts/run_local.sh` builds everything and
+starts the gateway, or `pip install -e .` puts `ship` on your PATH directly.
+
 ## How you use it
 
 Type `ship` in a terminal and the interface opens on the checkout you are in.
