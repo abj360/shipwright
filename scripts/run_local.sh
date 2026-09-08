@@ -5,12 +5,13 @@
 # What it does:
 #   1. Creates a Python venv in .venv/ and installs requirements.txt.
 #   2. Ensures a Node 20 runtime (downloads a local copy into .tools/ if none).
-#   3. npm-installs and builds the gateway and the UI.
-#   4. Starts the gateway on :4000 and the UI on :5173 in the background.
+#   3. npm-installs and builds the gateway.
+#   4. Starts the gateway on :4000 in the background, then tells you how to
+#      open the terminal interface against it.
 #
 # Note: running the *server* needs no Docker, but executing sandboxed agent
 # tasks does (a Docker daemon with runsc registered, and /var/run/docker.sock).
-# Without it the gateway and UI still boot, but sandbox launches will fail.
+# Without it the gateway still boots, but sandbox launches will fail.
 
 set -euo pipefail
 
@@ -43,7 +44,34 @@ export WORK_DIR="${WORK_DIR:-/tmp/shipwright-work}"
 export BASE_BRANCH="${BASE_BRANCH:-main}"
 
 say "python venv"
-python3 -m venv "$VENV"
+# Resolve an interpreter OUTSIDE the venv first: the fallback below deletes
+# $VENV, and bootstrapping it with its own python leaves nothing to run.
+SYS_PYTHON=""
+for candidate in python3.13 python3.12 python3; do
+    candidate_path="$(command -v "$candidate" 2>/dev/null || true)"
+    [ -n "$candidate_path" ] || continue
+    case "$candidate_path" in "$VENV"/*) continue ;; esac
+    SYS_PYTHON="$candidate_path"
+    break
+done
+if [ -z "$SYS_PYTHON" ]; then
+    echo "no python3 found outside $VENV on PATH" >&2
+    exit 1
+fi
+
+# Some distros ship python without ensurepip; bootstrap pip by hand there.
+if ! "$SYS_PYTHON" -m venv "$VENV" >/dev/null 2>&1; then
+    rm -rf "$VENV"
+    "$SYS_PYTHON" -m venv --without-pip "$VENV"
+    mkdir -p "$TOOLS"
+    if [ ! -s "$TOOLS/get-pip.py" ]; then
+        echo "ensurepip missing; downloading get-pip.py"
+        curl -fsSL https://bootstrap.pypa.io/get-pip.py -o "$TOOLS/get-pip.py"
+    else
+        echo "ensurepip missing; bootstrapping pip from .tools/get-pip.py"
+    fi
+    "$VENV/bin/python" "$TOOLS/get-pip.py" --quiet
+fi
 "$VENV/bin/pip" install --quiet --upgrade pip
 "$VENV/bin/pip" install --quiet -r "$ROOT/requirements.txt"
 "$VENV/bin/pip" install --quiet -e "$ROOT"
@@ -68,9 +96,6 @@ fi
 say "gateway build"
 (cd "$ROOT/gateway" && "$NPM_BIN" install --no-fund --no-audit && "$NPM_BIN" run build)
 
-say "ui build"
-(cd "$ROOT/ui" && "$NPM_BIN" install --no-fund --no-audit && "$NPM_BIN" run build)
-
 if ! command -v docker >/dev/null 2>&1; then
     echo "note: docker not found; sandbox launches will fail, server still boots"
 fi
@@ -78,18 +103,16 @@ fi
 say "starting services"
 (cd "$ROOT/gateway" && "$NODE_BIN" dist/server.js) &
 GATEWAY_PID=$!
-(cd "$ROOT/ui" && "$NPM_BIN" run preview -- --host 0.0.0.0 --port 5173) &
-UI_PID=$!
 
 cleanup() {
     echo
     say "stopping"
-    kill "$GATEWAY_PID" "$UI_PID" 2>/dev/null || true
+    kill "$GATEWAY_PID" 2>/dev/null || true
 }
 trap cleanup INT TERM
 
 sleep 3
 echo "gateway: http://localhost:${PORT}/health  (token: ${GATEWAY_TOKEN})"
-echo "ui:      http://localhost:5173"
+echo "tui:     $VENV/bin/ship --repo /path/to/checkout"
 echo "agent:   $VENV/bin/python -m agent.cli --task 'fix the flaky test'"
 wait

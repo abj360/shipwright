@@ -21,6 +21,7 @@ Contains:
     HeaderBar.compose(): builds the single status line
     HeaderBar.render_line_text(): renders the bar's current contents
     HeaderBar.watch_client_status(): repaints the bar when the provider changes
+    HeaderBar.refresh_line(): redraws the bar from the current cost and status
 """
 
 from dataclasses import dataclass
@@ -207,6 +208,11 @@ class HeaderBar(Static):
         """
         if self.is_mounted:
             self.update(self.render_line_text())
+
+    def refresh_line(self) -> None:
+        """Redraws the bar from the current cost, token count, and status."""
+        if self.is_mounted:
+            self.query_one(Label).update(self.render_line_text())
 
     def compose(self) -> ComposeResult:
         """Builds the single status line."""

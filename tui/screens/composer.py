@@ -10,6 +10,8 @@ Contains:
     Composer.compose(): builds the input line
     Composer.submit(): sends or queues one typed instruction
     Composer.take_next(): pops the next queued instruction
+    Composer.on_input_submitted(): sends what was typed when Enter is pressed
+    Composer.focus_input(): puts the cursor in the instruction field
     Composer.mark_busy(): records that a run has started
     Composer.mark_idle(): records that the run finished
     Composer._refresh_outlines(): rescans the checkout at most once per run state
@@ -108,6 +110,25 @@ class Composer(Static):
 
         self.post_message(self.Submitted(instruction))
         return SENT_NOTICE
+
+    def focus_input(self) -> None:
+        """Puts the cursor in the instruction field.
+
+        The timeline is focusable so it can be scrolled, and it composes first,
+        so without this the caret starts there and typing goes nowhere.
+        """
+        self.query_one(f"#{INPUT_ID}", Input).focus()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Sends or queues the typed instruction when Enter is pressed.
+
+        Args:
+            event: Submission carrying the text the operator typed.
+        """
+        if event.input.id != INPUT_ID:
+            return
+        if self.submit(event.value):
+            event.input.value = ""
 
     def take_next(self) -> str | None:
         """Pops the next queued instruction, oldest first.
