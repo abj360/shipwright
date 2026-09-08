@@ -13,12 +13,14 @@ Contains:
     StepRow: one activity row that opens to reveal its output
     StepRow.has_failed(): whether the step reported an error
     StepRow.summary_line(): renders the collapsed one-line summary
+    StepRow.input_line(): renders the arguments the step was dispatched with
     StepRow.highlight_color(): the colour a failed row is drawn in
     StepRow.detail_lines(): renders the output revealed when expanded
     StepRow.observation_lines(): the observation split into lines
     StepRow.is_truncated(): whether the observation is longer than the preview
     StepRow.action_show_full_output(): reveals the rest of a long observation
     DETAIL_INDENT: how far a revealed output line is indented
+    NODE_MARKER / CHAIN_MARKER: the reasoning chain drawn down the gutter
     StepRow.render(): draws the summary and any revealed output
     StepRow.action_toggle_step(): opens or closes the row
     StepRow.watch_is_expanded(): redraws only this row when it opens
@@ -38,6 +40,11 @@ PREVIEW_LINES = 12
 MORE_OUTPUT_TEMPLATE = "… show full output ({remaining} more lines)"
 DETAIL_INDENT = "    "
 WARNING_PREFIX = "!"
+INPUT_MARKER = "in "
+OUTPUT_MARKER = "out"
+# The reasoning chain: a node per entry, a rule joining them down the gutter.
+NODE_MARKER = "●"
+CHAIN_MARKER = "│"
 COLLAPSED_MARKER = "▸"
 EXPANDED_MARKER = "▾"
 # The arguments that name a step's subject, in the order they are preferred.
@@ -90,7 +97,7 @@ class StepRow(Static):
         Binding("o", "show_full_output", "Full output"),
     ]
 
-    is_expanded: reactive[bool] = reactive(False)
+    is_expanded: reactive[bool] = reactive(True)
     shows_full_output: reactive[bool] = reactive(False)
 
     def __init__(
@@ -166,6 +173,15 @@ class StepRow(Static):
         """
         return len(self.observation_lines()) > PREVIEW_LINES
 
+    def input_line(self) -> str:
+        """Renders the arguments the step was dispatched with.
+
+        Returns:
+            line: The primary argument in full, empty when the tool took none.
+        """
+        target = step_target(self.tool_args)
+        return f"{INPUT_MARKER} {target}" if target else ""
+
     def detail_lines(self) -> list[str]:
         """Renders the output revealed when the row is expanded.
 
@@ -195,9 +211,14 @@ class StepRow(Static):
             rendered: The row as coloured text ready for the timeline.
         """
         block: Text = Text()
+        block.append(f"{NODE_MARKER} ", style=self.palette.accent)
         block.append(self.summary_line(), style=self.highlight_color())
-        for line in self.detail_lines():
-            block.append(f"\n{DETAIL_INDENT}{line}")
+        argument = self.input_line()
+        if self.is_expanded and argument:
+            block.append(f"\n{CHAIN_MARKER}{DETAIL_INDENT}{argument}")
+        for index, line in enumerate(self.detail_lines()):
+            prefix = OUTPUT_MARKER if index == 0 else "   "
+            block.append(f"\n{CHAIN_MARKER}{DETAIL_INDENT}{prefix} {line}")
         return block
 
     def action_toggle_step(self) -> None:

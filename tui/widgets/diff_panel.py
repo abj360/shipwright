@@ -30,6 +30,8 @@ FILE_HEADER_PREFIX = "diff --git"
 # The ---/+++ markers name the file; counting them as changes inflates every stat.
 FILE_MARKER_PREFIXES = ("---", "+++")
 EMPTY_DIFF_NOTICE = "no changes yet"
+CHAIN_MARKER = "│"
+CHAIN_INDENT = "│   "
 
 
 class LineKind(StrEnum):
@@ -186,8 +188,8 @@ class DiffPanel(Static):
             yield Label(EMPTY_DIFF_NOTICE)
             return
         added, removed = diff_stats(self.files)
-        yield Label(f"+{added} / -{removed}")
+        yield Label(f"{CHAIN_INDENT}+{added} / -{removed}")
         for changed in self.files:
-            yield Label(changed.path)
+            yield Label(f"{CHAIN_INDENT}{changed.path}")
             for line in changed.lines:
-                yield Label(line.text, classes=f"diff-{line.kind}")
+                yield Label(f"{CHAIN_INDENT}{line.text}", classes=f"diff-{line.kind}")

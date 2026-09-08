@@ -15,10 +15,14 @@ Contains:
     ShipwrightApp.handle_line(): runs a command or starts a turn
     ShipwrightApp.start_turn_for(): opens a turn and dispatches it to the agent
     ShipwrightApp.build_loop(): builds the agent loop for one instruction
+    ShipwrightApp.remember_turn(): keeps a finished turn for later reasoning
     ShipwrightApp.run_task(): runs one instruction off the UI thread
     ShipwrightApp.append_step(): mounts one activity row as a step completes
     ShipwrightApp.finish_run(): closes the turn and starts any queued work
-    ShipwrightApp.switch_provider(): points later runs at another provider
+    ShipwrightApp.switch_provider(): points later runs at another provider or model
+    ShipwrightApp.describe_models(): lists the models the provider serves
+    ShipwrightApp.model_label(): the provider and model shown under the composer
+    ShipwrightApp.refresh_context_bar(): updates fullness and model readout
     ShipwrightApp.toggle_plan_mode(): turns plan-then-execute on and off
     ShipwrightApp.approve_plan(): shows a proposed plan and waits for an answer
     ShipwrightApp.show_plan_panel(): mounts a plan panel and focuses it
@@ -26,18 +30,28 @@ Contains:
     ShipwrightApp.on_setup_panel_skipped(): dismisses onboarding when declined
 """
 
+from collections.abc import Callable
 from pathlib import Path
 
 import httpx
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
+from textual.containers import Vertical
 from textual.css.query import NoMatches
 from textual.widgets import Label
 
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
-from agent.llm_client import MissingCredentialError, Provider, build_client
+from agent.llm_client import (
+    DEFAULT_MODELS,
+    MissingCredentialError,
+    Provider,
+    build_client,
+    models_for,
+    provider_for_model,
+)
+from agent.llm_client import Message as LoopMessage
 from agent.loop import AgentConfig, AgentLoop, Step
 from agent.planner import Plan, RepoPlanner, RepoReader, build_outline
 from agent.repo_map import RepoMap
@@ -52,20 +66,25 @@ from tui.commands import (
 )
 from tui.screens.composer import Composer
 from tui.screens.footer import FooterBar
-from tui.screens.header import ClientStatus, HeaderBar
 from tui.screens.timeline import Timeline
 from tui.theme import Palette, css_variables, palette_for
 from tui.transcript import resume
-from tui.widgets.connection_dot import ConnectionDot
+from tui.widgets.context_bar import ContextBar
+from tui.widgets.diff_panel import DiffPanel
 from tui.widgets.plan_panel import PlanPanel
+from tui.widgets.robot import Phase, Robot, StatusLine, phase_for_tool
 from tui.widgets.setup_panel import SetupPanel, detect_missing
 from tui.widgets.step_row import StepRow
 from tui.widgets.wordmark import Wordmark
 
 DEFAULT_GATEWAY_URL = "http://localhost:4000"
-INSTRUCTION_PREFIX = "› "
-ANSWER_PREFIX = "✓ "
+INSTRUCTION_PREFIX = "● "
+ANSWER_PREFIX = "● "
 NO_ANSWER_NOTICE = "(the run ended without an answer)"
+# Earlier turns replayed into each new run. Capped so a long session cannot
+# crowd out the transcript the loop still has to fit in its own budget.
+HISTORY_TURN_LIMIT = 12
+HERO_TAGLINE = "describe a change and press enter"
 PLAN_DECISION_TIMEOUT_S = 300.0
 PLAN_ON_NOTICE = "plan mode on — runs propose steps and wait for [a] to accept"
 PLAN_OFF_NOTICE = "plan mode off — runs execute directly"
@@ -93,24 +112,48 @@ class ShipwrightApp(App[None]):
         layout: vertical;
         overflow: hidden;
     }
-    #region-wordmark {
-        height: 5;
+    #region-hero {
+        height: 1fr;
+        align: center middle;
     }
-    #region-header {
-        height: 1;
+    #region-hero.compact {
+        height: auto;
+        padding-top: 1;
     }
-    #region-connection {
-        height: 1;
+    #region-hero.compact #hero-robot,
+    #region-hero.compact #hero-tagline {
+        display: none;
+    }
+    #hero-mark {
+        width: auto;
+        color: $accent;
+    }
+    #hero-robot {
+        width: auto;
+        color: $accent;
+    }
+    #hero-tagline {
+        width: auto;
+        color: $text-muted;
     }
     #region-setup {
         height: auto;
-        max-height: 10;
     }
     #region-timeline {
         height: 1fr;
+        padding: 0 2;
+    }
+    #region-status {
+        height: 1;
+        padding: 0 2;
+        color: $accent;
     }
     #region-composer {
         height: 3;
+    }
+    #region-context {
+        height: 1;
+        padding: 0 2;
     }
     #region-footer {
         height: 1;
@@ -152,6 +195,9 @@ class ShipwrightApp(App[None]):
         self.model: str | None = None
         self.plan_mode = False
         self.active_loop: AgentLoop | None = None
+        self.credential_verifier: Callable[[Provider, str], str] | None = None
+        self.conversation: list[LoopMessage] = []
+        self.active_instruction = ""
 
     def get_css_variables(self) -> dict[str, str]:
         """Feeds the project palette into Textual's own design tokens.
@@ -174,36 +220,50 @@ class ShipwrightApp(App[None]):
         return len(detect_missing()) == len(list(Provider))
 
     def compose(self) -> ComposeResult:
-        """Lays out the header, timeline, composer, and footer."""
-        wordmark = Wordmark()
-        wordmark.id = "region-wordmark"
-        yield wordmark
-
-        header = HeaderBar(self.repo_path, self.provider, self.cost_tracker)
-        header.id = REGION_IDS[0]
-        yield header
-
-        dot = ConnectionDot(self.gateway_url, palette=self.palette)
-        dot.id = "region-connection"
-        yield dot
+        """Lays out the hero, the timeline, the status line, and the composer."""
+        hero = Vertical(
+            Wordmark(id="hero-mark"),
+            Robot(id="hero-robot"),
+            Label(HERO_TAGLINE, id="hero-tagline"),
+            id="region-hero",
+        )
+        if self.needs_setup():
+            hero.add_class("compact")
+        yield hero
 
         if self.needs_setup():
-            setup = SetupPanel(self.repo_path)
+            setup = SetupPanel(self.repo_path, verifier=self.credential_verifier)
             setup.id = "region-setup"
             yield setup
 
         timeline = Timeline()
         timeline.id = REGION_IDS[1]
+        timeline.display = False
         yield timeline
+
+        status = StatusLine()
+        status.id = "region-status"
+        status.display = False
+        yield status
 
         composer = Composer()
         composer.id = REGION_IDS[2]
         yield composer
 
+        context = ContextBar(self.model_label(), palette=self.palette)
+        context.id = "region-context"
+        yield context
+
         bindings = [binding for binding in self.BINDINGS if isinstance(binding, Binding)]
         footer = FooterBar(bindings)
         footer.id = REGION_IDS[3]
         yield footer
+
+    def enter_working_view(self) -> None:
+        """Swaps the idle hero for the transcript once work begins."""
+        self.query_one("#region-hero").display = False
+        self.query_one(Timeline).display = True
+        self.query_one(StatusLine).display = True
 
     def register_commands(self) -> None:
         """Binds each slash command the composer can route to its handler."""
@@ -244,9 +304,14 @@ class ShipwrightApp(App[None]):
         Args:
             instruction: What the operator asked the agent to do.
         """
+        self.enter_working_view()
+        self.active_instruction = instruction
         timeline = self.query_one(Timeline)
         timeline.start_turn(instruction)
         timeline.mount(Label(f"{INSTRUCTION_PREFIX}{instruction}"))
+        status = self.query_one(StatusLine)
+        status.display = True
+        status.set_phase(Phase.PLANNING)
         self.run_task(instruction)
 
     def build_loop(self, instruction: str) -> AgentLoop:
@@ -268,6 +333,7 @@ class ShipwrightApp(App[None]):
             cost_tracker=self.cost_tracker,
         )
         config.breaker = self.breaker
+        config.history = list(self.conversation)
         client = build_client(Provider(self.provider), self.model)
         if self.plan_mode:
             config.mode = "plan_execute"
@@ -301,9 +367,9 @@ class ShipwrightApp(App[None]):
             answer = f"halted: {exc}"
         except httpx.HTTPError as exc:
             answer = f"provider unreachable: {exc}"
-        self.active_loop = None
         if self.is_running:
             self.call_from_thread(self.finish_run, answer)
+        self.active_loop = None
 
     def switch_provider(self, argument: str) -> str:
         """Points later runs, and any run in flight, at another provider.
@@ -316,11 +382,20 @@ class ShipwrightApp(App[None]):
         """
         parts = argument.split()
         if not parts:
-            return USAGE_MODEL
+            return self.describe_models()
+
+        model: str | None = None
         provider = parse_provider(parts[0])
         if provider is None:
-            return USAGE_MODEL
-        model = parts[1] if len(parts) > 1 else None
+            # A bare model identifier switches models without naming the provider,
+            # which is what you actually want mid-task.
+            owner = provider_for_model(parts[0])
+            if owner is None:
+                return USAGE_MODEL
+            provider = owner
+            model = parts[0]
+        elif len(parts) > 1:
+            model = parts[1]
         try:
             build_client(provider, model)
         except MissingCredentialError as exc:
@@ -328,10 +403,23 @@ class ShipwrightApp(App[None]):
 
         self.provider = provider.value
         self.model = model
-        self.query_one(HeaderBar).client_status = ClientStatus(provider.value, model)
         if self.active_loop is not None:
             switch_model(self.active_loop, argument)
+        self.query_one(ContextBar).set_model(self.model_label())
         return f"now using {provider.value}" + (f" / {model}" if model else "")
+
+    def describe_models(self) -> str:
+        """Lists the models available on the current provider.
+
+        Returns:
+            listing: One line naming each model, marking the active one.
+        """
+        active = self.model or DEFAULT_MODELS[Provider(self.provider)]
+        names = [
+            f"{'*' if name == active else ' '} {name}"
+            for name in models_for(Provider(self.provider))
+        ]
+        return f"{self.provider}:  " + "   ".join(names)
 
     def toggle_plan_mode(self, argument: str) -> str:
         """Turns plan-then-execute on and off for later runs.
@@ -380,7 +468,6 @@ class ShipwrightApp(App[None]):
         event.stop()
         self.query_one(SetupPanel).remove()
         self.query_one(Timeline).mount(Label(SETUP_DONE_TEMPLATE.format(env_var=event.env_var)))
-        self.query_one(HeaderBar).refresh_line()
         self.query_one(Composer).focus_input()
 
     def on_setup_panel_skipped(self, event: SetupPanel.Skipped) -> None:
@@ -391,8 +478,38 @@ class ShipwrightApp(App[None]):
         """
         event.stop()
         self.query_one(SetupPanel).remove()
-        self.query_one(Timeline).mount(Label(SETUP_SKIPPED_NOTICE))
+        self.query_one("#region-hero").remove_class("compact")
         self.query_one(Composer).focus_input()
+
+    def remember_turn(self, instruction: str, answer: str) -> None:
+        """Keeps a finished turn so later runs reason against the whole session.
+
+        Args:
+            instruction: What the operator asked for.
+            answer: What the agent reported back.
+        """
+        if not instruction:
+            return
+        self.conversation.append(LoopMessage(role="user", content=instruction))
+        self.conversation.append(LoopMessage(role="assistant", content=answer))
+        excess = len(self.conversation) - HISTORY_TURN_LIMIT * 2
+        if excess > 0:
+            del self.conversation[:excess]
+
+    def model_label(self) -> str:
+        """Renders the provider and model currently answering.
+
+        Returns:
+            label: Provider and model, as the bar under the composer shows it.
+        """
+        return f"{self.provider}/{self.model or DEFAULT_MODELS[Provider(self.provider)]}"
+
+    def refresh_context_bar(self) -> None:
+        """Updates the context readout from the run currently in flight."""
+        bar = self.query_one(ContextBar)
+        bar.set_model(self.model_label())
+        if self.active_loop is not None:
+            bar.set_usage(self.active_loop.context_usage())
 
     def append_step(self, step: Step) -> None:
         """Mounts one activity row as its step completes.
@@ -401,11 +518,14 @@ class ShipwrightApp(App[None]):
             step: Step the agent loop just observed.
         """
         timeline = self.query_one(Timeline)
+        self.query_one(StatusLine).set_phase(phase_for_tool(step.tool_name))
         row = StepRow(step.tool_name, step.tool_args, step.observation, palette=self.palette)
         timeline.record_step(row)
         timeline.mount(row)
+        if step.diff:
+            timeline.mount(DiffPanel(step.diff, palette=self.palette))
         timeline.scroll_end(animate=False)
-        self.query_one(HeaderBar).refresh_line()
+        self.refresh_context_bar()
 
     def finish_run(self, answer: str) -> None:
         """Closes the open turn and starts whatever was queued behind it.
@@ -413,13 +533,15 @@ class ShipwrightApp(App[None]):
         Args:
             answer: Final answer, or the reason the run produced none.
         """
+        self.remember_turn(self.active_instruction, answer)
         timeline = self.query_one(Timeline)
         timeline.finish_turn(answer)
         timeline.mount(Label(f"{ANSWER_PREFIX}{answer}"))
         timeline.scroll_end(animate=False)
+        self.query_one(StatusLine).stop()
+        self.refresh_context_bar()
         composer = self.query_one(Composer)
         composer.mark_idle()
-        self.query_one(HeaderBar).refresh_line()
         queued = composer.take_next()
         if queued is not None:
             self.start_turn_for(queued)

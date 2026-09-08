@@ -62,13 +62,14 @@ class Wordmark(Static):
         palette: Palette deciding whether the wordmark is coloured at all.
     """
 
-    def __init__(self, palette: Palette | None = None) -> None:
+    def __init__(self, palette: Palette | None = None, id: str | None = None) -> None:
         """Builds the wordmark for one terminal's colour capability.
 
         Args:
             palette: Colours to render with; detected from the terminal when None.
+            id: Element id, so the layout can target the mark in CSS.
         """
-        super().__init__()
+        super().__init__(id=id)
         self.palette = palette_for() if palette is None else palette
 
     def style_for_palette(self) -> str:

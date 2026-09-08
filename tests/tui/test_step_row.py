@@ -28,14 +28,15 @@ def test_summary_names_what_it_acted_on() -> None:
 
     summary = row.summary_line()
 
-    assert summary.startswith(COLLAPSED_MARKER)
+    assert summary.startswith(EXPANDED_MARKER)
     assert "Ran" in summary
     assert "pytest -q" in summary
 
 
 def test_collapsed_row_hides_its_output() -> None:
-    """Asserts a collapsed row reveals none of its observation."""
+    """Asserts a row that has been closed reveals none of its observation."""
     row = StepRow("read_file", {"path": "a.py"}, "line one\nline two")
+    row.is_expanded = False
 
     assert row.detail_lines() == []
 
@@ -44,12 +45,12 @@ def test_toggle_opens_and_closes() -> None:
     """Asserts toggling reveals the output and then hides it again."""
     row = StepRow("read_file", {"path": "a.py"}, "line one\nline two")
 
-    row.action_toggle_step()
     assert row.detail_lines() == ["line one", "line two"]
     assert row.summary_line().startswith(EXPANDED_MARKER)
 
     row.action_toggle_step()
     assert row.detail_lines() == []
+    assert row.summary_line().startswith(COLLAPSED_MARKER)
 
 
 def test_target_prefers_path_then_command() -> None:
@@ -65,7 +66,7 @@ def test_row_with_no_target_still_renders() -> None:
 
     summary = row.summary_line()
 
-    assert summary == f"{COLLAPSED_MARKER} Diffed"
+    assert summary == f"{EXPANDED_MARKER} Diffed"
     assert not summary.endswith(" ")
 
 

@@ -17,7 +17,7 @@ import asyncio
 from textual.app import App, ComposeResult
 
 from tui.theme import DARK
-from tui.widgets.step_row import DETAIL_INDENT, StepRow
+from tui.widgets.step_row import CHAIN_MARKER, DETAIL_INDENT, StepRow
 
 
 class RowHarness(App[None]):
@@ -62,6 +62,7 @@ async def _mounted_text(row: StepRow, expand: bool) -> str:
 def test_collapsed_row_draws_only_its_summary() -> None:
     """Asserts a closed row draws its summary and none of its output."""
     row = StepRow("read_file", {"path": "a.py"}, "secret contents", palette=DARK)
+    row.is_expanded = False
 
     drawn = asyncio.run(_mounted_text(row, expand=False))
 
@@ -73,7 +74,7 @@ def test_expanded_row_draws_its_output() -> None:
     """Asserts opening a row draws the observation beneath the summary."""
     row = StepRow("read_file", {"path": "a.py"}, "line one\nline two", palette=DARK)
 
-    drawn = asyncio.run(_mounted_text(row, expand=True))
+    drawn = asyncio.run(_mounted_text(row, expand=False))
 
     assert "line one" in drawn
     assert "line two" in drawn
@@ -91,14 +92,13 @@ def test_failed_row_is_styled() -> None:
 def test_output_lines_are_indented() -> None:
     """Asserts revealed output is indented so it reads as belonging to the row."""
     row = StepRow("read_file", {"path": "a.py"}, "line one", palette=DARK)
-    row.is_expanded = True
 
-    assert f"\n{DETAIL_INDENT}line one" in row.render().plain
+    assert f"\n{CHAIN_MARKER}{DETAIL_INDENT}" in row.render().plain
+    assert "line one" in row.render().plain
 
 
 def test_row_with_no_output_draws_one_line() -> None:
     """Asserts a tool that produced no output draws just its summary line."""
     row = StepRow("git_diff", {}, "", palette=DARK)
-    row.is_expanded = True
 
     assert "\n" not in row.render().plain

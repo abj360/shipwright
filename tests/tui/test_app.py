@@ -4,7 +4,7 @@ test_app.py --- covers the app's four-region composition and command routing
 
 Contains:
     _app(): builds the app against a temporary checkout
-    test_four_regions_mount(): header, timeline, composer, and footer all mount
+    test_core_regions_mount(): the mark, composer and footer all mount
     test_slash_command_is_routed(): a breaker command reaches the breaker
     test_unknown_command_is_reported(): an unknown command is reported, not raised
     test_plain_text_starts_a_turn(): ordinary text opens a turn on the timeline
@@ -21,9 +21,9 @@ import pytest
 from tui.app import ShipwrightApp
 from tui.screens.composer import Composer
 from tui.screens.footer import FooterBar
-from tui.screens.header import HeaderBar
 from tui.screens.timeline import Timeline
 from tui.theme import DARK
+from tui.widgets.wordmark import Wordmark
 
 
 def _app(tmp_path: Path) -> ShipwrightApp:
@@ -38,8 +38,8 @@ def _app(tmp_path: Path) -> ShipwrightApp:
     return ShipwrightApp(tmp_path, provider="anthropic", palette=DARK)
 
 
-def test_four_regions_mount(tmp_path: Path) -> None:
-    """Asserts all four regions of the layout mount under a headless pilot."""
+def test_core_regions_mount(tmp_path: Path) -> None:
+    """Asserts the mark, transcript, composer and footer all mount headless."""
 
     async def _boot() -> list[str]:
         app = _app(tmp_path)
@@ -47,10 +47,10 @@ def test_four_regions_mount(tmp_path: Path) -> None:
             await pilot.pause()
             return [
                 type(app.query_one(widget)).__name__
-                for widget in (HeaderBar, Timeline, Composer, FooterBar)
+                for widget in (Wordmark, Timeline, Composer, FooterBar)
             ]
 
-    assert asyncio.run(_boot()) == ["HeaderBar", "Timeline", "Composer", "FooterBar"]
+    assert asyncio.run(_boot()) == ["Wordmark", "Timeline", "Composer", "FooterBar"]
 
 
 def test_slash_command_is_routed(tmp_path: Path) -> None:

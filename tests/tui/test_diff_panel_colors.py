@@ -17,7 +17,7 @@ GOLDEN_DARK = {
     LineKind.ADD: "#2ea043",
     LineKind.DELETE: "#f85149",
     LineKind.HUNK: "#8b949e",
-    LineKind.CONTEXT: "#c9d1d9",
+    LineKind.CONTEXT: "#d4d4d4",
 }
 
 

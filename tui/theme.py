@@ -53,16 +53,16 @@ class Palette:
 BRAND_BLUE = "#2f81f7"
 
 DARK = Palette(
-    background="#0d1117",
-    foreground="#c9d1d9",
-    accent="#6cb6ff",
+    background="#000000",
+    foreground="#d4d4d4",
+    accent=BRAND_BLUE,
     add="#2ea043",
     delete="#f85149",
     hunk="#8b949e",
     status_error="#f85149",
-    panel_background="#161b22",
-    panel_border="#21262d",
-    border_subtle="#30363d",
+    panel_background="#0a0a0a",
+    panel_border=BRAND_BLUE,
+    border_subtle="#1c4f8f",
 )
 
 
