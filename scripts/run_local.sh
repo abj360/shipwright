@@ -91,6 +91,11 @@ else
     NODE_BIN="$NODE_DIR/bin/node"
     NPM_BIN="$NODE_DIR/bin/npm"
 fi
+# npm shells out to tools whose shebang is `#!/usr/bin/env node` (tsc, vitest,
+# eslint), so the runtime must be discoverable on PATH -- calling npm by its
+# absolute path is not enough.
+PATH="$(cd "$(dirname "$NODE_BIN")" && pwd):$PATH"
+export PATH
 "$NODE_BIN" --version
 
 say "gateway build"
