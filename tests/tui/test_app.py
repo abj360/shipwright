@@ -86,6 +86,11 @@ def test_plain_text_starts_a_turn(tmp_path: Path) -> None:
         async with app.run_test() as pilot:
             await pilot.pause()
             app.handle_line("add a health endpoint")
+            for _ in range(40):
+                await pilot.pause()
+                await asyncio.sleep(0.05)
+                if app.query_one(Timeline).turns[-1].is_finished:
+                    break
             return len(app.query_one(Timeline).turns)
 
     assert asyncio.run(_run()) == 1
