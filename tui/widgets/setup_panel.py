@@ -11,23 +11,39 @@ Contains:
     SetupPanel.target(): the provider this panel is currently collecting for
     SetupPanel.is_needed(): whether any provider still requires a key
     SetupPanel.compose(): builds the provider choice, masked input, and buttons
+    SetupPanel.on_input_submitted(): verifies and saves when Enter is pressed
     SetupPanel.on_button_pressed(): saves the key or skips setup
+    SetupPanel.submit_key(): verifies whatever is currently typed
+    SetupPanel.action_skip(): dismisses setup from the keyboard
     SetupPanel.Saved: reports which variable was written, never its value
     SetupPanel.Skipped: reports that setup was dismissed without a key
+    verify_credential(): proves a key works with one real completion
+    DEFAULT_MODELS_BY_ENV: the model each provider verifies against
 """
 
 import os
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.binding import Binding
+from textual.containers import Horizontal
 from textual.css.query import NoMatches
 from textual.message import Message
 from textual.widgets import Button, Input, Label, RadioButton, RadioSet, Static
 
-from agent.llm_client import CREDENTIAL_ENV_VARS, Provider
+from agent.llm_client import (
+    CREDENTIAL_ENV_VARS,
+    DEFAULT_MODELS,
+    MissingCredentialError,
+    Provider,
+    build_client,
+)
+from agent.llm_client import (
+    Message as LLMMessage,
+)
 from tui.redaction import redact_secrets
 
 ENV_FILENAME = ".env"
@@ -38,6 +54,13 @@ SKIP_BUTTON_ID = "setup-skip"
 PROVIDER_SET_ID = "setup-provider"
 STATUS_LABEL_ID = "setup-status"
 EMPTY_KEY_NOTICE = "Paste a key first, or choose Skip for now."
+VERIFYING_NOTICE = "verifying the key with a real completion…"
+VERIFIED_TEMPLATE = "verified against {model} — saved to {path}"
+PANEL_TITLE = "Welcome to shipwright"
+SECURITY_NOTE = "Runs sandboxed. Only this folder is mounted."
+PROVIDER_PROMPT = "Choose a model provider:"
+KEY_HINT = "enter to verify and save   ·   esc to skip"
+VERIFY_TIMEOUT_S = 30.0
 
 
 @dataclass(frozen=True)
@@ -96,6 +119,38 @@ def persist_key(env_var: str, key: str, repo_path: Path) -> Path:
     return env_path
 
 
+def verify_credential(provider: Provider, key: str) -> str:
+    """Proves a credential works by asking its provider for one real completion.
+
+    OpenClaw verifies a key before storing it, and the reason is sound: a
+    rejected key discovered on the first real task looks like a broken agent
+    rather than a typo. The check is deliberately tiny.
+
+    Args:
+        provider: Provider the credential belongs to.
+        key: Credential to test.
+
+    Returns:
+        error: Empty when the key works, otherwise why it did not.
+    """
+    previous = os.environ.get(CREDENTIAL_ENV_VARS[provider])
+    os.environ[CREDENTIAL_ENV_VARS[provider]] = key
+    try:
+        client = build_client(provider)
+        client.complete([LLMMessage(role="user", content="hi")], "Reply with one word.", 16)
+    except MissingCredentialError as exc:
+        return str(exc)
+    except Exception as exc:  # noqa: BLE001 - any provider failure is a failed check
+        return f"{type(exc).__name__}: {exc}"
+    finally:
+        if previous is None:
+            with suppress(KeyError):
+                del os.environ[CREDENTIAL_ENV_VARS[provider]]
+        else:
+            os.environ[CREDENTIAL_ENV_VARS[provider]] = previous
+    return ""
+
+
 def confirmation_line(env_var: str, env_path: Path, key: str) -> str:
     """Renders the line the timeline shows once a key has been saved.
 
@@ -120,6 +175,7 @@ class SetupPanel(Static):
     Attributes:
         repo_path: Checkout whose .env file the entered key is written to.
         missing: Providers still waiting on a credential.
+        verifier: Proves a key works; injected so tests need no provider.
     """
 
     class Saved(Message):
@@ -144,16 +200,25 @@ class SetupPanel(Static):
     class Skipped(Message):
         """Reports that the operator dismissed setup without entering a key."""
 
-    def __init__(self, repo_path: Path, missing: list[CredentialStatus] | None = None) -> None:
+    BINDINGS = [Binding("escape", "skip", "Skip setup")]
+
+    def __init__(
+        self,
+        repo_path: Path,
+        missing: list[CredentialStatus] | None = None,
+        verifier: Callable[[Provider, str], str] | None = None,
+    ) -> None:
         """Builds the panel for whichever providers lack a credential.
 
         Args:
             repo_path: Checkout whose .env file the entered key is written to.
             missing: Providers to offer; detected from the environment when None.
+            verifier: Proves a key works; defaults to a real provider call.
         """
         super().__init__()
         self.repo_path = repo_path
         self.missing = detect_missing() if missing is None else missing
+        self.verifier = verify_credential if verifier is None else verifier
 
     def is_needed(self) -> bool:
         """Reports whether the panel has anything left to ask for.
@@ -177,29 +242,61 @@ class SetupPanel(Static):
             return self.missing[0]
         return self.missing[chosen]
 
+    DEFAULT_CSS = """
+    SetupPanel {
+        border: round $accent;
+        padding: 1 2;
+        margin: 1 4;
+        height: auto;
+    }
+    SetupPanel .setup-note { color: $text-muted; }
+    SetupPanel .setup-status { color: $accent; }
+    """
+
     def compose(self) -> ComposeResult:
         """Builds the provider choice, the masked key input, and the buttons."""
         if not self.is_needed():
             yield Label("Every provider already has a key configured.")
             return
 
-        choices = [
-            RadioButton(status.env_var, value=index == 0)
-            for index, status in enumerate(self.missing)
-        ]
-        yield Vertical(
-            Label("Shipwright needs a model provider key to run."),
-            RadioSet(*choices, id=PROVIDER_SET_ID),
-            Input(placeholder="paste key here", password=True, id=KEY_INPUT_ID),
-            Label("", id=STATUS_LABEL_ID),
-            Horizontal(
-                Button("Save key", variant="primary", id=SAVE_BUTTON_ID),
-                Button("Skip for now", id=SKIP_BUTTON_ID),
+        self.border_title = PANEL_TITLE
+        yield Label(SECURITY_NOTE, classes="setup-note")
+        yield Label(PROVIDER_PROMPT)
+        yield RadioSet(
+            *(
+                RadioButton(
+                    f"{status.provider.value}  ·  {DEFAULT_MODELS[status.provider]}",
+                    value=index == 0,
+                )
+                for index, status in enumerate(self.missing)
             ),
+            id=PROVIDER_SET_ID,
+        )
+        yield Input(placeholder="paste key here", password=True, id=KEY_INPUT_ID)
+        yield Label(KEY_HINT, classes="setup-note")
+        yield Label("", id=STATUS_LABEL_ID, classes="setup-status")
+        yield Horizontal(
+            Button("Verify and save", variant="primary", id=SAVE_BUTTON_ID),
+            Button("Skip for now", id=SKIP_BUTTON_ID),
         )
 
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Verifies and saves the key when Enter is pressed in the field.
+
+        Args:
+            event: Submission carrying the key that was typed.
+        """
+        if event.input.id != KEY_INPUT_ID:
+            return
+        event.stop()
+        self.submit_key()
+
+    def action_skip(self) -> None:
+        """Dismisses setup from the keyboard."""
+        self.post_message(self.Skipped())
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Saves the entered key, or dismisses setup when Skip was pressed.
+        """Verifies and stores the entered key, or dismisses setup.
 
         Args:
             event: Button press identifying which control was activated.
@@ -209,21 +306,50 @@ class SetupPanel(Static):
             return
         if event.button.id != SAVE_BUTTON_ID:
             return
+        self.submit_key()
 
+    def submit_key(self) -> None:
+        """Verifies whatever is currently typed, then stores it if it works."""
         entry = self.query_one(f"#{KEY_INPUT_ID}", Input)
-        key = entry.value.strip()
         status = self.query_one(f"#{STATUS_LABEL_ID}", Label)
+        key = entry.value.strip()
         if not key:
             status.update(EMPTY_KEY_NOTICE)
             return
 
         target = self.target()
+        status.update(VERIFYING_NOTICE)
+        self.run_worker(lambda: self._verify_then_store(target, key), thread=True, exclusive=True)
+
+    def _verify_then_store(self, target: CredentialStatus, key: str) -> None:
+        """Checks the key against its provider, then hands the result back.
+
+        Args:
+            target: Provider the key belongs to.
+            key: Credential the operator entered.
+        """
+        error = self.verifier(target.provider, key)
+        self.app.call_from_thread(self._apply_verification, target, key, error)
+
+    def _apply_verification(self, target: CredentialStatus, key: str, error: str) -> None:
+        """Stores a verified key, or reports why it was rejected.
+
+        Args:
+            target: Provider the key belongs to.
+            key: Credential the operator entered.
+            error: Empty when the key worked, otherwise why it did not.
+        """
+        status = self.query_one(f"#{STATUS_LABEL_ID}", Label)
+        if error:
+            status.update(f"that key did not work — {error}")
+            return
+
         env_path = persist_key(target.env_var, key, self.repo_path)
         # Apply it now as well: the run about to start reads the environment,
         # not the file, and re-prompting for a key just saved is nonsense.
         os.environ[target.env_var] = key
-        # Clear the field before the confirmation renders: the widget keeps its
-        # value in the DOM, and the transcript snapshots the DOM.
-        entry.value = ""
-        status.update(confirmation_line(target.env_var, env_path, key))
+        self.query_one(f"#{KEY_INPUT_ID}", Input).value = ""
+        status.update(
+            VERIFIED_TEMPLATE.format(model=DEFAULT_MODELS[target.provider], path=env_path)
+        )
         self.post_message(self.Saved(target.env_var, env_path))

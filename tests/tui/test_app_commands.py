@@ -6,7 +6,7 @@ Contains:
     _app(): builds an app against a temporary checkout
     test_every_documented_command_is_registered(): no command is advertised but missing
     test_model_switches_the_provider(): /model retargets later runs
-    test_model_updates_the_header(): the status bar follows the switch
+    test_model_records_the_chosen_model(): the switch is remembered for later runs
     test_model_without_a_key_is_refused(): a provider with no credential is rejected
     test_model_rejects_an_unknown_provider(): a typo does not change the provider
     test_plan_toggles_plan_mode(): /plan turns plan-then-execute on and off
@@ -20,7 +20,6 @@ import pytest
 
 from tui.app import ShipwrightApp
 from tui.commands import USAGE_MODEL
-from tui.screens.header import HeaderBar
 
 DOCUMENTED_COMMANDS = {"plan", "resume", "model", "max-cost", "max-steps"}
 
@@ -76,16 +75,15 @@ def test_model_switches_the_provider(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert app.provider == "openai"
 
 
-def test_model_updates_the_header(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Asserts the status bar reflects a provider switch straight away."""
+def test_model_records_the_chosen_model(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts an explicit model is remembered for the runs that follow."""
     monkeypatch.setenv("OPENAI_API_KEY", "sk-openai-test")
     app = _app(tmp_path)
 
-    def _switch() -> str:
-        app.handle_line("/model openai gpt-4.1")
-        return app.query_one(HeaderBar).render_line_text()
+    line = _mounted(app, lambda: app.handle_line("/model openai gpt-4.1"))
 
-    assert "openai/gpt-4.1" in _mounted(app, _switch)
+    assert "gpt-4.1" in line
+    assert (app.provider, app.model) == ("openai", "gpt-4.1")
 
 
 def test_model_without_a_key_is_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

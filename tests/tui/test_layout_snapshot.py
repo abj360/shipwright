@@ -1,71 +1,127 @@
 #!/usr/bin/env python3
 """
-test_layout_snapshot.py --- pins the order and shape of the four regions
+test_layout_snapshot.py --- pins the shape of the idle and working views
 
 Contains:
-    EXPECTED_ORDER: the widget types composed down the screen, in order
-    _composed_order(): the widget types the app actually mounts, in order
-    test_region_order_matches_the_snapshot(): composition order is unchanged
-    test_timeline_takes_the_remaining_height(): the timeline absorbs spare rows
-    test_header_sits_above_the_composer(): the header is drawn before the input
+    _regions(): the visible regions of a mounted app, top to bottom
+    test_idle_view_is_the_centred_mark(): the mark and composer, nothing else
+    test_timeline_is_hidden_until_work_starts(): no empty transcript on open
+    test_working_view_reveals_the_transcript(): a turn swaps in the transcript
+    test_mark_sits_above_the_composer(): the mark is centred above the input
+    test_no_status_bar_clutter(): no header, cost, token or connection readout
 """
 
 import asyncio
 from pathlib import Path
 
+import pytest
+
 from tui.app import ShipwrightApp
 from tui.screens.composer import Composer
 from tui.screens.footer import FooterBar
-from tui.screens.header import HeaderBar
 from tui.screens.timeline import Timeline
-from tui.widgets.wordmark import GLYPH_HEIGHT
+from tui.widgets.robot import StatusLine
+from tui.widgets.wordmark import Wordmark
 
-EXPECTED_ORDER = ["HeaderBar", "Timeline", "Composer", "FooterBar"]
 
-
-async def _composed_order(repo_path: Path) -> list[str]:
-    """Reports the four regions in the order the app mounts them.
+def _app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ShipwrightApp:
+    """Builds a configured app so onboarding does not take the screen.
 
     Args:
-        repo_path: Checkout the app is pointed at.
+        tmp_path: Checkout the app is pointed at.
+        monkeypatch: Used to supply a provider credential.
 
     Returns:
-        order: Region class names, top to bottom.
+        app: Application ready to mount.
     """
-    app = ShipwrightApp(repo_path, provider="anthropic")
-    async with app.run_test() as pilot:
-        await pilot.pause()
-        wanted = (HeaderBar, Timeline, Composer, FooterBar)
-        found = [(app.query_one(w).region.y, type(app.query_one(w)).__name__) for w in wanted]
-    return [name for _, name in sorted(found)]
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-configured")
+    return ShipwrightApp(tmp_path, provider="anthropic")
 
 
-def test_region_order_matches_the_snapshot(tmp_path: Path) -> None:
-    """Asserts the four regions are laid out in the documented order."""
-    assert asyncio.run(_composed_order(tmp_path)) == EXPECTED_ORDER
+def _regions(app: ShipwrightApp) -> list[str]:
+    """Reports the visible regions of a mounted app, top to bottom.
 
+    Args:
+        app: Application to mount and inspect.
 
-def test_timeline_takes_the_remaining_height(tmp_path: Path) -> None:
-    """Asserts the timeline is the region that absorbs the leftover height."""
+    Returns:
+        order: Class names of the visible regions in vertical order.
+    """
 
-    async def _heights() -> tuple[int, int, int]:
-        app = ShipwrightApp(tmp_path, provider="anthropic")
+    async def _run() -> list[str]:
         async with app.run_test() as pilot:
             await pilot.pause()
-            return (
-                app.query_one(Timeline).region.height,
-                app.query_one(HeaderBar).region.height,
-                app.query_one(HeaderBar).region.y,
-            )
+            found = [
+                (widget.region.y, type(widget).__name__)
+                for widget in (
+                    app.query_one(Wordmark),
+                    app.query_one(Timeline),
+                    app.query_one(StatusLine),
+                    app.query_one(Composer),
+                    app.query_one(FooterBar),
+                )
+                if widget.display
+            ]
+        return [name for _, name in sorted(found)]
 
-    timeline_height, header_height, header_y = asyncio.run(_heights())
-
-    assert timeline_height > header_height
-    assert header_y == GLYPH_HEIGHT
+    return asyncio.run(_run())
 
 
-def test_header_sits_above_the_composer(tmp_path: Path) -> None:
-    """Asserts the status bar is drawn above the instruction input."""
-    order = asyncio.run(_composed_order(tmp_path))
+def test_idle_view_is_the_centred_mark(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts an idle window shows the mark and the input, and nothing more."""
+    assert _regions(_app(tmp_path, monkeypatch)) == ["Wordmark", "Composer", "FooterBar"]
 
-    assert order.index("HeaderBar") < order.index("Composer")
+
+def test_timeline_is_hidden_until_work_starts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Asserts an empty transcript is not shown before anything has run."""
+    app = _app(tmp_path, monkeypatch)
+
+    async def _run() -> tuple[bool, bool]:
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            return app.query_one(Timeline).display, app.query_one(StatusLine).display
+
+    timeline_shown, status_shown = asyncio.run(_run())
+
+    assert timeline_shown is False
+    assert status_shown is False
+
+
+def test_working_view_reveals_the_transcript(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Asserts starting a turn swaps the mark out for the transcript."""
+    app = _app(tmp_path, monkeypatch)
+
+    async def _run() -> tuple[bool, bool]:
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            app.enter_working_view()
+            await pilot.pause()
+            return app.query_one("#region-hero").display, app.query_one(Timeline).display
+
+    hero_shown, timeline_shown = asyncio.run(_run())
+
+    assert hero_shown is False
+    assert timeline_shown is True
+
+
+def test_mark_sits_above_the_composer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts the wordmark is drawn above the instruction input."""
+    order = _regions(_app(tmp_path, monkeypatch))
+
+    assert order.index("Wordmark") < order.index("Composer")
+
+
+def test_no_status_bar_clutter(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts the header, cost, token and connection readouts are all gone."""
+    app = _app(tmp_path, monkeypatch)
+
+    async def _run() -> int:
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            return len(app.query("HeaderBar")) + len(app.query("ConnectionDot"))
+
+    assert asyncio.run(_run()) == 0

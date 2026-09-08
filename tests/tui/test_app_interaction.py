@@ -18,6 +18,7 @@ Contains:
 import asyncio
 from pathlib import Path
 
+import pytest
 from textual.widgets import Input
 
 from agent.llm_client import ScriptedLLM
@@ -90,8 +91,9 @@ async def _drive(app: ShipwrightApp, instruction: str) -> tuple[Timeline, str]:
         return app.query_one(Timeline), app.query_one(Input).value
 
 
-def test_caret_starts_in_the_composer(tmp_path: Path) -> None:
-    """Asserts typing on a freshly opened app lands in the instruction field."""
+def test_caret_starts_in_the_composer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts typing on a configured app lands in the instruction field."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-configured")
 
     async def _run() -> str:
         app = ScriptedApp(_checkout(tmp_path), provider="anthropic")

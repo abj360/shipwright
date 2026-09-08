@@ -10,6 +10,8 @@ COPY pyproject.toml ./
 COPY agent ./agent
 COPY sandbox ./sandbox
 COPY security ./security
+COPY tui ./tui
 RUN pip install --no-cache-dir .
 
-CMD ["python", "-m", "agent.cli", "--help"]
+# The interface is the default entrypoint; the CLI stays reachable as `shipwright`.
+CMD ["ship", "--repo", "/workspace"]

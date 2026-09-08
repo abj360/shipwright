@@ -26,6 +26,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from agent.workspace import find_escapes
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_COMMAND_TIMEOUT_S = 120
@@ -139,15 +141,23 @@ class ToolDispatcher:
 
     Attributes:
         repo_root: Checkout all file tools are confined to.
+        escape_gate: Asked before a command may reach outside the checkout.
     """
 
-    def __init__(self, repo_root: Path) -> None:
+    def __init__(
+        self,
+        repo_root: Path,
+        escape_gate: Callable[[str, str], bool] | None = None,
+    ) -> None:
         """Registers the built-in tool set bound to one checkout.
 
         Args:
             repo_root: Checkout all file tools are confined to.
+            escape_gate: Called with the command and why it leaves the checkout;
+                returning False refuses it. Without a gate, escapes are refused.
         """
         self.repo_root = repo_root.resolve()
+        self.escape_gate = escape_gate
         self._tools: dict[str, Callable[[dict[str, str]], str]] = {
             "edit_file": self._edit_file,
             "read_file": self._read_file,
@@ -290,6 +300,7 @@ class ToolDispatcher:
         command = args.get("command", "").strip()
         if not command:
             raise ToolError("run_shell requires a non-empty command")
+        self._guard_workspace(command)
         proc = subprocess.run(
             command,
             shell=True,
@@ -299,6 +310,29 @@ class ToolDispatcher:
             timeout=DEFAULT_COMMAND_TIMEOUT_S,
         )
         return proc.stdout + proc.stderr
+
+    def _guard_workspace(self, command: str) -> None:
+        """Refuses a command that leaves the checkout unless it is approved.
+
+        File tools are confined by path resolution, but a shell command can
+        walk out with a single `cd`. Fails closed: with no gate configured an
+        escape is refused outright rather than run unattended.
+
+        Args:
+            command: Shell command the agent wants to run.
+
+        Raises:
+            ToolError: The command leaves the checkout and was not approved.
+        """
+        escapes = find_escapes(command, self.repo_root)
+        if not escapes:
+            return
+        reason = f"{escapes[0].token} {escapes[0].reason}"
+        if self.escape_gate is None or not self.escape_gate(command, reason):
+            raise ToolError(
+                f"refused: this command leaves {self.repo_root} ({reason}). "
+                "Work inside the checkout, or approve the step to allow it."
+            )
 
     def _resolve(self, rel_path: str) -> Path:
         """Resolves a repo-relative path, refusing escapes outside the checkout.

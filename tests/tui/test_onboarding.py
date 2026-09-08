@@ -6,9 +6,11 @@ Contains:
     _keyless(): clears every provider credential from the environment
     test_panel_appears_with_no_key(): a fresh machine is asked to set up
     test_panel_offers_every_provider(): the operator picks which provider to use
-    test_saving_dismisses_onboarding(): a stored key clears the panel
+    test_saving_dismisses_onboarding(): a verified key clears the panel
     test_skipping_dismisses_onboarding(): declining also clears the panel
     test_panel_absent_once_configured(): a configured machine is not asked again
+    test_enter_submits_the_key(): the Enter key verifies, no button needed
+    test_rejected_key_is_not_stored(): a key the provider refuses is not saved
 """
 
 import asyncio
@@ -32,6 +34,32 @@ def _keyless(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(env_var, raising=False)
 
 
+def _accept(provider: object, key: str) -> str:
+    """Stands in for a provider that accepts the key.
+
+    Args:
+        provider: Ignored.
+        key: Ignored.
+
+    Returns:
+        error: Always empty, meaning the key verified.
+    """
+    return ""
+
+
+def _reject(provider: object, key: str) -> str:
+    """Stands in for a provider that refuses the key.
+
+    Args:
+        provider: Ignored.
+        key: Ignored.
+
+    Returns:
+        error: Why the key was refused.
+    """
+    return "401 invalid x-api-key"
+
+
 def _panel_count(app: ShipwrightApp, action: str | None = None) -> tuple[int, bool]:
     """Mounts the app, optionally answers onboarding, and reports the outcome.
 
@@ -47,11 +75,19 @@ def _panel_count(app: ShipwrightApp, action: str | None = None) -> tuple[int, bo
     async def _run() -> tuple[int, bool]:
         async with app.run_test() as pilot:
             await pilot.pause()
-            if action == "save":
+            if action in {"save", "enter"}:
                 panel = app.query_one(SetupPanel)
                 panel.query_one("#setup-key").value = "sk-ant-entered-by-hand"
-                await pilot.click("#setup-save")
-                await pilot.pause()
+                if action == "enter":
+                    panel.query_one("#setup-key").focus()
+                    await pilot.press("enter")
+                else:
+                    await pilot.click("#setup-save")
+                for _ in range(30):
+                    await pilot.pause()
+                    await asyncio.sleep(0.02)
+                    if not app.query(SetupPanel):
+                        break
             elif action == "skip":
                 await pilot.click("#setup-skip")
                 await pilot.pause()
@@ -88,7 +124,10 @@ def test_saving_dismisses_onboarding(tmp_path: Path, monkeypatch: pytest.MonkeyP
     """Asserts storing a key clears the panel and hands over to the composer."""
     _keyless(monkeypatch)
 
-    remaining, focused = _panel_count(ShipwrightApp(tmp_path), action="save")
+    app = ShipwrightApp(tmp_path)
+    app.credential_verifier = _accept
+
+    remaining, focused = _panel_count(app, action="save")
 
     assert remaining == 0
     assert focused is True
@@ -113,3 +152,27 @@ def test_panel_absent_once_configured(tmp_path: Path, monkeypatch: pytest.Monkey
     remaining, _ = _panel_count(ShipwrightApp(tmp_path))
 
     assert remaining == 0
+
+
+def test_enter_submits_the_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts Enter in the key field completes setup, with no button press."""
+    _keyless(monkeypatch)
+    app = ShipwrightApp(tmp_path)
+    app.credential_verifier = _accept
+
+    remaining, _ = _panel_count(app, action="enter")
+
+    assert remaining == 0
+    assert (tmp_path / ".env").exists()
+
+
+def test_rejected_key_is_not_stored(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts a key the provider refuses is neither saved nor allowed through."""
+    _keyless(monkeypatch)
+    app = ShipwrightApp(tmp_path)
+    app.credential_verifier = _reject
+
+    remaining, _ = _panel_count(app, action="save")
+
+    assert remaining == 1
+    assert not (tmp_path / ".env").exists()
