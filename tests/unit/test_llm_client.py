@@ -3,6 +3,7 @@
 test_llm_client.py --- unit tests for the Anthropic and OpenAI completion clients
 
 Contains:
+    resolved_headers(): the headers an auth object sets on a request
     stub_post(): replaces httpx.post with a canned response
     capture_post(): replaces httpx.post and records the request it was given
 """
@@ -53,6 +54,23 @@ def stub_post(monkeypatch: pytest.MonkeyPatch, body: dict[str, Any], status: int
     monkeypatch.setattr(httpx, "post", fake_post)
 
 
+def resolved_headers(auth: Any) -> dict[str, str]:
+    """Returns the headers an auth object would set on a real request.
+
+    The credential is attached during the auth flow rather than passed as a
+    header dict, so it has to be resolved before it can be asserted on.
+
+    Args:
+        auth: Auth object handed to httpx.
+
+    Returns:
+        headers: Headers the auth applied to a throwaway request.
+    """
+    request = httpx.Request("POST", "http://example.test")
+    next(auth.auth_flow(request))
+    return dict(request.headers)
+
+
 def capture_post(monkeypatch: pytest.MonkeyPatch, body: dict[str, Any]) -> dict[str, Any]:
     """Replaces httpx.post with one that records the request it was handed.
 
@@ -68,7 +86,7 @@ def capture_post(monkeypatch: pytest.MonkeyPatch, body: dict[str, Any]) -> dict[
     def fake_post(url: str, **kwargs: Any) -> httpx.Response:
         seen["url"] = url
         seen["payload"] = kwargs["json"]
-        seen["headers"] = kwargs["headers"]
+        seen["headers"] = resolved_headers(kwargs["auth"])
         return httpx.Response(200, json=body, request=httpx.Request("POST", url))
 
     monkeypatch.setattr(httpx, "post", fake_post)
