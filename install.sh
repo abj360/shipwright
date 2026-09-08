@@ -1,35 +1,26 @@
 #!/bin/sh
 #
-# install.sh --- installs shipwright as a sandboxed Docker workload.
+# install.sh --- installs, updates, or removes shipwright.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh -o install.sh
-#   sh install.sh
+#   sh install.sh              install (default)
+#   sh install.sh update       rebuild from the latest source
+#   sh install.sh uninstall    remove everything this script created
 #
 # There is deliberately no native install path. The agent runs arbitrary
 # commands on your behalf, so it runs inside a gVisor-isolated container or it
-# does not run at all. This script:
-#   1. Installs Docker if it is missing (with your consent).
-#   2. Installs gVisor and registers `runsc` as a Docker runtime.
-#   3. Proves the sandbox works by launching a probe container under runsc.
-#   4. Builds the agent image and links `ship` into ~/.local/bin.
-#
-# `ship` mounts only the directory you run it in. Nothing above that directory
-# is visible to the agent.
+# does not run at all. `ship` mounts only the directory you launch it in.
 #
 # Escape hatch (understand it before using it):
 #   SHIPWRIGHT_ALLOW_UNSANDBOXED=1  proceed when runsc will not start. Tools
-#   then run under the default runtime, with weaker isolation, and the
-#   interface says so on every launch.
+#   then run with ordinary container isolation, and the launcher says so.
 #
 # Environment overrides:
-#   SHIPWRIGHT_HOME      where the checkout lives
-#   SHIPWRIGHT_BIN       where the `ship` launcher is linked
-#   SHIPWRIGHT_REPO_URL  clone source (a local path works, for testing)
-#   SHIPWRIGHT_REF       branch or tag to install
+#   SHIPWRIGHT_HOME  SHIPWRIGHT_BIN  SHIPWRIGHT_REPO_URL  SHIPWRIGHT_REF
 
 set -eu
 
+MODE="${1:-install}"
 REPO_URL="${SHIPWRIGHT_REPO_URL:-https://github.com/abj360/shipwright.git}"
 REF="${SHIPWRIGHT_REF:-main}"
 INSTALL_HOME="${SHIPWRIGHT_HOME:-$HOME/.local/share/shipwright}"
@@ -38,152 +29,226 @@ SRC_DIR="$INSTALL_HOME/src"
 IMAGE_NAME="shipwright-agent:latest"
 ALLOW_UNSANDBOXED="${SHIPWRIGHT_ALLOW_UNSANDBOXED:-0}"
 GVISOR_KEYRING="/usr/share/keyrings/gvisor-archive-keyring.gpg"
+TOTAL_STEPS=7
+STEP_NUMBER=0
 
-say() { printf '\033[36m==>\033[0m %s\n' "$*"; }
-warn() { printf '\033[33mwarning:\033[0m %s\n' "$*" >&2; }
-die() { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+# --- logging -----------------------------------------------------------------
 
-# Consent and passwords must come from the terminal: piping this script into a
-# shell leaves stdin owned by the pipe, where a prompt is silently skipped.
-have_tty() { [ -r /dev/tty ]; }
+stamp() { date '+%H:%M:%S'; }
+step() {
+    STEP_NUMBER=$((STEP_NUMBER + 1))
+    printf '\n\033[1;36m[%d/%d]\033[0m \033[2m%s\033[0m  \033[1m%s\033[0m\n' \
+        "$STEP_NUMBER" "$TOTAL_STEPS" "$(stamp)" "$*"
+}
+detail() { printf '        \033[2m%s\033[0m %s\n' "·" "$*"; }
+ok()     { printf '        \033[32m✓\033[0m %s\n' "$*"; }
+skip()   { printf '        \033[2m—\033[0m %s\n' "$*"; }
+warn()   { printf '        \033[33m!\033[0m %s\n' "$*" >&2; }
+die()    { printf '\n\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+
+# Run a command, echoing it first so the log shows exactly what happened.
+run() {
+    printf '        \033[2m$ %s\033[0m\n' "$*"
+    "$@"
+}
+
+# The node exists even with no controlling terminal, so test an actual open.
+# Done in a subshell: a redirection failure on a special builtin kills the shell.
+have_tty() { ( exec >/dev/tty ) 2>/dev/null; }
 
 confirm() {
-    have_tty || die "no terminal available for confirmation. Download the script and run it: sh install.sh"
-    printf '\033[1m%s\033[0m [y/N] ' "$1" > /dev/tty
+    have_tty || die "no terminal for confirmation. Download the script and run it: sh install.sh"
+    printf '        \033[1m%s\033[0m [y/N] ' "$1" > /dev/tty
     read -r reply < /dev/tty
     case "$reply" in [yY]*) return 0 ;; *) return 1 ;; esac
 }
 
 as_root() {
-    if [ "$(id -u)" = "0" ]; then "$@"; return; fi
+    if [ "$(id -u)" = "0" ]; then run "$@"; return; fi
     command -v sudo >/dev/null 2>&1 || die "sudo is required to install system packages"
     have_tty || die "sudo needs a terminal. Download the script and run it: sh install.sh"
+    printf '        \033[2m$ sudo %s\033[0m\n' "$*"
     sudo "$@" < /dev/tty
 }
 
+# --- uninstall ---------------------------------------------------------------
+
+if [ "$MODE" = "uninstall" ]; then
+    TOTAL_STEPS=3
+    printf '\033[1mRemoving shipwright\033[0m\n'
+
+    step "Removing launchers from $BIN_DIR"
+    for launcher in ship shipwright ship-update ship-uninstall; do
+        if [ -e "$BIN_DIR/$launcher" ]; then
+            run rm -f "$BIN_DIR/$launcher"
+            ok "removed $launcher"
+        else
+            skip "$launcher was not installed"
+        fi
+    done
+
+    step "Removing the container image"
+    if command -v docker >/dev/null 2>&1 && docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+        run docker image rm -f "$IMAGE_NAME" >/dev/null
+        ok "removed $IMAGE_NAME"
+    else
+        skip "no image to remove"
+    fi
+
+    step "Removing $INSTALL_HOME"
+    if [ -d "$INSTALL_HOME" ]; then
+        detail "$(du -sh "$INSTALL_HOME" 2>/dev/null | cut -f1) of files"
+        run rm -rf "$INSTALL_HOME"
+        ok "removed the checkout and cached files"
+    else
+        skip "nothing installed there"
+    fi
+
+    printf '\n\033[32mshipwright removed.\033[0m Docker and gVisor were left installed.\n'
+    exit 0
+fi
+
 # --- preflight ---------------------------------------------------------------
 
-[ "$(uname -s)" = "Linux" ] || die "shipwright's sandbox requires Linux"
-command -v git >/dev/null 2>&1 || die "git is required; install it and re-run"
+printf '\033[1mshipwright %s\033[0m\n' "$MODE"
 
-IS_WSL=0
-if grep -qi microsoft /proc/version 2>/dev/null; then
-    IS_WSL=1
-    warn "WSL2 detected. gVisor is not officially supported there and may refuse to start."
+step "Checking prerequisites"
+[ "$(uname -s)" = "Linux" ] || die "the sandbox requires Linux; found $(uname -s)"
+if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    ok "linux: ${NAME:-unknown} ${VERSION_ID:-}"
+else
+    ok "linux: $(uname -sr)"
 fi
+detail "kernel $(uname -r)"
+command -v git >/dev/null 2>&1 || die "git is required; install it and re-run"
+ok "git: $(git --version | awk '{print $3}')"
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    warn "WSL2 detected — gVisor is unsupported there and may refuse to start"
+fi
+detail "install prefix: $INSTALL_HOME"
+detail "launchers:      $BIN_DIR"
 
 # --- docker ------------------------------------------------------------------
 
-if ! command -v docker >/dev/null 2>&1; then
-    say "Docker is not installed"
+step "Ensuring Docker is installed and running"
+if command -v docker >/dev/null 2>&1; then
+    ok "docker: $(docker --version | sed 's/Docker version //; s/,.*//')"
+else
+    detail "docker is not installed"
     confirm "Install Docker now? This modifies system packages." \
-        || die "Docker is required. shipwright does not install natively."
-    say "installing Docker"
-    curl -fsSL https://get.docker.com -o "$INSTALL_HOME/get-docker.sh" 2>/dev/null \
-        || { mkdir -p "$INSTALL_HOME"; curl -fsSL https://get.docker.com -o "$INSTALL_HOME/get-docker.sh"; }
+        || die "Docker is required. shipwright has no native install path."
+    mkdir -p "$INSTALL_HOME"
+    run curl -fsSL https://get.docker.com -o "$INSTALL_HOME/get-docker.sh"
     as_root sh "$INSTALL_HOME/get-docker.sh"
+    ok "docker installed: $(docker --version | sed 's/Docker version //; s/,.*//')"
 fi
 
-if ! docker info >/dev/null 2>&1; then
-    say "starting the Docker daemon"
+if docker info >/dev/null 2>&1; then
+    ok "daemon reachable"
+else
+    detail "daemon is not reachable; starting it"
     if [ -d /run/systemd/system ]; then
         as_root systemctl enable --now docker || true
     else
         as_root service docker start || true
     fi
+    docker info >/dev/null 2>&1 || die "the Docker daemon is not reachable. Start it and re-run."
+    ok "daemon started"
 fi
-docker info >/dev/null 2>&1 || die "the Docker daemon is not reachable. Start it and re-run."
-
-if ! docker info >/dev/null 2>&1 && ! id -nG "$USER" | grep -qw docker; then
-    warn "you are not in the 'docker' group; you may need: sudo usermod -aG docker $USER"
-fi
-say "Docker is available"
+id -nG "$USER" 2>/dev/null | grep -qw docker || warn "you are not in the 'docker' group (sudo usermod -aG docker $USER)"
 
 # --- gVisor ------------------------------------------------------------------
 
-install_gvisor() {
-    say "installing gVisor"
+step "Ensuring the gVisor sandbox is available"
+if command -v runsc >/dev/null 2>&1; then
+    ok "runsc: $(runsc --version 2>/dev/null | head -1 | awk '{print $NF}')"
+else
+    detail "runsc is not installed"
+    command -v apt-get >/dev/null 2>&1 \
+        || die "automated gVisor install supports apt only; install runsc manually and re-run"
+    confirm "Install gVisor (runsc) and register it with Docker?" \
+        || die "gVisor is required. Re-run with SHIPWRIGHT_ALLOW_UNSANDBOXED=1 to accept weaker isolation."
     as_root apt-get update -qq
     as_root apt-get install -y -qq apt-transport-https ca-certificates curl gnupg
+    detail "adding the gVisor package repository"
     curl -fsSL https://gvisor.dev/archive.key | as_root gpg --dearmor -o "$GVISOR_KEYRING"
     printf 'deb [arch=%s signed-by=%s] https://storage.googleapis.com/gvisor/releases release main\n' \
         "$(dpkg --print-architecture)" "$GVISOR_KEYRING" \
         | as_root tee /etc/apt/sources.list.d/gvisor.list >/dev/null
     as_root apt-get update -qq
     as_root apt-get install -y -qq runsc
-}
-
-if ! command -v runsc >/dev/null 2>&1; then
-    command -v apt-get >/dev/null 2>&1 \
-        || die "gVisor install is automated for apt systems only; install runsc manually and re-run"
-    confirm "Install gVisor (runsc) and register it with Docker?" \
-        || die "gVisor is required. Re-run with SHIPWRIGHT_ALLOW_UNSANDBOXED=1 only if you accept weaker isolation."
-    install_gvisor
+    ok "runsc installed"
 fi
 
-if command -v runsc >/dev/null 2>&1; then
-    say "registering runsc with Docker"
-    as_root runsc install >/dev/null 2>&1 || warn "runsc install reported a problem"
-    if [ -d /run/systemd/system ]; then
-        as_root systemctl restart docker || true
-    else
-        as_root service docker restart || true
-    fi
-    sleep 2
-fi
+detail "registering runsc as a Docker runtime"
+as_root runsc install >/dev/null 2>&1 || warn "runsc install reported a problem"
+if [ -d /run/systemd/system ]; then as_root systemctl restart docker || true
+else as_root service docker restart || true; fi
+sleep 2
+ok "docker restarted with the runsc runtime"
 
-say "probing the sandbox"
+# --- sandbox probe -----------------------------------------------------------
+
+step "Proving the sandbox actually starts"
+detail "launching a throwaway container under runsc"
 RUNTIME="runsc"
 if docker run --rm --runtime=runsc hello-world >/dev/null 2>&1; then
-    say "gVisor sandbox is working"
+    ok "gVisor sandbox verified"
 else
     if [ "$ALLOW_UNSANDBOXED" = "1" ]; then
         RUNTIME="runc"
-        warn "runsc will not start. Continuing UNSANDBOXED because SHIPWRIGHT_ALLOW_UNSANDBOXED=1."
-        warn "The agent's commands will run with ordinary container isolation only."
+        warn "runsc would not start — continuing UNSANDBOXED as you requested"
+        warn "the agent's commands will have ordinary container isolation only"
     else
-        printf '\n'
         die "gVisor could not start a container, so the sandbox cannot be guaranteed.
-  ${IS_WSL:+WSL2 often cannot run gVisor. }Install on native Linux, or re-run with:
+  Install on native Linux, or re-run accepting weaker isolation:
 
-      SHIPWRIGHT_ALLOW_UNSANDBOXED=1 sh install.sh
-
-  which proceeds with container isolation only and says so on every launch."
+      SHIPWRIGHT_ALLOW_UNSANDBOXED=1 sh install.sh"
     fi
 fi
 
-# --- source and image --------------------------------------------------------
+# --- source ------------------------------------------------------------------
 
+step "Fetching the source"
 mkdir -p "$INSTALL_HOME"
 if [ -d "$SRC_DIR/.git" ]; then
-    say "updating $SRC_DIR"
-    git -C "$SRC_DIR" fetch --quiet --depth 1 origin "$REF"
-    git -C "$SRC_DIR" checkout --quiet FETCH_HEAD
+    detail "updating the existing checkout"
+    run git -C "$SRC_DIR" fetch --quiet --depth 1 origin "$REF"
+    run git -C "$SRC_DIR" checkout --quiet FETCH_HEAD
 else
-    say "cloning $REPO_URL"
+    detail "cloning $REPO_URL ($REF)"
     rm -rf "$SRC_DIR"
     git clone --quiet --depth 1 --branch "$REF" "$REPO_URL" "$SRC_DIR" 2>/dev/null \
         || git clone --quiet --depth 1 "$REPO_URL" "$SRC_DIR"
 fi
+ok "source at $(git -C "$SRC_DIR" rev-parse --short HEAD)"
+cp "$0" "$INSTALL_HOME/install.sh" 2>/dev/null || true
 
-say "building the agent image"
-docker build --quiet -f "$SRC_DIR/docker/agent.Dockerfile" -t "$IMAGE_NAME" "$SRC_DIR" >/dev/null
+# --- image -------------------------------------------------------------------
 
-# --- launcher ----------------------------------------------------------------
+step "Building the agent image"
+detail "this bakes the agent, sandbox policies and interface into $IMAGE_NAME"
+run docker build --quiet -f "$SRC_DIR/docker/agent.Dockerfile" -t "$IMAGE_NAME" "$SRC_DIR" >/dev/null
+ok "image built: $(docker image inspect "$IMAGE_NAME" --format '{{.Size}}' | awk '{printf "%.0f MB", $1/1048576}')"
 
+# --- launchers ---------------------------------------------------------------
+
+step "Installing launchers"
 mkdir -p "$BIN_DIR"
+
 cat > "$BIN_DIR/ship" <<LAUNCHER
 #!/bin/sh
 # ship --- opens the shipwright interface against the current directory.
 #
-# Only \$PWD is mounted. The agent cannot see anything above the directory you
-# run this in, which is the containment boundary -- not a heuristic.
+# Only \$PWD is mounted, so the agent cannot see anything above the directory
+# you run this in. That is the containment boundary.
 set -eu
 IMAGE="\${SHIPWRIGHT_IMAGE:-$IMAGE_NAME}"
 RUNTIME="\${SHIPWRIGHT_RUNTIME:-$RUNTIME}"
 
 if [ "\$RUNTIME" != "runsc" ]; then
-    printf '\033[33mwarning:\033[0m running without gVisor (runtime=%s); tools are only container-isolated\n' "\$RUNTIME" >&2
+    printf '\033[33mwarning:\033[0m running without gVisor (runtime=%s)\n' "\$RUNTIME" >&2
 fi
 
 exec docker run --rm -it \\
@@ -195,15 +260,28 @@ exec docker run --rm -it \\
     "\$IMAGE" ship --repo /workspace "\$@"
 LAUNCHER
 chmod +x "$BIN_DIR/ship"
+ok "ship"
 
-say "installed (runtime: $RUNTIME)"
+printf '#!/bin/sh\nexec sh "%s/install.sh" update\n' "$INSTALL_HOME" > "$BIN_DIR/ship-update"
+chmod +x "$BIN_DIR/ship-update"
+ok "ship-update      rebuild from the latest source"
+
+printf '#!/bin/sh\nexec sh "%s/install.sh" uninstall\n' "$INSTALL_HOME" > "$BIN_DIR/ship-uninstall"
+chmod +x "$BIN_DIR/ship-uninstall"
+ok "ship-uninstall   remove shipwright"
+
+# --- done --------------------------------------------------------------------
+
+printf '\n\033[1;32mshipwright is ready\033[0m  (runtime: %s)\n\n' "$RUNTIME"
 case ":$PATH:" in
-    *":$BIN_DIR:"*) printf '\nRun \033[1mship\033[0m inside any project to open it.\n' ;;
+    *":$BIN_DIR:"*) printf '  Run \033[1mship\033[0m inside any project to open it.\n' ;;
     *)
-        printf '\n%s is not on your PATH yet. Add it:\n\n' "$BIN_DIR"
-        printf '    echo '\''export PATH="%s:$PATH"'\'' >> ~/.bashrc && exec $SHELL\n\n' "$BIN_DIR"
-        printf 'Then run \033[1mship\033[0m inside any project to open it.\n'
+        printf '  %s is not on your PATH yet:\n\n' "$BIN_DIR"
+        printf '      echo '\''export PATH="%s:$PATH"'\'' >> ~/.bashrc && exec $SHELL\n\n' "$BIN_DIR"
+        printf '  Then run \033[1mship\033[0m inside any project.\n'
         ;;
 esac
-printf 'Only the directory you launch it from is mounted; nothing above it is visible.\n'
-printf 'First run asks which provider to use and for its API key.\n'
+printf '  Only the directory you launch it from is mounted.\n'
+printf '  First run asks which provider to use and for its API key.\n\n'
+printf '  \033[2mship-update\033[0m     update to the latest version\n'
+printf '  \033[2mship-uninstall\033[0m  remove it again\n'

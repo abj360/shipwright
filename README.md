@@ -35,22 +35,38 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh -o install.sh
+sh install.sh
 ```
 
-Needs `git` and Python 3.12+. It installs into `~/.local/share/shipwright` with
-its own virtualenv and links `ship` into `~/.local/bin`; re-running upgrades in
-place. Then:
+Needs `git`, Linux, and a terminal (the installer asks before touching system
+packages, so it cannot be piped straight into a shell).
+
+There is **no native install path**. The agent runs arbitrary commands on your
+behalf, so it runs inside a gVisor-isolated container or it does not run. The
+installer provisions Docker and `runsc`, registers the runtime, and then proves
+the sandbox by launching a probe container. If that probe fails the install
+aborts — re-run with `SHIPWRIGHT_ALLOW_UNSANDBOXED=1` only if you accept
+ordinary container isolation, which the launcher then warns about every time.
+
+Then, inside any project:
 
 ```bash
 ship
 ```
 
-The first run asks which provider you want and for its key, stores it in the
-checkout's `.env` with owner-only permissions, and never asks again.
+`ship` mounts **only the directory you run it in**. Nothing above it is visible
+to the agent — that is the containment boundary, not a heuristic.
 
-Working from a clone instead? `scripts/run_local.sh` builds everything and
-starts the gateway, or `pip install -e .` puts `ship` on your PATH directly.
+The first run asks which provider you want, takes the key masked, verifies it
+with one real completion, and stores it in that folder's `.env` with owner-only
+permissions. It never asks again.
+
+| Command | What it does |
+| ------- | ------------ |
+| `ship` | Open the interface on the current directory |
+| `ship-update` | Rebuild from the latest source |
+| `ship-uninstall` | Remove shipwright (Docker and gVisor are left alone) |
 
 ## How you use it
 
