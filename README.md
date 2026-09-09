@@ -75,7 +75,29 @@ permissions. It never asks again.
 | ------- | ------------ |
 | `ship` | Open the interface on the current directory |
 | `ship-update` | Rebuild from the latest source |
-| `ship-uninstall` | Remove shipwright (Docker and gVisor are left alone) |
+| `ship-uninstall` | Remove shipwright |
+
+### Update
+
+```bash
+ship-update
+```
+
+### Uninstall
+
+```bash
+ship-uninstall
+```
+
+That removes the launchers, the container image, and `~/.local/share/shipwright`.
+Docker and gVisor are left installed, and nothing outside the install prefix is
+touched — your checkouts stay where they are.
+
+If the launcher is gone but the install directory is not:
+
+```bash
+sh ~/.local/share/shipwright/install.sh uninstall
+```
 
 ## How you use it
 
