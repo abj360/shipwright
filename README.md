@@ -49,12 +49,14 @@ curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh -
 sh install.sh
 ```
 
-There is **no native install path**. The agent runs arbitrary commands on your
-behalf, so it runs inside a gVisor-isolated container or it does not run. The
-installer verifies `runsc` is registered with Docker and then proves the sandbox
-by launching a probe container. If gVisor is missing or the probe fails, the
-install stops — re-run with `SHIPWRIGHT_ALLOW_UNSANDBOXED=1` only if you accept
-ordinary container isolation, which the launcher then warns about every time.
+There is **no native install path and no unsandboxed mode**. The agent runs
+arbitrary commands on your behalf, so it runs inside a gVisor-isolated container
+or it does not run. The installer verifies `runsc` is registered with Docker and
+then proves the sandbox by launching a probe container; if gVisor is missing, or
+the probe fails, the install stops.
+
+gVisor is not supported on the WSL2 kernel, so install on native Linux or in a
+VM with a stock kernel.
 
 Then, inside any project:
 
