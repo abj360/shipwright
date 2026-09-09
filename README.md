@@ -41,17 +41,20 @@ curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh -
 sh install.sh
 ```
 
-**Install Docker first** — the installer checks for it and will not install it
-for you ([docs](https://docs.docker.com/engine/install/); on WSL2, Docker
-Desktop with WSL integration is usually smoother). You also need `git`, Linux,
-and a terminal: the installer prompts before touching system packages, so it
-cannot be piped straight into a shell.
+**Install the prerequisites first** — the installer checks for them and will not
+install them for you:
+
+| Requirement | Notes |
+| ----------- | ----- |
+| [Docker](https://docs.docker.com/engine/install/) | On WSL2, Docker Desktop with WSL integration is usually smoother |
+| [gVisor (`runsc`)](https://gvisor.dev/docs/user_guide/install/) | Then register it: `sudo runsc install && sudo systemctl restart docker` |
+| `git`, Linux, a terminal | The installer prompts, so it cannot be piped into a shell |
 
 There is **no native install path**. The agent runs arbitrary commands on your
 behalf, so it runs inside a gVisor-isolated container or it does not run. The
-installer installs `runsc`, registers it as a Docker runtime, and then proves
-the sandbox by launching a probe container. If that probe fails the install
-aborts — re-run with `SHIPWRIGHT_ALLOW_UNSANDBOXED=1` only if you accept
+installer verifies `runsc` is registered with Docker and then proves the sandbox
+by launching a probe container. If gVisor is missing or the probe fails, the
+install stops — re-run with `SHIPWRIGHT_ALLOW_UNSANDBOXED=1` only if you accept
 ordinary container isolation, which the launcher then warns about every time.
 
 Then, inside any project:
