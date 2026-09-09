@@ -31,6 +31,10 @@ ALLOW_UNSANDBOXED="${SHIPWRIGHT_ALLOW_UNSANDBOXED:-0}"
 GVISOR_KEYRING="/usr/share/keyrings/gvisor-archive-keyring.gpg"
 TOTAL_STEPS=7
 STEP_NUMBER=0
+# Docker may only be reachable through sudo until a new login picks up the
+# docker group, so every docker call goes through this.
+DOCKER="docker"
+NEEDS_RELOGIN=0
 
 # --- logging -----------------------------------------------------------------
 
@@ -88,8 +92,8 @@ if [ "$MODE" = "uninstall" ]; then
     done
 
     step "Removing the container image"
-    if command -v docker >/dev/null 2>&1 && docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
-        run docker image rm -f "$IMAGE_NAME" >/dev/null
+    if command -v docker >/dev/null 2>&1 && $DOCKER image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+        run $DOCKER image rm -f "$IMAGE_NAME" >/dev/null
         ok "removed $IMAGE_NAME"
     else
         skip "no image to remove"
@@ -146,17 +150,33 @@ fi
 
 if docker info >/dev/null 2>&1; then
     ok "daemon reachable"
+elif sudo docker info >/dev/null 2>&1; then
+    # The daemon is up; this user just is not allowed to talk to its socket.
+    detail "daemon is running, but $USER cannot reach $(ls -l /var/run/docker.sock 2>/dev/null | awk '{print $3":"$4}')"
+    as_root usermod -aG docker "$USER"
+    ok "added $USER to the docker group"
+    detail "group membership only applies to new logins, so this install uses sudo"
+    DOCKER="sudo docker"
+    NEEDS_RELOGIN=1
 else
-    detail "daemon is not reachable; starting it"
+    detail "daemon is not running; starting it"
     if [ -d /run/systemd/system ]; then
         as_root systemctl enable --now docker || true
     else
         as_root service docker start || true
     fi
-    docker info >/dev/null 2>&1 || die "the Docker daemon is not reachable. Start it and re-run."
-    ok "daemon started"
+    sleep 2
+    if docker info >/dev/null 2>&1; then
+        ok "daemon started"
+    elif sudo docker info >/dev/null 2>&1; then
+        as_root usermod -aG docker "$USER"
+        ok "daemon started; added $USER to the docker group"
+        DOCKER="sudo docker"
+        NEEDS_RELOGIN=1
+    else
+        die "the Docker daemon could not be started. Check: sudo systemctl status docker"
+    fi
 fi
-id -nG "$USER" 2>/dev/null | grep -qw docker || warn "you are not in the 'docker' group (sudo usermod -aG docker $USER)"
 
 # --- gVisor ------------------------------------------------------------------
 
@@ -193,7 +213,7 @@ ok "docker restarted with the runsc runtime"
 step "Proving the sandbox actually starts"
 detail "launching a throwaway container under runsc"
 RUNTIME="runsc"
-if docker run --rm --runtime=runsc hello-world >/dev/null 2>&1; then
+if $DOCKER run --rm --runtime=runsc hello-world >/dev/null 2>&1; then
     ok "gVisor sandbox verified"
 else
     if [ "$ALLOW_UNSANDBOXED" = "1" ]; then
@@ -229,8 +249,8 @@ cp "$0" "$INSTALL_HOME/install.sh" 2>/dev/null || true
 
 step "Building the agent image"
 detail "this bakes the agent, sandbox policies and interface into $IMAGE_NAME"
-run docker build --quiet -f "$SRC_DIR/docker/agent.Dockerfile" -t "$IMAGE_NAME" "$SRC_DIR" >/dev/null
-ok "image built: $(docker image inspect "$IMAGE_NAME" --format '{{.Size}}' | awk '{printf "%.0f MB", $1/1048576}')"
+run $DOCKER build --quiet -f "$SRC_DIR/docker/agent.Dockerfile" -t "$IMAGE_NAME" "$SRC_DIR" >/dev/null
+ok "image built: $($DOCKER image inspect "$IMAGE_NAME" --format '{{.Size}}' | awk '{printf "%.0f MB", $1/1048576}')"
 
 # --- launchers ---------------------------------------------------------------
 
@@ -246,6 +266,18 @@ cat > "$BIN_DIR/ship" <<LAUNCHER
 set -eu
 IMAGE="\${SHIPWRIGHT_IMAGE:-$IMAGE_NAME}"
 RUNTIME="\${SHIPWRIGHT_RUNTIME:-$RUNTIME}"
+
+if ! docker info >/dev/null 2>&1; then
+    printf '\033[31merror:\033[0m cannot reach Docker.\n' >&2
+    if id -nG 2>/dev/null | tr " " "\\n" | grep -qx docker; then
+        printf '  Is the daemon running?  sudo systemctl start docker\n' >&2
+    else
+        printf '  You are not in the docker group yet. Start a new login shell:\n\n' >&2
+        printf '      newgrp docker\n\n' >&2
+        printf '  or log out and back in, then run ship again.\n' >&2
+    fi
+    exit 1
+fi
 
 if [ "\$RUNTIME" != "runsc" ]; then
     printf '\033[33mwarning:\033[0m running without gVisor (runtime=%s)\n' "\$RUNTIME" >&2
