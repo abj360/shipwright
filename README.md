@@ -16,6 +16,8 @@ Shipwright is an autonomous coding agent that reads a repository, edits code,
 runs the tests, and opens a draft PR, with every command it issues executing inside a
 gVisor-isolated sandbox under hard resource limits and a default-deny egress allowlist.
 
+<img src="docs/media/live-viewer.gif" alt="A run from typing the request to the diff" width="940" />
+
 
 </div>
 
@@ -39,12 +41,15 @@ curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh -
 sh install.sh
 ```
 
-Needs `git`, Linux, and a terminal (the installer asks before touching system
-packages, so it cannot be piped straight into a shell).
+**Install Docker first** — the installer checks for it and will not install it
+for you ([docs](https://docs.docker.com/engine/install/); on WSL2, Docker
+Desktop with WSL integration is usually smoother). You also need `git`, Linux,
+and a terminal: the installer prompts before touching system packages, so it
+cannot be piped straight into a shell.
 
 There is **no native install path**. The agent runs arbitrary commands on your
 behalf, so it runs inside a gVisor-isolated container or it does not run. The
-installer provisions Docker and `runsc`, registers the runtime, and then proves
+installer installs `runsc`, registers it as a Docker runtime, and then proves
 the sandbox by launching a probe container. If that probe fails the install
 aborts — re-run with `SHIPWRIGHT_ALLOW_UNSANDBOXED=1` only if you accept
 ordinary container isolation, which the launcher then warns about every time.
@@ -226,6 +231,10 @@ are explicitly ignored so runs can never trigger themselves in a loop.
 
 The terminal interface (`tui/`) is a conversation: each request you send becomes
 a turn showing what the agent did and the diff it produced.
+
+![Two turns of a conversation, one activity row expanded](docs/media/conversation.png)
+
+<sub>Captures above predate the terminal interface; new ones are pending.</sub>
 
 Each turn collapses the run into activity rows — `Read`, `Edited`, `Ran` — that
 open to reveal that step's output, followed by the agent's answer, the token

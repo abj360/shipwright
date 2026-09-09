@@ -135,18 +135,23 @@ detail "launchers:      $BIN_DIR"
 
 # --- docker ------------------------------------------------------------------
 
-step "Ensuring Docker is installed and running"
-if command -v docker >/dev/null 2>&1; then
-    ok "docker: $(docker --version | sed 's/Docker version //; s/,.*//')"
-else
-    detail "docker is not installed"
-    confirm "Install Docker now? This modifies system packages." \
-        || die "Docker is required. shipwright has no native install path."
-    mkdir -p "$INSTALL_HOME"
-    run curl -fsSL https://get.docker.com -o "$INSTALL_HOME/get-docker.sh"
-    as_root sh "$INSTALL_HOME/get-docker.sh"
-    ok "docker installed: $(docker --version | sed 's/Docker version //; s/,.*//')"
+step "Checking Docker"
+if ! command -v docker >/dev/null 2>&1; then
+    die "Docker is required, and it is not installed.
+
+  shipwright has no native install path: the agent runs arbitrary commands on
+  your behalf, so it runs inside a container or it does not run at all.
+
+  Install Docker first, then re-run this script.
+
+      Docs:    https://docs.docker.com/engine/install/
+      Ubuntu:  curl -fsSL https://get.docker.com | sudo sh
+      WSL2:    Docker Desktop with WSL integration is usually smoother
+               https://docs.docker.com/desktop/wsl/
+
+  Then:  sh $0"
 fi
+ok "docker: $(docker --version | sed 's/Docker version //; s/,.*//')"
 
 if docker info >/dev/null 2>&1; then
     ok "daemon reachable"
