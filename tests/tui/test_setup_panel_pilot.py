@@ -15,7 +15,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import Input
 
 from agent.llm_client import Provider
-from tui.widgets.setup_panel import CredentialStatus, SetupPanel
+from tui.widgets.setup_panel import CredentialStatus, SetupPanel, Verification
 
 ANTHROPIC_MISSING = CredentialStatus(Provider.ANTHROPIC, "ANTHROPIC_API_KEY", False)
 SAMPLE_KEY = "sk-ant-api03-Qr7TbV3wKd8ZnH2yPcE5uJf0RgXa91Lm"
@@ -39,7 +39,11 @@ class SetupHarness(App[None]):
 
     def compose(self) -> ComposeResult:
         """Mounts the setup panel with a single missing provider."""
-        yield SetupPanel(self.repo_path, [ANTHROPIC_MISSING], verifier=lambda p, k: "")
+        yield SetupPanel(
+            self.repo_path,
+            [ANTHROPIC_MISSING],
+            verifier=lambda p, k: Verification(is_rejected=False, message=""),
+        )
 
 
 async def _save_key(repo_path: Path, key: str) -> str:

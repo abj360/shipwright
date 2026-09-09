@@ -11,6 +11,7 @@ Contains:
     test_panel_absent_once_configured(): a configured machine is not asked again
     test_enter_submits_the_key(): the Enter key verifies, no button needed
     test_rejected_key_is_not_stored(): a key the provider refuses is not saved
+    test_unreachable_provider_still_stores_the_key(): offline does not re-prompt
 """
 
 import asyncio
@@ -21,7 +22,7 @@ import pytest
 from agent.llm_client import CREDENTIAL_ENV_VARS
 from tui.app import ShipwrightApp
 from tui.screens.composer import Composer
-from tui.widgets.setup_panel import SetupPanel
+from tui.widgets.setup_panel import SetupPanel, Verification
 
 
 def _keyless(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -34,7 +35,7 @@ def _keyless(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(env_var, raising=False)
 
 
-def _accept(provider: object, key: str) -> str:
+def _accept(provider: object, key: str) -> Verification:
     """Stands in for a provider that accepts the key.
 
     Args:
@@ -42,12 +43,12 @@ def _accept(provider: object, key: str) -> str:
         key: Ignored.
 
     Returns:
-        error: Always empty, meaning the key verified.
+        result: A clean verification.
     """
-    return ""
+    return Verification(is_rejected=False, message="")
 
 
-def _reject(provider: object, key: str) -> str:
+def _reject(provider: object, key: str) -> Verification:
     """Stands in for a provider that refuses the key.
 
     Args:
@@ -55,9 +56,9 @@ def _reject(provider: object, key: str) -> str:
         key: Ignored.
 
     Returns:
-        error: Why the key was refused.
+        result: A refusal from the provider.
     """
-    return "401 invalid x-api-key"
+    return Verification(is_rejected=True, message="provider returned 401")
 
 
 def _panel_count(app: ShipwrightApp, action: str | None = None) -> tuple[int, bool]:
@@ -176,3 +177,34 @@ def test_rejected_key_is_not_stored(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
     assert remaining == 1
     assert not (tmp_path / ".env").exists()
+
+
+def _unreachable(provider: object, key: str) -> Verification:
+    """Stands in for a provider that cannot be reached at all.
+
+    Args:
+        provider: Ignored.
+        key: Ignored.
+
+    Returns:
+        result: Not a refusal, just an unreachable provider.
+    """
+    return Verification(is_rejected=False, message="ConnectError: connection refused")
+
+
+def test_unreachable_provider_still_stores_the_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Asserts an unreachable provider does not cost the operator their key.
+
+    Being offline says nothing about whether a key is valid, and discarding it
+    means being asked for it again on every single launch.
+    """
+    _keyless(monkeypatch)
+    app = ShipwrightApp(tmp_path)
+    app.credential_verifier = _unreachable
+
+    remaining, _ = _panel_count(app, action="save")
+
+    assert remaining == 0
+    assert "ANTHROPIC_API_KEY" in (tmp_path / ".env").read_text()

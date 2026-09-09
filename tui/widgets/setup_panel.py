@@ -17,7 +17,8 @@ Contains:
     SetupPanel.action_skip(): dismisses setup from the keyboard
     SetupPanel.Saved: reports which variable was written, never its value
     SetupPanel.Skipped: reports that setup was dismissed without a key
-    verify_credential(): proves a key works with one real completion
+    Verification: whether a key was refused, and what to tell the operator
+    verify_credential(): asks the provider whether a key works
     DEFAULT_MODELS_BY_ENV: the model each provider verifies against
 """
 
@@ -27,6 +28,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
+import httpx
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal
@@ -56,6 +58,8 @@ STATUS_LABEL_ID = "setup-status"
 EMPTY_KEY_NOTICE = "Paste a key first, or choose Skip for now."
 VERIFYING_NOTICE = "verifying the key with a real completion…"
 VERIFIED_TEMPLATE = "verified against {model} — saved to {path}"
+UNVERIFIED_TEMPLATE = "saved to {path}, but the provider could not be reached: {reason}"
+REJECTED_STATUSES = frozenset({401, 403})
 PANEL_TITLE = "Welcome to shipwright"
 SECURITY_NOTE = "Runs sandboxed. Only this folder is mounted."
 PROVIDER_PROMPT = "Choose a model provider:"
@@ -119,19 +123,33 @@ def persist_key(env_var: str, key: str, repo_path: Path) -> Path:
     return env_path
 
 
-def verify_credential(provider: Provider, key: str) -> str:
-    """Proves a credential works by asking its provider for one real completion.
+@dataclass(frozen=True)
+class Verification:
+    """Records what a provider said about a credential.
 
-    OpenClaw verifies a key before storing it, and the reason is sound: a
-    rejected key discovered on the first real task looks like a broken agent
-    rather than a typo. The check is deliberately tiny.
+    Attributes:
+        is_rejected: True only when the provider actively refused the key.
+        message: What to tell the operator; empty when it verified cleanly.
+    """
+
+    is_rejected: bool
+    message: str
+
+
+def verify_credential(provider: Provider, key: str) -> Verification:
+    """Asks a provider whether a credential works, with one tiny completion.
+
+    A key is only discarded when the provider actually refuses it. Being
+    unable to reach the provider at all -- offline, behind a proxy, inside a
+    container with no egress -- says nothing about the key, and refusing to
+    store it there would leave the operator retyping it on every launch.
 
     Args:
         provider: Provider the credential belongs to.
         key: Credential to test.
 
     Returns:
-        error: Empty when the key works, otherwise why it did not.
+        result: Whether the key was refused, and what to report.
     """
     previous = os.environ.get(CREDENTIAL_ENV_VARS[provider])
     os.environ[CREDENTIAL_ENV_VARS[provider]] = key
@@ -139,16 +157,20 @@ def verify_credential(provider: Provider, key: str) -> str:
         client = build_client(provider)
         client.complete([LLMMessage(role="user", content="hi")], "Reply with one word.", 16)
     except MissingCredentialError as exc:
-        return str(exc)
-    except Exception as exc:  # noqa: BLE001 - any provider failure is a failed check
-        return f"{type(exc).__name__}: {exc}"
+        return Verification(is_rejected=True, message=str(exc))
+    except httpx.HTTPStatusError as exc:
+        refused = exc.response.status_code in REJECTED_STATUSES
+        detail = f"provider returned {exc.response.status_code}"
+        return Verification(is_rejected=refused, message=detail)
+    except Exception as exc:  # noqa: BLE001 - anything else is a reachability problem
+        return Verification(is_rejected=False, message=f"{type(exc).__name__}: {exc}")
     finally:
         if previous is None:
             with suppress(KeyError):
                 del os.environ[CREDENTIAL_ENV_VARS[provider]]
         else:
             os.environ[CREDENTIAL_ENV_VARS[provider]] = previous
-    return ""
+    return Verification(is_rejected=False, message="")
 
 
 def confirmation_line(env_var: str, env_path: Path, key: str) -> str:
@@ -206,7 +228,7 @@ class SetupPanel(Static):
         self,
         repo_path: Path,
         missing: list[CredentialStatus] | None = None,
-        verifier: Callable[[Provider, str], str] | None = None,
+        verifier: Callable[[Provider, str], Verification] | None = None,
     ) -> None:
         """Builds the panel for whichever providers lack a credential.
 
@@ -328,20 +350,20 @@ class SetupPanel(Static):
             target: Provider the key belongs to.
             key: Credential the operator entered.
         """
-        error = self.verifier(target.provider, key)
-        self.app.call_from_thread(self._apply_verification, target, key, error)
+        result = self.verifier(target.provider, key)
+        self.app.call_from_thread(self._apply_verification, target, key, result)
 
-    def _apply_verification(self, target: CredentialStatus, key: str, error: str) -> None:
-        """Stores a verified key, or reports why it was rejected.
+    def _apply_verification(self, target: CredentialStatus, key: str, result: Verification) -> None:
+        """Stores the key unless the provider refused it.
 
         Args:
             target: Provider the key belongs to.
             key: Credential the operator entered.
-            error: Empty when the key worked, otherwise why it did not.
+            result: What the provider said about the key.
         """
         status = self.query_one(f"#{STATUS_LABEL_ID}", Label)
-        if error:
-            status.update(f"that key did not work — {error}")
+        if result.is_rejected:
+            status.update(f"that key was refused — {result.message}")
             return
 
         env_path = persist_key(target.env_var, key, self.repo_path)
@@ -349,7 +371,10 @@ class SetupPanel(Static):
         # not the file, and re-prompting for a key just saved is nonsense.
         os.environ[target.env_var] = key
         self.query_one(f"#{KEY_INPUT_ID}", Input).value = ""
-        status.update(
-            VERIFIED_TEMPLATE.format(model=DEFAULT_MODELS[target.provider], path=env_path)
-        )
+        if result.message:
+            status.update(UNVERIFIED_TEMPLATE.format(path=env_path, reason=result.message))
+        else:
+            status.update(
+                VERIFIED_TEMPLATE.format(model=DEFAULT_MODELS[target.provider], path=env_path)
+            )
         self.post_message(self.Saved(target.env_var, env_path))

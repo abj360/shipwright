@@ -73,7 +73,7 @@ from tui.widgets.context_bar import ContextBar
 from tui.widgets.diff_panel import DiffPanel
 from tui.widgets.plan_panel import PlanPanel
 from tui.widgets.robot import Phase, Robot, StatusLine, phase_for_tool
-from tui.widgets.setup_panel import SetupPanel, detect_missing
+from tui.widgets.setup_panel import SetupPanel, Verification, detect_missing
 from tui.widgets.step_row import StepRow
 from tui.widgets.wordmark import Wordmark
 
@@ -195,7 +195,7 @@ class ShipwrightApp(App[None]):
         self.model: str | None = None
         self.plan_mode = False
         self.active_loop: AgentLoop | None = None
-        self.credential_verifier: Callable[[Provider, str], str] | None = None
+        self.credential_verifier: Callable[[Provider, str], Verification] | None = None
         self.conversation: list[LoopMessage] = []
         self.active_instruction = ""
 
