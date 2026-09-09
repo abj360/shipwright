@@ -8,7 +8,8 @@ Contains:
     ShipwrightApp: the terminal interface for one checkout
     ShipwrightApp.get_css_variables(): feeds the palette into Textual's tokens
     ShipwrightApp.compose(): lays out wordmark, header, timeline, composer, footer
-    ShipwrightApp.needs_setup(): whether a provider credential is missing
+    ShipwrightApp.needs_setup(): whether onboarding should run at startup
+    ShipwrightApp.open_setup(): re-runs onboarding on demand
     ShipwrightApp.register_commands(): binds each slash command to its handler
     ShipwrightApp.on_mount(): wires the slash commands once mounted
     ShipwrightApp.on_composer_submitted(): routes a submitted line
@@ -73,7 +74,12 @@ from tui.widgets.context_bar import ContextBar
 from tui.widgets.diff_panel import DiffPanel
 from tui.widgets.plan_panel import PlanPanel
 from tui.widgets.robot import Phase, Robot, StatusLine, phase_for_tool
-from tui.widgets.setup_panel import SetupPanel, Verification, detect_missing
+from tui.widgets.setup_panel import (
+    SetupPanel,
+    Verification,
+    all_providers,
+    detect_missing,
+)
 from tui.widgets.step_row import StepRow
 from tui.widgets.wordmark import Wordmark
 
@@ -81,6 +87,8 @@ DEFAULT_GATEWAY_URL = "http://localhost:4000"
 INSTRUCTION_PREFIX = "● "
 ANSWER_PREFIX = "● "
 NO_ANSWER_NOTICE = "(the run ended without an answer)"
+SETUP_ALREADY_OPEN = "setup is already open"
+SETUP_REOPENED = "pick a provider and paste a key; enter to save, esc to cancel"
 # Earlier turns replayed into each new run. Capped so a long session cannot
 # crowd out the transcript the loop still has to fit in its own budget.
 HISTORY_TURN_LIMIT = 12
@@ -172,6 +180,7 @@ class ShipwrightApp(App[None]):
         gateway_url: str = DEFAULT_GATEWAY_URL,
         cost_tracker: CostTracker | None = None,
         palette: Palette | None = None,
+        force_setup: bool = False,
     ) -> None:
         """Builds the interface for one checkout.
 
@@ -181,10 +190,12 @@ class ShipwrightApp(App[None]):
             gateway_url: Gateway the connection indicator polls.
             cost_tracker: Tracker the header's cost readout is drawn from.
             palette: Colours to render with; detected from the terminal when None.
+            force_setup: Show onboarding even when a credential is already set.
         """
         # Textual resolves CSS variables inside App.__init__, so the palette has
         # to exist before the base class is initialised.
         self.palette: Palette = palette_for() if palette is None else palette
+        self.force_setup = force_setup
         super().__init__()
         self.repo_path: Path = repo_path
         self.provider: str = provider
@@ -217,6 +228,8 @@ class ShipwrightApp(App[None]):
         Returns:
             needs_setup: True when the setup panel should be shown first.
         """
+        if self.force_setup:
+            return True
         return len(detect_missing()) == len(list(Provider))
 
     def compose(self) -> ComposeResult:
@@ -232,7 +245,9 @@ class ShipwrightApp(App[None]):
         yield hero
 
         if self.needs_setup():
-            setup = SetupPanel(self.repo_path, verifier=self.credential_verifier)
+            # A forced re-run is for changing a key, so offer configured providers too.
+            offered = all_providers() if self.force_setup else None
+            setup = SetupPanel(self.repo_path, missing=offered, verifier=self.credential_verifier)
             setup.id = "region-setup"
             yield setup
 
@@ -272,11 +287,17 @@ class ShipwrightApp(App[None]):
         self.router.register("resume", resume)
         self.router.register("model", self.switch_provider)
         self.router.register("plan", self.toggle_plan_mode)
+        self.router.register("setup", self.open_setup)
 
     def on_mount(self) -> None:
-        """Registers the slash commands and puts the caret in the composer."""
+        """Registers the slash commands and places the caret.
+
+        Onboarding focuses its own key field, so the composer only takes the
+        caret when there is no setup panel competing for it.
+        """
         self.register_commands()
-        self.query_one(Composer).focus_input()
+        if not self.query(SetupPanel):
+            self.query_one(Composer).focus_input()
 
     def handle_line(self, text: str) -> str:
         """Runs a slash command, or reports that a turn should start.
@@ -495,6 +516,31 @@ class ShipwrightApp(App[None]):
         excess = len(self.conversation) - HISTORY_TURN_LIMIT * 2
         if excess > 0:
             del self.conversation[:excess]
+
+    def open_setup(self, argument: str) -> str:
+        """Re-runs onboarding so a key or provider can be changed.
+
+        The key lives in the checkout's .env, not in the install, so
+        reinstalling never brings onboarding back by itself.
+
+        Args:
+            argument: Ignored; the command takes none.
+
+        Returns:
+            line: What to tell the operator.
+        """
+        del argument
+        if self.query(SetupPanel):
+            return SETUP_ALREADY_OPEN
+
+        panel = SetupPanel(
+            self.repo_path,
+            missing=all_providers(),
+            verifier=self.credential_verifier,
+        )
+        panel.id = "region-setup"
+        self.mount(panel, before=self.query_one(Timeline))
+        return SETUP_REOPENED
 
     def model_label(self) -> str:
         """Renders the provider and model currently answering.

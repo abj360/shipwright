@@ -55,8 +55,9 @@ or it does not run. The installer verifies `runsc` is registered with Docker and
 then proves the sandbox by launching a probe container; if gVisor is missing, or
 the probe fails, the install stops.
 
-gVisor is not supported on the WSL2 kernel, so install on native Linux or in a
-VM with a stock kernel.
+gVisor needs a kernel of 4.14.77 or newer with `CONFIG_SECCOMP_FILTER`. It
+defaults to the systrap platform, which needs no virtualisation support, so it
+runs inside VMs and WSL2 as well as on bare metal.
 
 Then, inside any project:
 
@@ -75,6 +76,7 @@ permissions. It never asks again.
 | ------- | ------------ |
 | `ship` | Open the interface on the current directory |
 | `ship-update` | Rebuild from the latest source |
+| `ship --setup` | Change provider or API key |
 | `ship-uninstall` | Remove shipwright |
 
 ### Update
@@ -89,9 +91,17 @@ ship-update
 ship-uninstall
 ```
 
-That removes the launchers, the container image, and `~/.local/share/shipwright`.
-Docker and gVisor are left installed, and nothing outside the install prefix is
-touched — your checkouts stay where they are.
+That removes the launchers, the container image, and `~/.local/share/shipwright`,
+then offers to clear stored provider keys so a reinstall starts from onboarding
+again. Keys live in each project's `.env` rather than in the install, so it
+lists every file it found and asks before touching any of them — and it strips
+only the `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` lines, leaving anything else in
+those files alone.
+
+Docker and gVisor are left installed, and your checkouts stay where they are.
+
+To change a key without uninstalling, run `ship --setup`, or `/setup` inside the
+interface.
 
 If the launcher is gone but the install directory is not:
 
@@ -294,6 +304,7 @@ Once it is open:
 | `/model <provider> [model]` | Switch provider or model mid-run |
 | `/max-cost <usd>` | Raise or lower the run's spend ceiling live |
 | `/max-steps <n>` | Raise or lower the run's iteration ceiling live |
+| `/setup` | Change provider or API key without restarting |
 
 `NO_COLOR` or a `TERM` the terminal reports as colourless drops the interface to
 a monochrome layout rather than printing escape codes.
