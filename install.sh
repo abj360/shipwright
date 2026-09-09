@@ -28,7 +28,6 @@ BIN_DIR="${SHIPWRIGHT_BIN:-$HOME/.local/bin}"
 SRC_DIR="$INSTALL_HOME/src"
 IMAGE_NAME="shipwright-agent:latest"
 ALLOW_UNSANDBOXED="${SHIPWRIGHT_ALLOW_UNSANDBOXED:-0}"
-GVISOR_KEYRING="/usr/share/keyrings/gvisor-archive-keyring.gpg"
 TOTAL_STEPS=7
 STEP_NUMBER=0
 # Docker may only be reachable through sudo until a new login picks up the
@@ -185,40 +184,60 @@ fi
 
 # --- gVisor ------------------------------------------------------------------
 
-step "Ensuring the gVisor sandbox is available"
-if command -v runsc >/dev/null 2>&1; then
-    ok "runsc: $(runsc --version 2>/dev/null | head -1 | awk '{print $NF}')"
-else
-    detail "runsc is not installed"
-    command -v apt-get >/dev/null 2>&1 \
-        || die "automated gVisor install supports apt only; install runsc manually and re-run"
-    confirm "Install gVisor (runsc) and register it with Docker?" \
-        || die "gVisor is required. Re-run with SHIPWRIGHT_ALLOW_UNSANDBOXED=1 to accept weaker isolation."
-    as_root apt-get update -qq
-    as_root apt-get install -y -qq apt-transport-https ca-certificates curl gnupg
-    detail "adding the gVisor package repository"
-    curl -fsSL https://gvisor.dev/archive.key | as_root gpg --dearmor -o "$GVISOR_KEYRING"
-    printf 'deb [arch=%s signed-by=%s] https://storage.googleapis.com/gvisor/releases release main\n' \
-        "$(dpkg --print-architecture)" "$GVISOR_KEYRING" \
-        | as_root tee /etc/apt/sources.list.d/gvisor.list >/dev/null
-    as_root apt-get update -qq
-    as_root apt-get install -y -qq runsc
-    ok "runsc installed"
+step "Checking the gVisor sandbox"
+RUNTIME="runsc"
+if ! command -v runsc >/dev/null 2>&1; then
+    if [ "$ALLOW_UNSANDBOXED" = "1" ]; then
+        RUNTIME="runc"
+        warn "runsc is not installed — continuing UNSANDBOXED as you asked"
+        warn "the agent's commands will have ordinary container isolation only"
+    else
+    die "gVisor (runsc) is required, and it is not installed.
+
+  The agent runs arbitrary commands, so it runs under gVisor or it does not run.
+
+  Install it, then re-run this script:
+
+      Docs:   https://gvisor.dev/docs/user_guide/install/
+
+      Debian/Ubuntu:
+        sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+        curl -fsSL https://gvisor.dev/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/gvisor-archive-keyring.gpg
+        echo 'deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/gvisor-archive-keyring.gpg] https://storage.googleapis.com/gvisor/releases release main' | sudo tee /etc/apt/sources.list.d/gvisor.list > /dev/null
+        sudo apt-get update && sudo apt-get install -y runsc
+
+  Then register it with Docker:
+
+        sudo runsc install && sudo systemctl restart docker
+
+  If you accept weaker isolation instead, re-run with:
+
+        SHIPWRIGHT_ALLOW_UNSANDBOXED=1 sh $0"
+    fi
 fi
 
-detail "registering runsc as a Docker runtime"
-as_root runsc install >/dev/null 2>&1 || warn "runsc install reported a problem"
-if [ -d /run/systemd/system ]; then as_root systemctl restart docker || true
-else as_root service docker restart || true; fi
-sleep 2
-ok "docker restarted with the runsc runtime"
+if [ "$RUNTIME" = "runsc" ]; then
+ok "runsc: $(runsc --version 2>/dev/null | head -1 | awk '{print $NF}')"
+
+if $DOCKER info --format '{{range printf \"%s\" .Runtimes}}{{.}}{{end}}' 2>/dev/null | grep -q runsc \
+    || $DOCKER info 2>/dev/null | grep -q runsc; then
+    ok "registered as a Docker runtime"
+else
+    die "runsc is installed but Docker does not know about it.
+
+  Register it and restart the daemon, then re-run this script:
+
+      sudo runsc install && sudo systemctl restart docker"
+fi
+fi
 
 # --- sandbox probe -----------------------------------------------------------
 
 step "Proving the sandbox actually starts"
-detail "launching a throwaway container under runsc"
-RUNTIME="runsc"
-if $DOCKER run --rm --runtime=runsc hello-world >/dev/null 2>&1; then
+if [ "$RUNTIME" != "runsc" ]; then
+    skip "gVisor is not in use; nothing to prove"
+elif detail "launching a throwaway container under runsc"; \
+    $DOCKER run --rm --runtime=runsc hello-world >/dev/null 2>&1; then
     ok "gVisor sandbox verified"
 else
     if [ "$ALLOW_UNSANDBOXED" = "1" ]; then
