@@ -36,19 +36,18 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
 
 ## Install
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh -o install.sh
-sh install.sh
-```
-
-**Install the prerequisites first** — the installer checks for them and will not
-install them for you:
+### Prerequisites
 
 | Requirement | Notes |
 | ----------- | ----- |
 | [Docker](https://docs.docker.com/engine/install/) | On WSL2, Docker Desktop with WSL integration is usually smoother |
 | [gVisor (`runsc`)](https://gvisor.dev/docs/user_guide/install/) | Then register it: `sudo runsc install && sudo systemctl restart docker` |
 | `git`, Linux, a terminal | The installer prompts, so it cannot be piped into a shell |
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh -o install.sh
+sh install.sh
+```
 
 There is **no native install path**. The agent runs arbitrary commands on your
 behalf, so it runs inside a gVisor-isolated container or it does not run. The
