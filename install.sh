@@ -11,10 +11,6 @@
 # commands on your behalf, so it runs inside a gVisor-isolated container or it
 # does not run at all. `ship` mounts only the directory you launch it in.
 #
-# Escape hatch (understand it before using it):
-#   SHIPWRIGHT_ALLOW_UNSANDBOXED=1  proceed when runsc will not start. Tools
-#   then run with ordinary container isolation, and the launcher says so.
-#
 # Environment overrides:
 #   SHIPWRIGHT_HOME  SHIPWRIGHT_BIN  SHIPWRIGHT_REPO_URL  SHIPWRIGHT_REF
 
@@ -27,7 +23,6 @@ INSTALL_HOME="${SHIPWRIGHT_HOME:-$HOME/.local/share/shipwright}"
 BIN_DIR="${SHIPWRIGHT_BIN:-$HOME/.local/bin}"
 SRC_DIR="$INSTALL_HOME/src"
 IMAGE_NAME="shipwright-agent:latest"
-ALLOW_UNSANDBOXED="${SHIPWRIGHT_ALLOW_UNSANDBOXED:-0}"
 TOTAL_STEPS=7
 STEP_NUMBER=0
 # Docker may only be reachable through sudo until a new login picks up the
@@ -185,16 +180,11 @@ fi
 # --- gVisor ------------------------------------------------------------------
 
 step "Checking the gVisor sandbox"
-RUNTIME="runsc"
 if ! command -v runsc >/dev/null 2>&1; then
-    if [ "$ALLOW_UNSANDBOXED" = "1" ]; then
-        RUNTIME="runc"
-        warn "runsc is not installed — continuing UNSANDBOXED as you asked"
-        warn "the agent's commands will have ordinary container isolation only"
-    else
     die "gVisor (runsc) is required, and it is not installed.
 
-  The agent runs arbitrary commands, so it runs under gVisor or it does not run.
+  The agent runs arbitrary commands on your behalf. It runs under gVisor or it
+  does not run: there is no unsandboxed mode.
 
   Install it, then re-run this script:
 
@@ -208,15 +198,8 @@ if ! command -v runsc >/dev/null 2>&1; then
 
   Then register it with Docker:
 
-        sudo runsc install && sudo systemctl restart docker
-
-  If you accept weaker isolation instead, re-run with:
-
-        SHIPWRIGHT_ALLOW_UNSANDBOXED=1 sh $0"
-    fi
+        sudo runsc install && sudo systemctl restart docker"
 fi
-
-if [ "$RUNTIME" = "runsc" ]; then
 ok "runsc: $(runsc --version 2>/dev/null | head -1 | awk '{print $NF}')"
 
 if $DOCKER info --format '{{range printf \"%s\" .Runtimes}}{{.}}{{end}}' 2>/dev/null | grep -q runsc \
@@ -229,27 +212,24 @@ else
 
       sudo runsc install && sudo systemctl restart docker"
 fi
-fi
 
 # --- sandbox probe -----------------------------------------------------------
 
 step "Proving the sandbox actually starts"
-if [ "$RUNTIME" != "runsc" ]; then
-    skip "gVisor is not in use; nothing to prove"
-elif detail "launching a throwaway container under runsc"; \
-    $DOCKER run --rm --runtime=runsc hello-world >/dev/null 2>&1; then
+detail "launching a throwaway container under runsc"
+if $DOCKER run --rm --runtime=runsc hello-world >/dev/null 2>&1; then
     ok "gVisor sandbox verified"
 else
-    if [ "$ALLOW_UNSANDBOXED" = "1" ]; then
-        RUNTIME="runc"
-        warn "runsc would not start — continuing UNSANDBOXED as you requested"
-        warn "the agent's commands will have ordinary container isolation only"
-    else
-        die "gVisor could not start a container, so the sandbox cannot be guaranteed.
-  Install on native Linux, or re-run accepting weaker isolation:
+    die "gVisor is registered but could not actually start a container.
 
-      SHIPWRIGHT_ALLOW_UNSANDBOXED=1 sh install.sh"
-    fi
+  The sandbox is the whole safety boundary, so the install stops here.
+
+  On WSL2 this is expected: gVisor is not supported on the WSL kernel. Install
+  on native Linux, or in a VM with a stock kernel.
+
+  Check what went wrong with:
+
+      docker run --rm --runtime=runsc hello-world"
 fi
 
 # --- source ------------------------------------------------------------------
@@ -289,7 +269,6 @@ cat > "$BIN_DIR/ship" <<LAUNCHER
 # you run this in. That is the containment boundary.
 set -eu
 IMAGE="\${SHIPWRIGHT_IMAGE:-$IMAGE_NAME}"
-RUNTIME="\${SHIPWRIGHT_RUNTIME:-$RUNTIME}"
 
 if ! docker info >/dev/null 2>&1; then
     printf '\033[31merror:\033[0m cannot reach Docker.\n' >&2
@@ -303,12 +282,13 @@ if ! docker info >/dev/null 2>&1; then
     exit 1
 fi
 
-if [ "\$RUNTIME" != "runsc" ]; then
-    printf '\033[33mwarning:\033[0m running without gVisor (runtime=%s)\n' "\$RUNTIME" >&2
+if ! command -v runsc >/dev/null 2>&1; then
+    printf '\033[31merror:\033[0m gVisor (runsc) is not installed; shipwright will not run without it.\n' >&2
+    exit 1
 fi
 
 exec docker run --rm -it \\
-    --runtime "\$RUNTIME" \\
+    --runtime runsc \\
     --workdir /workspace \\
     --mount "type=bind,source=\$(pwd),target=/workspace" \\
     --env ANTHROPIC_API_KEY --env OPENAI_API_KEY \\
@@ -328,7 +308,7 @@ ok "ship-uninstall   remove shipwright"
 
 # --- done --------------------------------------------------------------------
 
-printf '\n\033[1;32mshipwright is ready\033[0m  (runtime: %s)\n\n' "$RUNTIME"
+printf '\n\033[1;32mshipwright is ready\033[0m  (sandboxed with gVisor)\n\n' 
 case ":$PATH:" in
     *":$BIN_DIR:"*) printf '  Run \033[1mship\033[0m inside any project to open it.\n' ;;
     *)
