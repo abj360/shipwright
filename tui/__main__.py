@@ -50,6 +50,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="model provider to run the loop with",
     )
     parser.add_argument(
+        "--setup",
+        action="store_true",
+        help="re-run provider and API-key setup, even if a key is already stored",
+    )
+    parser.add_argument(
         "--gateway",
         default=DEFAULT_GATEWAY_URL,
         help="gateway the connection indicator polls",
@@ -73,6 +78,7 @@ def build_app(argv: list[str] | None = None) -> ShipwrightApp:
         provider=args.provider,
         gateway_url=args.gateway,
         cost_tracker=CostTracker(),
+        force_setup=args.setup,
     )
 
 

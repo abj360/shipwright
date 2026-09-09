@@ -5,12 +5,14 @@ setup_panel.py --- first-run panel collecting a missing provider API key
 Contains:
     CredentialStatus: whether one provider has a usable credential
     detect_missing(): lists providers whose credential is unset
+    all_providers(): lists every provider, configured or not
     persist_key(): writes one provider credential into the .env file
     confirmation_line(): renders a save confirmation carrying no credential
     SetupPanel: prompts for a provider key on first run
     SetupPanel.target(): the provider this panel is currently collecting for
     SetupPanel.is_needed(): whether any provider still requires a key
     SetupPanel.compose(): builds the provider choice, masked input, and buttons
+    SetupPanel.on_mount(): puts the caret in the key field
     SetupPanel.on_input_submitted(): verifies and saves when Enter is pressed
     SetupPanel.on_button_pressed(): saves the key or skips setup
     SetupPanel.submit_key(): verifies whatever is currently typed
@@ -97,6 +99,25 @@ def detect_missing(environ: Mapping[str, str] | None = None) -> list[CredentialS
         for provider, env_var in CREDENTIAL_ENV_VARS.items()
     ]
     return [status for status in statuses if not status.is_present]
+
+
+def all_providers(environ: Mapping[str, str] | None = None) -> list[CredentialStatus]:
+    """Lists every provider, whether or not it already has a credential.
+
+    Re-running setup is for changing a key or switching provider, so it must
+    offer the ones already configured too.
+
+    Args:
+        environ: Environment to inspect; defaults to the process environment.
+
+    Returns:
+        statuses: One entry per provider, in catalogue order.
+    """
+    source: Mapping[str, str] = os.environ if environ is None else environ
+    return [
+        CredentialStatus(provider, env_var, bool(source.get(env_var, "").strip()))
+        for provider, env_var in CREDENTIAL_ENV_VARS.items()
+    ]
 
 
 def persist_key(env_var: str, key: str, repo_path: Path) -> Path:
@@ -301,6 +322,11 @@ class SetupPanel(Static):
             Button("Verify and save", variant="primary", id=SAVE_BUTTON_ID),
             Button("Skip for now", id=SKIP_BUTTON_ID),
         )
+
+    def on_mount(self) -> None:
+        """Puts the caret in the key field as soon as the panel appears."""
+        if self.is_needed():
+            self.query_one(f"#{KEY_INPUT_ID}", Input).focus()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Verifies and saves the key when Enter is pressed in the field.

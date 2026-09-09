@@ -12,6 +12,9 @@ Contains:
     test_enter_submits_the_key(): the Enter key verifies, no button needed
     test_rejected_key_is_not_stored(): a key the provider refuses is not saved
     test_unreachable_provider_still_stores_the_key(): offline does not re-prompt
+    test_force_setup_reopens_onboarding(): --setup asks again despite a stored key
+    test_setup_command_reopens_onboarding(): /setup asks again mid-session
+    test_setup_offers_configured_providers_too(): switching provider is possible
 """
 
 import asyncio
@@ -208,3 +211,56 @@ def test_unreachable_provider_still_stores_the_key(
 
     assert remaining == 0
     assert "ANTHROPIC_API_KEY" in (tmp_path / ".env").read_text()
+
+
+def test_force_setup_reopens_onboarding(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts --setup asks again even though a credential is already stored.
+
+    Uninstalling never removes a key: it lives in the checkout's .env, not in
+    the install. Without this there is no way back to onboarding at all.
+    """
+    _keyless(monkeypatch)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-already-configured")
+
+    remaining, _ = _panel_count(ShipwrightApp(tmp_path, force_setup=True))
+
+    assert remaining == 1
+
+
+def test_setup_command_reopens_onboarding(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts /setup brings onboarding back mid-session."""
+    _keyless(monkeypatch)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-already-configured")
+    app = ShipwrightApp(tmp_path)
+
+    async def _run() -> tuple[int, int]:
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            before = len(app.query(SetupPanel))
+            app.handle_line("/setup")
+            for _ in range(20):
+                await pilot.pause()
+                await asyncio.sleep(0.02)
+                if app.query(SetupPanel):
+                    break
+            return before, len(app.query(SetupPanel))
+
+    before, after = asyncio.run(_run())
+
+    assert (before, after) == (0, 1)
+
+
+def test_setup_offers_configured_providers_too(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Asserts re-running setup lists every provider, so one can be swapped."""
+    _keyless(monkeypatch)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-already-configured")
+    app = ShipwrightApp(tmp_path, force_setup=True)
+
+    async def _run() -> set[str]:
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            return {status.env_var for status in app.query_one(SetupPanel).missing}
+
+    assert asyncio.run(_run()) == set(CREDENTIAL_ENV_VARS.values())

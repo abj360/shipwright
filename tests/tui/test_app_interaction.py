@@ -7,6 +7,7 @@ the caret has to start in the composer, Enter has to submit, and a submitted
 instruction has to actually reach the agent loop.
 
 Contains:
+    configured: keeps onboarding out of the way of the composer
     ScriptedApp: app whose loop is backed by a scripted model
     _drive(): types an instruction, presses Enter, and waits for the turn
     test_caret_starts_in_the_composer(): typing lands in the input, not the timeline
@@ -30,6 +31,19 @@ SCRIPT = [
     "Looking first.\nAction: read_file\npath=widget.py",
     "FINAL: read the file and left it alone",
 ]
+
+
+@pytest.fixture(autouse=True)
+def configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Gives every test a provider key so onboarding does not take focus.
+
+    These cover the composer, and an unconfigured app opens the setup panel,
+    which quite rightly claims the keyboard first.
+
+    Args:
+        monkeypatch: Fixture used to set the credential.
+    """
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-configured")
 
 
 class ScriptedApp(ShipwrightApp):
@@ -136,11 +150,16 @@ def test_submitted_instruction_reaches_the_agent(tmp_path: Path) -> None:
     assert answer == "read the file and left it alone"
 
 
-def test_missing_credential_is_reported_in_the_timeline(tmp_path: Path) -> None:
+def test_missing_credential_is_reported_in_the_timeline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Asserts a run with no provider key closes the turn instead of crashing."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-configured")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-openai-configured")
 
     async def _run() -> str:
         app = ShipwrightApp(_checkout(tmp_path), provider="anthropic")
+        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         timeline, _ = await _drive(app, "do something")
         return timeline.turns[-1].answer
 

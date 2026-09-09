@@ -5,7 +5,8 @@
 # Usage:
 #   sh install.sh              install (default)
 #   sh install.sh update       rebuild from the latest source
-#   sh install.sh uninstall    remove everything this script created
+#   sh install.sh uninstall    remove everything this script created, and offer
+#                              to clear stored provider keys
 #
 # There is deliberately no native install path. The agent runs arbitrary
 # commands on your behalf, so it runs inside a gVisor-isolated container or it
@@ -72,7 +73,7 @@ as_root() {
 # --- uninstall ---------------------------------------------------------------
 
 if [ "$MODE" = "uninstall" ]; then
-    TOTAL_STEPS=3
+    TOTAL_STEPS=4
     printf '\033[1mRemoving shipwright\033[0m\n'
 
     step "Removing launchers from $BIN_DIR"
@@ -102,6 +103,32 @@ if [ "$MODE" = "uninstall" ]; then
         skip "nothing installed there"
     fi
 
+    step "Clearing stored provider keys"
+    detail "keys live in each project's .env, not in the install"
+    KEY_FILES=$(find "$HOME" -maxdepth 5 -type f -name .env \
+        -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/.venv/*" 2>/dev/null \
+        | while read -r envfile; do
+              grep -qE '^(export )?(ANTHROPIC|OPENAI)_API_KEY=.+' "$envfile" && echo "$envfile"
+          done)
+    if [ -z "$KEY_FILES" ]; then
+        skip "no stored provider keys found"
+    else
+        echo "$KEY_FILES" | while read -r envfile; do detail "$envfile"; done
+        if confirm "Remove the provider key lines from the files above?"; then
+            echo "$KEY_FILES" | while read -r envfile; do
+                sed -i -E '/^(export )?(ANTHROPIC|OPENAI)_API_KEY=/d' "$envfile"
+                if grep -qE '[^[:space:]]' "$envfile"; then
+                    ok "cleared keys in $envfile"
+                else
+                    rm -f "$envfile"
+                    ok "removed $envfile (nothing else was in it)"
+                fi
+            done
+        else
+            skip "left the keys in place"
+        fi
+    fi
+
     printf '\n\033[32mshipwright removed.\033[0m Docker and gVisor were left installed.\n'
     exit 0
 fi
@@ -122,7 +149,7 @@ detail "kernel $(uname -r)"
 command -v git >/dev/null 2>&1 || die "git is required; install it and re-run"
 ok "git: $(git --version | awk '{print $3}')"
 if grep -qi microsoft /proc/version 2>/dev/null; then
-    warn "WSL2 detected — gVisor is unsupported there and may refuse to start"
+    detail "WSL2 detected — gVisor runs here via the systrap platform"
 fi
 detail "install prefix: $INSTALL_HOME"
 detail "launchers:      $BIN_DIR"
@@ -224,12 +251,12 @@ else
 
   The sandbox is the whole safety boundary, so the install stops here.
 
-  On WSL2 this is expected: gVisor is not supported on the WSL kernel. Install
-  on native Linux, or in a VM with a stock kernel.
-
   Check what went wrong with:
 
-      docker run --rm --runtime=runsc hello-world"
+      docker run --rm --runtime=runsc hello-world
+
+  gVisor needs a kernel of 4.14.77 or newer with CONFIG_SECCOMP_FILTER, and it
+  defaults to the systrap platform, which needs no virtualisation support."
 fi
 
 # --- source ------------------------------------------------------------------
