@@ -42,20 +42,18 @@ gVisor-isolated sandbox under hard resource limits and a default-deny egress all
 | ----------- | ----- |
 | [Docker](https://docs.docker.com/engine/install/) | On WSL2, Docker Desktop with WSL integration is usually smoother |
 | [gVisor (`runsc`)](https://gvisor.dev/docs/user_guide/install/) | Then register it: `sudo runsc install && sudo systemctl restart docker` |
-| `git`, Linux, a terminal | Debian or Ubuntu, for `apt` |
-
-Add the repository once, then install:
+| `git`, Linux, a terminal | The installer prompts, so it cannot be piped into a shell |
 
 ```bash
-curl -fsSL https://abj360.github.io/shipwright/key.gpg | sudo tee /etc/apt/keyrings/shipwright.gpg > /dev/null
-echo "deb [signed-by=/etc/apt/keyrings/shipwright.gpg] https://abj360.github.io/shipwright stable main" | sudo tee /etc/apt/sources.list.d/shipwright.list
-sudo apt update && sudo apt install shipwright
+curl -fsSL https://raw.githubusercontent.com/abj360/shipwright/main/install.sh -o install.sh
+sh install.sh
 ```
 
-`apt` is the only way in: there is **no install script, no native install path
-and no unsandboxed mode**. The agent runs arbitrary commands on your behalf, so
-it runs inside a gVisor-isolated container or it does not run. The first `ship`
-pulls the agent image, and refuses to start if `runsc` is missing.
+There is **no native install path and no unsandboxed mode**. The agent runs
+arbitrary commands on your behalf, so it runs inside a gVisor-isolated container
+or it does not run. The installer verifies `runsc` is registered with Docker and
+then proves the sandbox by launching a probe container; if gVisor is missing, or
+the probe fails, the install stops.
 
 gVisor needs a kernel of 4.14.77 or newer with `CONFIG_SECCOMP_FILTER`. It
 defaults to the systrap platform, which needs no virtualisation support, so it
@@ -91,41 +89,49 @@ permissions. It never asks again.
 | ------- | ------------ |
 | `ship` | Open the interface on the current directory |
 | `ship PATH` | Open it on another directory (`.`, `..`, relative or absolute) |
+| `ship-update` | Rebuild from the latest source |
 | `ship --setup` | Change provider or API key |
 | `ship --mode bypass` | Start in a permission mode (`manual`, `edit`, `plan`, `bypass`) |
 | `ship --resume <id>` | Reopen a saved session in full; the id is printed when you exit |
+| `ship-uninstall` | Remove shipwright |
 
 ### Update
 
 ```bash
-sudo apt update && sudo apt upgrade shipwright
+ship-update
 ```
-
-The first `ship` afterwards pulls the matching image.
 
 ### Uninstall
 
 ```bash
-sudo apt remove --purge shipwright
+ship-uninstall
 ```
 
-Docker, gVisor and your checkouts stay where they are, and so do the things
-apt does not own: the image, and your own state.
+That removes the launchers, the container image, and `~/.local/share/shipwright`,
+including the record that onboarding was done, so the next install starts from
+onboarding again. It also clears every stored provider key without asking. Keys
+live in each project's `.env` rather than in the install, so it finds those
+files under your home directory and strips only the `ANTHROPIC_API_KEY` and
+`OPENAI_API_KEY` lines, leaving anything else in them alone. A key exported in
+your shell profile is yours to remove.
+
+Docker and gVisor are left installed, and your checkouts stay where they are.
+
+To change a key without uninstalling, run `ship --setup`, or `/setup` inside the
+interface.
+
+If the launcher is gone but the install directory is not:
 
 ```bash
-docker image rm ghcr.io/abj360/shipwright
-rm -rf ~/.local/share/shipwright
+sh ~/.local/share/shipwright/src/install.sh uninstall
 ```
-
-The second line clears sessions, the record that onboarding was done, and
-nothing else. Provider keys live in each project's `.env`; remove those lines
-yourself, or run `ship --setup` to replace a key without uninstalling.
 
 ## How you use it
 
 Type `ship` in a terminal and the interface opens on the checkout you are in.
 
-1. **Bring the stack up** — `docker compose -f docker/docker-compose.yml up --build`.
+1. **Bring the stack up** — `docker compose -f docker/docker-compose.yml up --build`,
+   or `scripts/run_local.sh` if you would rather not use compose.
 2. **Give it a task**, from the terminal:
    ```bash
    python -m agent.cli --task "add validation to apply_discount and cover it with tests" --repo .
