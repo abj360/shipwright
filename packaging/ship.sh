@@ -95,11 +95,6 @@ if [ ! -w "$STATE_DIR" ] || { [ -e "$STATE_DIR/sessions" ] && [ ! -w "$STATE_DIR
     printf '   Take it back with:  sudo chown -R "%s" %s\n' "$(id -un)" "$STATE_DIR" >&2
 fi
 
-# A packaged install has no locally built image; fetch it the first time.
-if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-    docker pull "$IMAGE" || die "could not pull $IMAGE"
-fi
-
 # As you, not as root: anything the agent writes into the directory has to be
 # yours to read, edit and delete afterwards. HOME points somewhere writable
 # because that user has no home inside the container.
