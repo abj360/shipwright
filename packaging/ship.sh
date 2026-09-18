@@ -138,6 +138,8 @@ docker run --rm -it \
 
 # The interface leaves this behind when the operator accepts the update: the
 # update runs out here, where Docker is, and the session is reopened after it.
+# A run that already updated ignores it, so nothing can update in a circle.
+[ -z "${SHIPWRIGHT_UPDATE_CHECKED:-}" ] || exit 0
 [ -f "$UPDATE_MARKER" ] || exit 0
 SESSION=$(sed -n '1p' "$UPDATE_MARKER")
 rm -f "$UPDATE_MARKER"
