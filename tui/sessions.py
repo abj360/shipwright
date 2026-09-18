@@ -4,6 +4,9 @@ sessions.py --- saves a conversation under an id so it can be resumed later
 
 Contains:
     SESSIONS_SUBDIR: the folder sessions live in, inside the state directory
+    UPDATE_MARKER: the file the launcher looks for to apply an update
+    state_dir(): the install's state directory, empty when there is none
+    request_update(): asks the launcher to update and reopen this session
     SESSION_FILE_MODE: owner-only permissions for a saved session
     SESSION_ID_PATTERN: what a session id looks like
     STATE_DIR_ENV: the variable naming the install's state directory
@@ -28,6 +31,8 @@ from pathlib import Path
 from agent.llm_client import Message
 
 SESSIONS_SUBDIR = "sessions"
+# The launcher reads this after the interface closes, and applies the update.
+UPDATE_MARKER = "update-requested"
 SESSION_FILE_MODE = 0o600
 SESSION_ID_PATTERN = re.compile(r"^[0-9a-f]{12}$")
 # Set by the installed launcher to a directory kept inside the install.
@@ -100,6 +105,39 @@ class SavedTurn:
             Message(role="user", content=self.instruction),
             Message(role="assistant", content=self.answer),
         ]
+
+
+def state_dir(environ: Mapping[str, str] | None = None) -> Path | None:
+    """Returns the install's state directory, when the launcher provided one.
+
+    Args:
+        environ: Environment to read the state directory from.
+
+    Returns:
+        path: The directory, or None outside an installed launcher.
+    """
+    source = os.environ if environ is None else environ
+    configured = source.get(STATE_DIR_ENV, "").strip()
+    return Path(configured) if configured else None
+
+
+def request_update(session_id: str, directory: Path) -> Path:
+    """Leaves the marker the launcher acts on once the interface closes.
+
+    The update itself happens outside: rebuilding the image needs Docker,
+    which the sandbox deliberately cannot reach.
+
+    Args:
+        session_id: Session to reopen once the update is installed.
+        directory: State directory the launcher watches.
+
+    Returns:
+        path: The marker that was written.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    marker = directory / UPDATE_MARKER
+    marker.write_text(f"{session_id}\n")
+    return marker
 
 
 def new_session_id() -> str:
