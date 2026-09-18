@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/media/wordmark.png" alt="The shipwright wordmark on the terminal" width="820" />
+<img src="docs/media/wordmark.png" alt="shipwright" width="720" />
 
 [![python](https://img.shields.io/badge/python-3.12+-2f81f7)](pyproject.toml)
 [![node](https://img.shields.io/badge/node-22-2f81f7)](gateway/package.json)
