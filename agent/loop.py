@@ -10,6 +10,7 @@ Contains:
     AgentLoop.run(): executes the loop until a final answer
     AgentLoop._think(): asks the model for the next step
     AgentLoop._parse_step(): splits model output into a step
+    strip_trailing_narration(): drops a sentence added after a multi-line argument
     AgentLoop._render_step(): replays a past step as the model's own turn
     AgentLoop._act(): runs the chosen tool and captures output
     AgentLoop._note_verification(): tracks whether edits have been checked
@@ -74,6 +75,14 @@ MUTATING_TOOLS = frozenset({"write_file", "edit_file", "apply_patch"})
 # A lone closing tag on its own line is tool-protocol residue, never file
 # content, and a multi-line argument would otherwise swallow it.
 CLOSING_TAG_PATTERN = re.compile(r"^\s*</[A-Za-z_][\w.-]*>\s*$")
+# Models often narrate their next move right after the arguments. A multi-line
+# value runs to the end of the reply, so that sentence was being written into
+# the file. Only a trailing first-person line is dropped, since a file may well
+# end with a sentence of its own.
+NARRATION_PATTERN = re.compile(
+    r"^(now,? )?(let me\b|i['’]ll\b|i will\b|i['’]m going to\b|next,? i\b|then i\b)",
+    re.IGNORECASE,
+)
 TOOL_USAGE_INSTRUCTIONS = (
     "Work in small steps. Each reply is your reasoning followed by EITHER one "
     "tool call OR a final answer, never both.\n\n"
@@ -173,6 +182,25 @@ PARAMETER_PATTERN = re.compile(
     r"<parameter\s+name=[\"'](?P<name>[^\"']+)[\"']\s*>(?P<value>.*?)</(?:parameter|(?P=name))\s*>",
     re.IGNORECASE | re.DOTALL,
 )
+
+
+def strip_trailing_narration(value: str) -> str:
+    """Drops a sentence the model added after a multi-line argument.
+
+    Args:
+        value: Argument value as parsed, narration and all.
+
+    Returns:
+        value: The value without a trailing line narrating the next move.
+    """
+    paragraphs = value.split("\n\n")
+    while len(paragraphs) > 1:
+        last = paragraphs[-1].strip()
+        if "\n" in last or not NARRATION_PATTERN.match(last):
+            break
+        paragraphs.pop()
+    trimmed = "\n\n".join(paragraphs).rstrip()
+    return f"{trimmed}\n" if value.endswith("\n") else trimmed
 
 
 def _parse_invoke(text: str) -> tuple[str, dict[str, str], int] | None:
@@ -584,6 +612,8 @@ class AgentLoop:
                 args[name] = value.strip()
                 if name in MULTILINE_ARGS:
                     pending = name
+        for name in MULTILINE_ARGS & args.keys():
+            args[name] = strip_trailing_narration(args[name])
         return Step(index=index, thought=thought.strip(), tool_name=tool_name, tool_args=args)
 
     def _act(self, step: Step) -> str:
