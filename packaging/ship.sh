@@ -10,6 +10,10 @@ set -eu
 IMAGE="${SHIPWRIGHT_IMAGE:-@IMAGE_NAME@}"
 # Lives inside the install, so uninstalling forgets onboarding along with it.
 STATE_DIR="@STATE_DIR@"
+VERSION="@VERSION@"
+UPDATER="@UPDATER@"
+RELEASES_URL="${SHIPWRIGHT_RELEASES_URL:-https://api.github.com/repos/abj360/shipwright/releases/latest}"
+UPDATE_MARKER="$STATE_DIR/update-requested"
 
 die() {
     printf '\033[31merror:\033[0m %s\n' "$*" >&2
@@ -98,7 +102,27 @@ fi
 # As you, not as root: anything the agent writes into the directory has to be
 # yours to read, edit and delete afterwards. HOME points somewhere writable
 # because that user has no home inside the container.
-exec docker run --rm -it \
+# Which version is published, if the network answers quickly. The interface
+# offers the update; this only tells it there is one.
+latest_version() {
+    command -v curl >/dev/null 2>&1 || return 0
+    curl -fsS --max-time 3 "$RELEASES_URL" 2>/dev/null \
+        | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\{0,1\}\([^"]*\)".*/\1/p' \
+        | head -1
+}
+
+UPDATE_AVAILABLE=""
+# A launch that just updated does not ask again: if the update did not take,
+# offering it once more every time would be a loop, not a prompt.
+if [ -z "${SHIPWRIGHT_UPDATE_CHECKED:-}" ]; then
+    LATEST=$(latest_version || true)
+    if [ -n "$LATEST" ] && [ "$LATEST" != "$VERSION" ]; then
+        UPDATE_AVAILABLE=$LATEST
+    fi
+fi
+
+rm -f "$UPDATE_MARKER"
+docker run --rm -it \
     --runtime runsc \
     --user "$(id -u):$(id -g)" \
     --env HOME=/tmp \
@@ -108,4 +132,18 @@ exec docker run --rm -it \
     --env SHIPWRIGHT_STATE_DIR=/state \
     --env ANTHROPIC_API_KEY --env OPENAI_API_KEY \
     --env SHIPWRIGHT_PROVIDER --env SHIPWRIGHT_MODEL \
+    --env SHIPWRIGHT_VERSION="$VERSION" \
+    --env SHIPWRIGHT_UPDATE_AVAILABLE="$UPDATE_AVAILABLE" \
     "$IMAGE" ship --repo /workspace "$@"
+
+# The interface leaves this behind when the operator accepts the update: the
+# update runs out here, where Docker is, and the session is reopened after it.
+[ -f "$UPDATE_MARKER" ] || exit 0
+SESSION=$(sed -n '1p' "$UPDATE_MARKER")
+rm -f "$UPDATE_MARKER"
+"$UPDATER" update || die "update failed; the version you had is still installed"
+export SHIPWRIGHT_UPDATE_CHECKED=1
+if [ -n "$SESSION" ]; then
+    exec "$0" --resume "$SESSION" "$WORKSPACE"
+fi
+exec "$0" "$WORKSPACE"

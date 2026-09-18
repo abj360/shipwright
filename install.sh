@@ -378,8 +378,9 @@ step "Installing launchers"
 mkdir -p "$BIN_DIR"
 VERSION=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' "$SRC_DIR/agent/__init__.py")
 
-# The launcher is one file, shared by this installer and the Debian package.
-sed "s|@IMAGE_NAME@|$IMAGE_NAME|; s|@STATE_DIR@|$INSTALL_HOME/state|" \
+# The launcher lives in one file that the installer fills in.
+sed "s|@IMAGE_NAME@|$IMAGE_NAME|; s|@STATE_DIR@|$INSTALL_HOME/state|; \
+     s|@VERSION@|$VERSION|; s|@UPDATER@|$SRC_DIR/install.sh|" \
     "$SRC_DIR/packaging/ship.sh" > "$BIN_DIR/ship"
 chmod +x "$BIN_DIR/ship"
 say "Setting up ship ($VERSION) ..."
