@@ -3,33 +3,34 @@
 update_panel.py --- offers an update when a newer release is out
 
 Contains:
-    UPDATE_KEY / SKIP_KEY: the keys that answer the panel
-    TITLE: the heading the card carries
-    NOTICE_TEMPLATE: what the card says about the two versions
-    HINT: the key hints under the notice
+    NOTICE: what the card says
+    UPDATE_LABEL / SKIP_LABEL: the two options
+    UPDATE_BUTTON_ID / SKIP_BUTTON_ID: their element ids
     UpdatePanel: bordered card offering the update
-    UpdatePanel.render(): draws the notice and the hints
-    UpdatePanel.action_update(): accepts the update
-    UpdatePanel.action_skip(): leaves this launch on the version it has
+    UpdatePanel.compose(): the notice above the two options
+    UpdatePanel.on_mount(): puts the keyboard on Update, so enter takes it
+    UpdatePanel.on_button_pressed(): reports whichever was chosen
+    UpdatePanel.action_skip(): escape leaves this launch alone
     UpdatePanel.Answered: reports which the operator chose
 """
 
-from rich.text import Text
+from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.containers import Horizontal, Vertical
 from textual.message import Message
-from textual.widgets import Static
+from textual.widgets import Button, Static
 
 from tui.theme import Palette, palette_for
 
-UPDATE_KEY = "enter"
-SKIP_KEY = "escape"
-TITLE = "Update available"
-NOTICE_TEMPLATE = "shipwright {latest} is out; this is {current}."
-HINT = "[enter] update and reopen this session   [esc] skip for now"
+NOTICE = "New update available"
+UPDATE_LABEL = "Update"
+SKIP_LABEL = "Skip for now"
+UPDATE_BUTTON_ID = "update-now"
+SKIP_BUTTON_ID = "update-skip"
 
 
-class UpdatePanel(Static):
-    """Offers the update that the launcher found, and reports the answer.
+class UpdatePanel(Vertical):
+    """Offers the update the launcher found, and reports the answer.
 
     Attributes:
         latest: Version that is published.
@@ -37,22 +38,32 @@ class UpdatePanel(Static):
         palette: Colours the card is drawn in.
     """
 
-    can_focus = True
-
     DEFAULT_CSS = """
     UpdatePanel {
         height: auto;
         margin-bottom: 1;
         padding: 0 1;
         border: round $caution;
-        border-title-color: $caution;
+    }
+    UpdatePanel #update-notice {
+        color: $caution;
+        text-style: bold;
+    }
+    UpdatePanel Horizontal {
+        height: auto;
+    }
+    UpdatePanel Button {
+        min-width: 0;
+        width: auto;
+        margin-right: 2;
+    }
+    UpdatePanel Button:hover {
+        background: $caution;
+        text-style: bold;
     }
     """
 
-    BINDINGS = [
-        Binding(UPDATE_KEY, "update", "Update"),
-        Binding(SKIP_KEY, "skip", "Skip"),
-    ]
+    BINDINGS = [Binding("escape", "skip", "Skip for now")]
 
     class Answered(Message):
         """Reports whether the operator took the update.
@@ -70,8 +81,11 @@ class UpdatePanel(Static):
             super().__init__()
             self.is_accepted = is_accepted
 
-    def __init__(self, latest: str, current: str, palette: Palette | None = None) -> None:
-        """Builds the card for one pair of versions.
+    def __init__(self, latest: str = "", current: str = "", palette: Palette | None = None) -> None:
+        """Builds the card.
+
+        The versions are kept for the record, not shown: the card says there is
+        an update and offers the two things that can be done about it.
 
         Args:
             latest: Version that is published.
@@ -82,22 +96,26 @@ class UpdatePanel(Static):
         self.latest = latest
         self.current = current
         self.palette: Palette = palette_for() if palette is None else palette
-        self.border_title = TITLE
 
-    def render(self) -> Text:
-        """Draws the notice and the key hints.
+    def compose(self) -> ComposeResult:
+        """Lays out the notice above the two options."""
+        yield Static(NOTICE, id="update-notice")
+        with Horizontal():
+            yield Button(UPDATE_LABEL, id=UPDATE_BUTTON_ID, variant="primary", compact=True)
+            yield Button(SKIP_LABEL, id=SKIP_BUTTON_ID, compact=True)
 
-        Returns:
-            rendered: The card's text.
+    def on_mount(self) -> None:
+        """Puts the keyboard on Update, so enter takes it and tab reaches Skip."""
+        self.query_one(f"#{UPDATE_BUTTON_ID}", Button).focus()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Reports whichever option was chosen.
+
+        Args:
+            event: Button press identifying the option.
         """
-        block = Text()
-        block.append(NOTICE_TEMPLATE.format(latest=self.latest, current=self.current))
-        block.append(f"\n{HINT}", style=self.palette.hunk)
-        return block
-
-    def action_update(self) -> None:
-        """Accepts the update."""
-        self.post_message(self.Answered(True))
+        event.stop()
+        self.post_message(self.Answered(event.button.id == UPDATE_BUTTON_ID))
 
     def action_skip(self) -> None:
         """Leaves this launch on the version it already has."""
