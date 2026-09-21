@@ -97,6 +97,14 @@ permissions. It never asks again.
 
 ### Update
 
+`ship` checks for a newer release as it opens. When there is one, it says so
+above the chat box: `enter` takes it, `esc` leaves this launch alone and the
+offer comes back next time. Taking it closes the interface, runs the update
+with its own progress bar, and reopens the session where you left it, since a
+running process cannot swap its own code.
+
+To update whenever you like:
+
 ```bash
 ship-update
 ```
