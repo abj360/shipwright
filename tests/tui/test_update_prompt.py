@@ -5,7 +5,7 @@ test_update_prompt.py --- covers the update offered when a newer release is out
 Contains:
     configured: keeps onboarding out of the way of the offer
     _app(): builds an app told that a given version is published
-    test_offer_appears_when_a_newer_version_is_out(): both versions are named
+    test_offer_says_there_is_an_update_and_offers_both_options(): notice and buttons
     test_no_offer_when_up_to_date(): the same version is not an update
     test_no_offer_when_the_launcher_says_nothing(): a quiet network offers nothing
     test_accepting_leaves_the_marker_and_closes(): the launcher takes it from there
@@ -17,11 +17,17 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from textual.widgets import Button
 
 from tui.app import ShipwrightApp
 from tui.screens.composer import Composer
 from tui.sessions import UPDATE_MARKER
-from tui.widgets.update_panel import UpdatePanel
+from tui.widgets.update_panel import (
+    NOTICE,
+    SKIP_LABEL,
+    UPDATE_LABEL,
+    UpdatePanel,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -73,8 +79,7 @@ def _panels(app: ShipwrightApp, keys: list[str]) -> tuple[int, str]:
     async def _run() -> tuple[int, str]:
         async with app.run_test() as pilot:
             await pilot.pause()
-            offers = app.query(UpdatePanel)
-            drawn = str(offers.first().render()) if offers else ""
+            drawn = str(app.query_one("#update-notice").render()) if app.query(UpdatePanel) else ""
             for key in keys:
                 await pilot.press(key)
                 await pilot.pause()
@@ -83,16 +88,25 @@ def _panels(app: ShipwrightApp, keys: list[str]) -> tuple[int, str]:
     return asyncio.run(_run())
 
 
-def test_offer_appears_when_a_newer_version_is_out(
+def test_offer_says_there_is_an_update_and_offers_both_options(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Asserts the offer names the published version and the one running."""
-    remaining, drawn = _panels(_app(tmp_path, monkeypatch, "1.2.0", "1.1.1"), [])
+    """Asserts the card says an update is available and offers exactly two options."""
+    app = _app(tmp_path, monkeypatch, "1.2.0", "1.1.1")
+
+    async def _run() -> tuple[int, str, list[str]]:
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            panel = app.query_one(UpdatePanel)
+            notice = str(panel.query_one("#update-notice").render())
+            options = [str(button.label) for button in panel.query(Button)]
+            return len(app.query(UpdatePanel)), notice, options
+
+    remaining, notice, options = asyncio.run(_run())
 
     assert remaining == 1
-    assert "1.2.0" in drawn
-    assert "1.1.1" in drawn
-    assert "[enter] update" in drawn
+    assert notice == NOTICE
+    assert options == [UPDATE_LABEL, SKIP_LABEL]
 
 
 def test_no_offer_when_up_to_date(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -149,3 +163,17 @@ def test_offer_returns_next_launch(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     remaining, _ = _panels(_app(tmp_path, monkeypatch, "1.2.0", "1.1.1"), [])
 
     assert remaining == 1
+
+
+def test_clicking_skip_dismisses_the_offer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asserts the Skip for now option answers the same way escape does."""
+    app = _app(tmp_path, monkeypatch, "1.2.0", "1.1.1")
+
+    async def _run() -> tuple[int, bool]:
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.click("#update-skip")
+            await pilot.pause()
+            return len(app.query(UpdatePanel)), (tmp_path / "state" / UPDATE_MARKER).exists()
+
+    assert asyncio.run(_run()) == (0, False)
