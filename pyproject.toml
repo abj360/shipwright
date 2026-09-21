@@ -15,7 +15,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.4", "ruff>=0.7", "mypy>=1.12", "types-PyYAML>=6.0"]
+# pillow is only for scripts/capture_media.py, which records the README media.
+dev = ["pytest>=8.4", "ruff>=0.7", "mypy>=1.12", "types-PyYAML>=6.0", "pillow>=11.0"]
 
 [project.scripts]
 shipwright = "agent.cli:main"

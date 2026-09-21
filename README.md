@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/media/wordmark.png" alt="shipwright" width="440" />
+<img src="docs/media/wordmark.png" alt="The shipwright wordmark on the terminal" width="820" />
 
 [![python](https://img.shields.io/badge/python-3.12+-2f81f7)](pyproject.toml)
 [![node](https://img.shields.io/badge/node-22-2f81f7)](gateway/package.json)
@@ -16,7 +16,10 @@ Shipwright is an autonomous coding agent that reads a repository, edits code,
 runs the tests, and opens a draft PR, with every command it issues executing inside a
 gVisor-isolated sandbox under hard resource limits and a default-deny egress allowlist.
 
-<img src="docs/media/live-viewer.gif" alt="A run from typing the request to the diff" width="940" />
+<img src="docs/media/session.gif" alt="A real run: the request typed, the file read, the edit and its diff, the check, the summary" width="940" />
+
+<sub>A real run, start to finish: the request, the file read, the edit with its
+diff, the read-back that checks it, and the summary.</sub>
 
 
 </div>
@@ -294,9 +297,13 @@ are explicitly ignored so runs can never trigger themselves in a loop.
 The terminal interface (`tui/`) is a conversation: each request you send becomes
 a turn showing what the agent did and the diff it produced.
 
-![Two turns of a conversation, one activity row expanded](docs/media/conversation.png)
+![A turn showing the diff it produced and the summary that closed it](docs/media/activity.png)
 
-<sub>Captures above predate the terminal interface; new ones are pending.</sub>
+Each card holds what went in, the diff, and what came out, in turquoise so it
+never reads as the chat box. Outside bypass, anything that changes the checkout
+or runs a command asks first:
+
+![The prompt asking before a command runs, with approve, deny and other](docs/media/approval.png)
 
 Each turn collapses the run into activity cards — `Read`, `Edited`, `Ran` — each
 holding what went in, the diff it produced, and what came out, followed by a

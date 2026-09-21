@@ -153,11 +153,13 @@ ONBOARDED_MARKER = "onboarded"
 PLAN_DECISION_TIMEOUT_S = 300.0
 QUEUED_TITLE = "queued"
 USAGE_MODE = "usage: /mode [manual|edit|plan|bypass]"
+# Glyphs common terminal fonts actually carry: the pause and play triangles
+# are missing from DejaVu and its relatives, and show as boxes.
 MODE_MARKERS: dict[PermissionMode, str] = {
-    PermissionMode.MANUAL: "⏸",
-    PermissionMode.EDIT_AUTOMATICALLY: "⏵⏵",
-    PermissionMode.PLAN: "⏸",
-    PermissionMode.BYPASS: "⏵⏵",
+    PermissionMode.MANUAL: "·",
+    PermissionMode.EDIT_AUTOMATICALLY: "»",
+    PermissionMode.PLAN: "▸",
+    PermissionMode.BYPASS: "»»",
 }
 PLAN_ON_NOTICE = "plan mode on — runs propose steps and wait for [a] to accept"
 PLAN_OFF_NOTICE = "plan mode off — manual"
