@@ -16,6 +16,8 @@ Contains:
     ShipwrightApp.close_onboarding(): returns from onboarding to the home page
     ShipwrightApp.register_commands(): binds each slash command to its handler
     ShipwrightApp.on_mount(): wires the slash commands once mounted
+    ShipwrightApp.offer_update(): shows the update the launcher found
+    ShipwrightApp.on_update_panel_answered(): takes the update, or leaves it
     ShipwrightApp.start_or_queue(): starts a turn, or queues it behind the one running
     ShipwrightApp.on_unmount(): releases a waiting run as the interface closes
     ShipwrightApp.action_stop_run(): stops the run in flight from the keyboard
@@ -69,6 +71,7 @@ from textual.containers import Vertical
 from textual.css.query import NoMatches
 from textual.widgets import Static
 
+from agent import __version__
 from agent.circuit_breaker import CircuitBreaker, RunawayRunError
 from agent.cost_tracker import CostTracker
 from agent.llm_client import (
@@ -110,8 +113,10 @@ from tui.sessions import (
     SavedStep,
     SavedTurn,
     new_session_id,
+    request_update,
     save_session,
     sessions_dir,
+    state_dir,
 )
 from tui.theme import TOKEN_FALLBACKS, Palette, css_variables, palette_for
 from tui.transcript import resume
@@ -127,11 +132,15 @@ from tui.widgets.setup_panel import (
     detect_missing,
 )
 from tui.widgets.step_row import StepRow
+from tui.widgets.update_panel import UpdatePanel
 from tui.widgets.wordmark import Wordmark
 
 DEFAULT_GATEWAY_URL = "http://localhost:4000"
 ANSWER_PREFIX = "● "
 STOPPED_NOTICE = "stopped"
+# Set by the launcher, which is where the version check and the update happen.
+UPDATE_AVAILABLE_ENV = "SHIPWRIGHT_UPDATE_AVAILABLE"
+VERSION_ENV = "SHIPWRIGHT_VERSION"
 SAVE_FAILED_TEMPLATE = (
     "this session is not being saved to {path} ({reason}), so --resume will not find it"
 )
@@ -284,6 +293,7 @@ class ShipwrightApp(App[None]):
         self.active_loop: AgentLoop | None = None
         self.credential_verifier: Callable[[Provider, str], Verification] | None = None
         self.session_id = session_id or new_session_id()
+        self.version = os.environ.get(VERSION_ENV, "").strip() or __version__
         self.turns: list[SavedTurn] = list(turns or [])
         self.conversation: list[LoopMessage] = [
             message for turn in self.turns for message in turn.messages()
@@ -397,10 +407,39 @@ class ShipwrightApp(App[None]):
         self.replay_conversation()
         self.query_one(Composer).focus_input()
         onboarded = self.is_onboarded()
+        self.offer_update()
         first_run = not self.force_setup and (not onboarded or self.needs_setup())
         if first_run or self.needs_setup():
             offered = all_providers() if (self.force_setup or not onboarded) else None
             self.push_screen(self.onboarding(offered, show_terms=first_run))
+
+    def offer_update(self) -> None:
+        """Shows the update the launcher found, if it found one."""
+        latest = os.environ.get(UPDATE_AVAILABLE_ENV, "").strip()
+        if not latest or latest == self.version:
+            return
+        panel = UpdatePanel(latest, self.version, palette=self.palette)
+        self.query_one("#region-queue").mount(panel)
+        panel.focus()
+
+    def on_update_panel_answered(self, event: UpdatePanel.Answered) -> None:
+        """Takes the update and closes, or dismisses the offer.
+
+        The update runs in the launcher once this closes, and reopens the
+        session where it left off.
+
+        Args:
+            event: Which the operator chose.
+        """
+        event.stop()
+        panel = self.query_one(UpdatePanel)
+        directory = state_dir()
+        if event.is_accepted and directory is not None:
+            request_update(self.session_id, directory)
+            self.exit()
+            return
+        panel.remove()
+        self.query_one(Composer).focus_input()
 
     def onboarding(
         self, offered: list[CredentialStatus] | None, show_terms: bool
