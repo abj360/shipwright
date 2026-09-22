@@ -19,7 +19,7 @@ Contains:
     class_colours(): reads the SVG stylesheet into class-to-colour
     parse_screen(): turns one exported SVG into rows of cells
     render(): draws rows of cells onto an image
-    capture_wordmark(): the idle screen
+    capture_wordmark(): the block-capital mark on its own, transparently
     capture_session(): a real run, frame by frame, as a GIF
     capture_approval(): the approval prompt on a proposed command
     main(): picks one of the above
@@ -43,8 +43,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent.env_file import load_env_file  # noqa: E402
 from agent.permissions import PermissionMode  # noqa: E402
 from tui.app import ShipwrightApp  # noqa: E402
-from tui.theme import DARK  # noqa: E402
+from tui.theme import BRAND_BLUE, DARK  # noqa: E402
 from tui.widgets.approval_panel import ApprovalPanel  # noqa: E402
+from tui.widgets.wordmark import PROJECT_NAME, render_word  # noqa: E402
 
 CELL_WIDTH = 12.2
 CELL_HEIGHT = 20.4
@@ -54,6 +55,9 @@ FONT_PATHS = (
 )
 FONT_SIZE = 17
 PADDING = 12
+# The mark is drawn larger than the recordings, with room around the letters.
+MARK_PADDING = 10
+MARK_FONT_SIZE = 54
 BACKGROUND = "#000000"
 DEFAULT_COLOUR = "#d4d4d4"
 TEXT_PATTERN = re.compile(
@@ -61,6 +65,21 @@ TEXT_PATTERN = re.compile(
 )
 STYLE_PATTERN = re.compile(r"\.(terminal-[\w-]+)\s*\{([^}]*)\}")
 FILL_PATTERN = re.compile(r"fill:\s*(#[0-9a-fA-F]{3,8})")
+
+
+def _font(size: int = FONT_SIZE) -> ImageFont.FreeTypeFont:
+    """Returns the monospace font the recordings are drawn with.
+
+    Args:
+        size: Point size to load it at.
+
+    Returns:
+        font: The first font on the list that this machine has.
+    """
+    for path in FONT_PATHS:
+        if Path(path).exists():
+            return ImageFont.truetype(path, size)
+    raise RuntimeError(f"no monospace font found; looked for {', '.join(FONT_PATHS)}")
 
 
 @dataclass(frozen=True)
@@ -129,10 +148,7 @@ def render(rows: list[list[Cell]], size: tuple[int, int]) -> Image.Image:
     Returns:
         image: The drawn screen.
     """
-    font = next(
-        (ImageFont.truetype(path, FONT_SIZE) for path in FONT_PATHS if Path(path).exists()),
-        ImageFont.load_default(),
-    )
+    font = _font()
     advance = font.getlength("M")
     # The cell is exactly as tall as a full block, so block letters and box
     # borders join up instead of showing a seam between rows.
@@ -187,17 +203,46 @@ def _workspace(path: Path) -> Path:
     return path
 
 
-async def capture_wordmark(out: Path, size: tuple[int, int]) -> None:
-    """Saves the idle screen, wordmark and all.
+def capture_wordmark(out: Path) -> None:
+    """Saves the block-capital mark alone, on a transparent background.
+
+    No terminal around it and no canvas behind it, so it sits on whatever the
+    page it is shown on happens to be.
 
     Args:
         out: File to write.
-        size: Terminal size to record at.
     """
-    app = ShipwrightApp(_workspace(out.parent / "_sample"), palette=DARK)
-    async with app.run_test(size=size) as pilot:
-        await pilot.pause()
-        image = await _screen(app, size)
+    font = _font(MARK_FONT_SIZE)
+    block = font.getbbox("█")
+    advance = font.getlength("M")
+    line_height = block[3] - block[1] - 1
+    lines = render_word(PROJECT_NAME)
+    image = Image.new(
+        "RGBA",
+        (
+            round(len(lines[0]) * advance) + MARK_PADDING * 2,
+            len(lines) * line_height + MARK_PADDING * 2,
+        ),
+        (0, 0, 0, 0),
+    )
+    canvas = ImageDraw.Draw(image)
+    for row, line in enumerate(lines):
+        canvas.text(
+            (MARK_PADDING, MARK_PADDING + row * line_height - block[1]),
+            line,
+            font=font,
+            fill=BRAND_BLUE,
+        )
+    bounds = image.getbbox()
+    if bounds is not None:
+        image = image.crop(
+            (
+                max(bounds[0] - MARK_PADDING, 0),
+                max(bounds[1] - MARK_PADDING, 0),
+                min(bounds[2] + MARK_PADDING, image.width),
+                min(bounds[3] + MARK_PADDING, image.height),
+            )
+        )
     image.save(out)
 
 
@@ -280,7 +325,7 @@ def main(argv: list[str] | None = None) -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     size = (args.columns, args.lines)
     if args.what == "wordmark":
-        asyncio.run(capture_wordmark(args.out, size))
+        capture_wordmark(args.out)
     elif args.what == "approval":
         asyncio.run(capture_approval(args.out, size))
     else:
