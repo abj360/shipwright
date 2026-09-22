@@ -2,6 +2,8 @@
 
 <img src="docs/media/wordmark.png" alt="shipwright" width="720" />
 
+
+
 [![python](https://img.shields.io/badge/python-3.12+-2f81f7)](pyproject.toml)
 [![node](https://img.shields.io/badge/node-22-2f81f7)](gateway/package.json)
 [![typescript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](gateway/package.json)
